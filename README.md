@@ -79,7 +79,7 @@ Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: percentá, odchýl
 
 ## 4. Precvičovanie
 
-`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obťažnosť, počet a čas na tip (aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
+`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obťažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
 V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20` (oblasť, typy, obťažnosť od-do, počet, sekundy na tip, 0 = bez limitu).
 

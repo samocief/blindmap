@@ -2,7 +2,7 @@
  * Odkaz môže mať prednastavené filtre: cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20
  */
 var C = { regions: [], pool: [], all: [], items: [], idx: 0, scene: null, sceneKey: '', view: null, rview: null, pin: null, phase: 'idle', tick: null, deadline: 0, time: 0, scoring: null, rsel: -1, seq: 0 };
-var C_KEY = 'sm-practice', C_PFULL = 1, C_PZERO = 30, C_WRONG = 0.7;
+var C_KEY = 'sm-practice2', C_PFULL = 1, C_PZERO = 30, C_WRONG = 0.7;
 
 function cShow(id) { show(id, 'c'); $('c-wrap').hidden = id === 'c-game'; }
 function cSet() { return store(C_KEY) || {}; }
@@ -24,7 +24,7 @@ async function practiceStart() {
   ['c-dmin', 'c-dmax'].forEach(function (id) { var s = $(id); for (var i = 1; i <= 5; i++) s.appendChild(el('option', { value: String(i), text: String(i) })); });
   [0, 10, 15, 20, 30, 60].forEach(function (x) { $('c-time').appendChild(el('option', { value: String(x), text: x ? t('c.time_s', { n: x }) : t('c.time_none') })); });
   $('c-dmin').value = String(S.dmin || 1); $('c-dmax').value = String(S.dmax || 5);
-  $('c-n').value = S.n || 10; $('c-time').value = String([0, 10, 15, 20, 30, 60].indexOf(S.time) >= 0 ? S.time : 0);
+  $('c-n').value = S.n || 10; $('c-time').value = String([0, 10, 15, 20, 30, 60].indexOf(S.time) >= 0 ? S.time : 20);
   var codes = C.regions.map(function (r) { return r.code; }), sel = (S.regions || []).filter(function (c) { return codes.indexOf(c) >= 0; });
   chipsC($('c-regions'), C.regions.map(function (r) { return { value: r.code, label: regionLabel(r.code, r.names) }; }), sel.length ? sel : codes.slice(0, 1), cRegions);
   $('c-dmin').onchange = $('c-dmax').onchange = $('c-n').oninput = $('c-time').onchange = function () { cSave(cForm()); cPoolInfo(); };
