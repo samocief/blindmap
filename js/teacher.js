@@ -331,9 +331,18 @@ function tStarted(id, title) {
   $('started-open').onclick = function () { tOpenTest(id); };
   $('started-new').onclick = function () { tTab('new'); };
 }
-function tQrCover(id, title) {
-  $('qr-title').textContent = title || id; $('qr-big').innerHTML = qrSvg(pupilUrl(id)); $('qr-link').textContent = pupilUrl(id);
+function tQrCover(id, title) { tQrShow(title || id, pupilUrl(id)); }
+function tQrShow(title, url) {
+  $('qr-title').textContent = title; $('qr-big').innerHTML = qrSvg(url);
+  $('qr-link').innerHTML = ''; $('qr-link').appendChild(el('a', { href: url, target: '_blank', rel: 'noopener', text: url }));
   $('qr-cover').hidden = false;
+}
+// Odkaz na precvičovanie s rovnakými filtrami ako formulár (oblasť, typy, obťažnosť, počet, čas). Bez tabuľky a bez mien.
+function tPractice() {
+  var a = +$('f-dmin').value, b = +$('f-dmax').value, time = parseInt($('f-time').value, 10) || 0;
+  var q = 'r=' + chipVals($('f-regions')).join(',') + '&t=' + chipVals($('f-types')).join(',') + '&d=' + Math.min(a, b) + '-' + Math.max(a, b) +
+    '&n=' + (parseInt($('f-n').value, 10) || 10) + '&s=' + ([10, 15, 20, 30, 60].indexOf(time) >= 0 ? time : 0);
+  tQrShow(t('t.practice_title'), appBase() + 'cvicenie.html?' + q);
 }
 
 /* ---------- zoznam testov ---------- */
@@ -574,6 +583,7 @@ async function tExportAll() {
   on('clear-all', function () { T.slots = T.slots.map(function () { return null; }); tSlots(); });
   on('prev-show', function () { if (T.pview) T.pview.redraw(); }, 'onchange');
   on('start', tStart);
+  on('practice', tPractice);
   on('test-toggle', tToggleState);
   on('sub-over-b', function () { tSub('over'); });
   on('sub-class-b', function () { tSub('class'); });

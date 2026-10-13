@@ -39,6 +39,9 @@ legend{font-weight:600;font-size:.9rem;padding:0;margin-bottom:6px}
 .chip:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
 button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;cursor:pointer;min-height:44px;touch-action:manipulation}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+a.button{display:inline-flex;align-items:center;justify-content:center;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;min-height:44px;text-decoration:none}
+a.button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+a.button.big{font-size:1.1rem;padding:14px 22px;min-height:54px}
 button.big{font-size:1.1rem;padding:14px 22px;min-height:54px}
 button.mini{padding:4px 10px;font-size:.85rem;min-height:34px}
 button.icon{width:44px;padding:0;font-size:1.15rem}

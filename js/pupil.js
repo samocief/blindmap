@@ -13,7 +13,7 @@ async function pupilStart() {
   var s = param('s'), testId = param('t');
   try { await loadLang(param('lang') || 'sk'); } catch (e) { document.body.textContent = e.message; return; }
   applyI18n();
-  if (!s || !testId) { pFail(t('p.no_link')); return; }
+  if (!s || !testId) { pFail(t('p.no_link')); $('p-fail-practice').hidden = false; return; }
   API.url = scriptUrl(s); P.t = testId;
   P.device = store('sm-device') || (Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-5));
   store('sm-device', P.device);

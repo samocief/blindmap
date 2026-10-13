@@ -117,7 +117,7 @@
   "unknown": "Nastala chyba: {msg}"
  },
  "p": {
-  "no_link": "Tento odkaz nie je úplný. Naskenuj QR kód od učiteľa.",
+  "no_link": "Tento odkaz nie je na test. Na test naskenuj QR kód od učiteľa, alebo si mapu precvič sám.",
   "who": "Kto si?",
   "class": "Trieda {cls}",
   "no_names": "V zozname triedy nie je nikto. Povedz to učiteľovi.",
@@ -166,7 +166,8 @@
   "no_result": "Na tomto zariadení nie je odovzdaný test, preto tu výsledky nie sú.",
   "tap_item": "Ťuknutím na miesto v zozname ho priblížiš.",
   "download_img": "Stiahnuť obrázok",
-  "rule_landscape": "Keď otočíš telefón na šírku, mapa bude väčšia."
+  "rule_landscape": "Keď otočíš telefón na šírku, mapa bude väčšia.",
+  "practice": "Precvičovať slepú mapu"
  },
  "t": {
   "open_sheet": "Otvoriť tabuľku",
@@ -311,6 +312,29 @@
   "download": "Stiahnuť",
   "save_drive": "Uložiť na Disk",
   "saving_drive": "Ukladám na Disk…",
-  "saved_drive": "Uložené:"
+  "saved_drive": "Uložené:",
+  "practice_link": "Odkaz na precvičovanie",
+  "practice_title": "Precvičovanie (bez mien, nič sa neukladá)"
+ },
+ "c": {
+  "title": "Precvičovanie slepej mapy",
+  "intro": "Vyber si, čo chceš precvičovať. Po každom tipe hneď uvidíš správnu polohu. Nič sa nikam neukladá.",
+  "time": "Čas na tip",
+  "time_s": "{n} s",
+  "time_none": "bez limitu",
+  "pool": {
+   "one": "Filtrom vyhovuje {n} objekt.",
+   "few": "Filtrom vyhovujú {n} objekty.",
+   "other": "Filtrom vyhovuje {n} objektov."
+  },
+  "show_results": "Výsledky",
+  "end_title": "Výsledok",
+  "again": "Hrať znova",
+  "wrong": {
+   "one": "Zopakovať {n} chybu",
+   "few": "Zopakovať {n} chyby",
+   "other": "Zopakovať {n} chýb"
+  },
+  "settings": "Zmeniť nastavenia"
  }
 }

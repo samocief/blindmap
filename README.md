@@ -10,6 +10,7 @@ Testovanie slepej mapy pre celú triedu. Žiaci naskenujú QR kód, na mobile ť
 | Súbor | Čo to je |
 |---|---|
 | `index.html` | stránka žiaka (otvára sa z QR kódu) |
+| `cvicenie.html` | precvičovanie pre kohokoľvek, bez tabuľky a bez mien |
 | `ucitel.html` | stránka učiteľa |
 | `js/`, `css/` | kód a vzhľad |
 | `lang/sk.json` | všetky texty aplikácie; preklad = kópia súboru s iným kódom jazyka |
@@ -75,3 +76,10 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 7. **Tipy triedy:** tipy celej triedy pri každom objekte, medián a návrh obťažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
 
 Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: percentá, odchýlky v km pri každom objekte a príznaky (odchod z testu, pokus o prihlásenie z iného zariadenia).
+
+## 4. Precvičovanie
+
+`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obťažnosť, počet a čas na tip (aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
+
+V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20` (oblasť, typy, obťažnosť od-do, počet, sekundy na tip, 0 = bez limitu).
+
