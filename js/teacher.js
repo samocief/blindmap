@@ -72,7 +72,7 @@ function tForm() {
   sel.onchange = function () { saveForm({ cls: sel.value }); };
   ['f-dmin', 'f-dmax'].forEach(function (id) { var s = $(id); s.innerHTML = ''; for (var d = 1; d <= 5; d++) s.appendChild(el('option', { value: String(d), text: String(d) })); });
   $('f-dmin').value = String(F.dmin || 1); $('f-dmax').value = String(F.dmax || 5);
-  $('f-n').value = F.n || 10; $('f-time').value = F.time || 30; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
+  $('f-n').value = F.n || 10; $('f-time').value = F.time || 20; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
   var codes = T.regions.map(function (r) { return r.code; }), lastR = (F.regions || []).filter(function (c) { return codes.indexOf(c) >= 0; });
   chips($('f-regions'), T.regions.map(function (r) { return { value: r.code, label: regionLabel(r.code, r.names) }; }), lastR.length ? lastR : codes.slice(0, 1), tRegionsChanged);
   $('f-dmin').onchange = $('f-dmax').onchange = function () { saveForm({ dmin: +$('f-dmin').value, dmax: +$('f-dmax').value }); tFilter(); };
@@ -80,7 +80,7 @@ function tForm() {
   var nTimer = null;
   $('f-n').oninput = function () { clearTimeout(nTimer); nTimer = setTimeout(function () { var n = parseInt($('f-n').value, 10); if (n >= 1 && n <= 40 && n !== T.slots.length) { saveForm({ n: n }); tResize(); } }, 400); };
   $('f-n').onchange = function () { clearTimeout(nTimer); var n = Math.max(1, Math.min(40, parseInt($('f-n').value, 10) || 10)); $('f-n').value = n; saveForm({ n: n }); if (n !== T.slots.length) tResize(); };
-  $('f-time').onchange = function () { saveForm({ time: Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 30)) }); };
+  $('f-time').onchange = function () { saveForm({ time: Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 20)) }); };
   $('f-full').oninput = $('f-zero').oninput = tScoringInfo;
   $('f-full').onchange = $('f-zero').onchange = function () { saveForm({ pFull: num($('f-full').value, 1), pZero: num($('f-zero').value, 30) }); };
   T.mode = F.mode === 'manual' ? 'manual' : 'auto'; tModeButtons();
@@ -298,7 +298,7 @@ function tScoringInfo() {
 /* ---------- spustenie testu ---------- */
 async function tStart() {
   var cls = $('f-cls').value, chosen = T.slots.filter(Boolean), sc = T.scene;
-  var pf = num($('f-full').value, 1), pz = num($('f-zero').value, 30), time = Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 30));
+  var pf = num($('f-full').value, 1), pz = num($('f-zero').value, 30), time = Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 20));
   if (!cls) { tStatus('start-msg', t('t.err_class'), 'bad'); return; }
   if (!chosen.length) { tStatus('start-msg', t('t.err_objects'), 'bad'); return; }
   if (!sc) { tStatus('start-msg', t('t.loading_map'), 'bad'); return; }
