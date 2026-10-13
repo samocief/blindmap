@@ -64,9 +64,9 @@ Jeden súbor GeoJSON (FeatureCollection) na oblasť a typ, súradnice v **EPSG:4
 
 | Atribút | Povinný | Význam |
 |---|---|---|
-| `id` | áno | Jedinečný a stály identifikátor v celom katalógu, napr. `rivers-hron`. Rovnaký objekt vo viacerých oblastiach (Dunaj v `sk` aj `eu`) má v oboch súboroch rovnaké `id`, aplikácia ho potom započíta raz. |
+| `id` | odporúčaný | Jedinečný a stály identifikátor v celom katalógu, napr. `rivers-hron`. Rovnaký objekt vo viacerých oblastiach (Dunaj v `sk` aj `eu`) má v oboch súboroch rovnaké `id`, aplikácia ho potom započíta raz. Bez `id` si ho aplikácia vytvorí z typu a názvu. |
 | `name` | áno | Názov, ktorý žiak hľadá (slovensky). |
-| `difficulty` | áno | Obťažnosť 1 až 5. |
+| `difficulty` | áno | Obťažnosť 1 až 5 (aplikácia prijme aj názov `Level`). |
 | `name_en`, `name_de` … | nie | Preklady názvu na neskôr. |
 | `active` | nie | `0` objekt skryje (inak sa vynecháva už vo FME). |
 
@@ -74,12 +74,13 @@ Geometria môže byť bod, línia alebo plocha (aj Multi…). Odchýlka sa meria
 
 ### Typy objektov
 
-Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotnom aj množnom čísle; iný typ funguje tiež, len sa zobrazí tak, ako je napísaný.
+Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotnom aj množnom čísle; iný typ funguje tiež, len sa zobrazí tak, ako je napísaný. Rozumie aj bežným iným názvom súborov, napr. `River`, `Town`, `Lake`, `Mountain`, `Lowland`, `ProtArea`, `Kraje`, `Okresy`.
 
 | Typ | V aplikácii | Typ | V aplikácii |
 |---|---|---|---|
 | `countries` | štáty | `peaks` | vrchy |
 | `regions` | kraje a regióny | `lowlands` | nížiny a kotliny |
+| `districts` | okresy | | |
 | `cities` | mestá | `islands` | ostrovy |
 | `rivers` | rieky | `peninsulas` | polostrovy |
 | `lakes` | jazerá a vodné nádrže | `deserts` | púšte |

@@ -1,4 +1,19 @@
 /* Slepá mapa: načítanie katalógu a vrstiev z priečinka data/ v repozitári (popis formátu je v DATA.md). */
+var TYPE_ALIAS = {
+  country: 'countries', countries: 'countries', state: 'countries', staty: 'countries', stat: 'countries',
+  region: 'regions', regions: 'regions', kraj: 'regions', kraje: 'regions',
+  district: 'districts', districts: 'districts', okres: 'districts', okresy: 'districts',
+  city: 'cities', cities: 'cities', town: 'cities', towns: 'cities', mesto: 'cities', mesta: 'cities', obce: 'cities',
+  river: 'rivers', rivers: 'rivers', rieka: 'rivers', rieky: 'rivers',
+  lake: 'lakes', lakes: 'lakes', reservoir: 'lakes', jazero: 'lakes', jazera: 'lakes',
+  sea: 'seas', seas: 'seas', more: 'seas', moria: 'seas', ocean: 'oceans', oceans: 'oceans',
+  mountain: 'mountains', mountains: 'mountains', pohorie: 'mountains', pohoria: 'mountains',
+  peak: 'peaks', peaks: 'peaks', vrch: 'peaks', vrchy: 'peaks',
+  lowland: 'lowlands', lowlands: 'lowlands', basin: 'lowlands', nizina: 'lowlands', niziny: 'lowlands', kotliny: 'lowlands',
+  island: 'islands', islands: 'islands', ostrov: 'islands', ostrovy: 'islands', peninsula: 'peninsulas', peninsulas: 'peninsulas',
+  desert: 'deserts', deserts: 'deserts', park: 'parks', parks: 'parks', protarea: 'parks', protectedarea: 'parks', protectedareas: 'parks',
+  cave: 'caves', caves: 'caves', jaskyne: 'caves'
+};
 var Data = {
   _idx: null, _json: {}, _raster: {},
 
@@ -15,8 +30,13 @@ var Data = {
   // Typ objektov alebo názov vrstvy z názvu súboru: sk/sk_rivers.json -> rivers, sk/base_relief.jpg -> relief.
   stem: function (file, code) {
     var s = String(file).split('/').pop().replace(/\.[^.]+$/, '');
-    if (code && s.indexOf(code + '_') === 0) s = s.slice(code.length + 1);
-    return s.replace(/^base_/, '');
+    if (code && s.toLowerCase().indexOf(code.toLowerCase() + '_') === 0) s = s.slice(code.length + 1);
+    return s.replace(/^base_/i, '');
+  },
+  // Iné bežné názvy typov (jednotné číslo, angličtina, slovenčina) -> kód typu z DATA.md.
+  typeOf: function (stem) {
+    var n = normName(stem).replace(/ /g, '');
+    return TYPE_ALIAS[n] || stem;
   },
   isRaster: function (file) { return /\.(jpe?g|png|webp)$/i.test(file); },
 
@@ -28,7 +48,7 @@ var Data = {
           var code = String(r.code);
           return {
             code: code, names: r.name, bbox: Array.isArray(r.bbox) && r.bbox.length === 4 ? r.bbox.map(Number) : null,
-            objects: (r.objects || []).map(function (f) { return { file: f, type: Data.stem(f, code) }; }),
+            objects: (r.objects || []).map(function (f) { return { file: f, type: Data.typeOf(Data.stem(f, code)) }; }),
             base: (r.base || []).map(function (f) { return { file: f, name: Data.stem(f, code), raster: Data.isRaster(f) }; })
           };
         });
@@ -46,7 +66,8 @@ var Data = {
         if (!g || p.active === 0 || p.active === false || p.active === '0') return;
         var name = (I18N.lang !== 'sk' && p['name_' + I18N.lang]) || p.name || p.nazov || p.NAME || '';
         if (!name) return;
-        var tp = p.type || type, diff = Math.max(1, Math.min(5, Math.round(+(p.difficulty || p.obtiaznost || 3)) || 3));
+        var tp = type, d = p.difficulty !== undefined ? p.difficulty : p.Difficulty !== undefined ? p.Difficulty : p.level !== undefined ? p.level : p.Level !== undefined ? p.Level : p.obtiaznost;
+        var diff = Math.max(1, Math.min(5, Math.round(+d) || 3));
         out.push({ id: String(p.id || tp + '-' + normName(name).replace(/ /g, '-')), name: String(name), type: tp, diff: diff, g: g, bbox: geomBBox(g), regions: [region] });
       });
       return out;
@@ -91,7 +112,7 @@ function layerStyle(name, raster) {
   var n = normName(name);
   if (/^(land|outline|obrys|uzemie|countries|staty)$/.test(n)) return n === 'countries' || n === 'staty' ? 'countries' : 'land';
   if (/surround|okolie|neighbo|susedia/.test(n)) return 'surroundings';
-  if (/border|hranic|regions|kraje|okresy/.test(n)) return 'borders';
+  if (/border|hranic|regions|kraje|okresy|district/.test(n)) return 'borders';
   if (/water|voda|vody|river|rieky|lake|jazer|sea|more|ocean|reservoir|nadrz/.test(n)) return 'water';
   if (/cities|mesta|obce|peaks|vrchy|caves|jaskyne|points|body/.test(n)) return 'dots';
   return 'auto';

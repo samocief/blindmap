@@ -3,8 +3,8 @@
     {
       "code": "sk",
       "bbox": [16.75, 47.65, 22.65, 49.7],
-      "objects": ["sk/regions.json", "sk/cities.json", "sk/rivers.json", "sk/peaks.json"],
-      "base": ["sk/base_land.json", "sk/base_surroundings.json", "sk/base_borders.json"]
+      "objects": ["sk/regions.json", "sk/districts.json", "sk/cities.json", "sk/rivers.json", "sk/lakes.json", "sk/mountains.json", "sk/lowlands.json", "sk/parks.json"],
+      "base": ["sk/base_relief.png", "sk/base_land.json", "sk/base_surroundings.json", "sk/base_borders.json"]
     },
     {
       "code": "eu",

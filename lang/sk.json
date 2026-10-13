@@ -34,6 +34,7 @@
  "type": {
   "countries": "štáty",
   "regions": "kraje a regióny",
+  "districts": "okresy",
   "cities": "mestá",
   "rivers": "rieky",
   "lakes": "jazerá a vodné nádrže",
@@ -52,6 +53,7 @@
  "type1": {
   "countries": "štát",
   "regions": "kraj, región",
+  "districts": "okres",
   "cities": "mesto",
   "rivers": "rieka",
   "lakes": "jazero, vodná nádrž",
@@ -177,7 +179,7 @@
   "no_index": "Nepodarilo sa načítať zoznam máp (data/index.json).",
   "old_script": "Skript v tvojej tabuľke je verzia {v}. Vlož do tabuľky nový Code.gs a nasaď novú verziu.",
   "connected": "Pripojená tabuľka: {name}",
-  "disconnect": "Odpojiť tabuľku",
+  "disconnect": "Odpojiť tabuľku z tohto zariadenia",
   "disconnect_confirm": "Odpojiť tabuľku z tohto zariadenia? Znova ju pripojíš z ponuky v tabuľke.",
   "tab_new": "Nový test",
   "tab_tests": "Testy",
@@ -213,7 +215,7 @@
   "clear_all": "Vymazať všetko",
   "slot_ph": "Hľadaj objekt…",
   "slot_aria": "Objekt {n}",
-  "dice": "Náhodne iný objekt",
+  "dice": "Náhodne iný objekt z ponuky",
   "clear": "Vymazať",
   "no_match": "Nič sa nenašlo.",
   "diff_short": "obťažnosť {n}",

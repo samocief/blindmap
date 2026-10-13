@@ -76,7 +76,10 @@ function tForm() {
   var codes = T.regions.map(function (r) { return r.code; }), lastR = (F.regions || []).filter(function (c) { return codes.indexOf(c) >= 0; });
   chips($('f-regions'), T.regions.map(function (r) { return { value: r.code, label: regionLabel(r.code, r.names) }; }), lastR.length ? lastR : codes.slice(0, 1), tRegionsChanged);
   $('f-dmin').onchange = $('f-dmax').onchange = function () { saveForm({ dmin: +$('f-dmin').value, dmax: +$('f-dmax').value }); tFilter(); };
-  $('f-n').onchange = function () { var n = Math.max(1, Math.min(40, parseInt($('f-n').value, 10) || 10)); $('f-n').value = n; saveForm({ n: n }); tResize(); };
+  // Počet objektov: políčka sa prispôsobia už počas písania; prekresľujú sa len pri skutočnej zmene počtu.
+  var nTimer = null;
+  $('f-n').oninput = function () { clearTimeout(nTimer); nTimer = setTimeout(function () { var n = parseInt($('f-n').value, 10); if (n >= 1 && n <= 40 && n !== T.slots.length) { saveForm({ n: n }); tResize(); } }, 400); };
+  $('f-n').onchange = function () { clearTimeout(nTimer); var n = Math.max(1, Math.min(40, parseInt($('f-n').value, 10) || 10)); $('f-n').value = n; saveForm({ n: n }); if (n !== T.slots.length) tResize(); };
   $('f-time').onchange = function () { saveForm({ time: Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 30)) }); };
   $('f-full').oninput = $('f-zero').oninput = tScoringInfo;
   $('f-full').onchange = $('f-zero').onchange = function () { saveForm({ pFull: num($('f-full').value, 1), pZero: num($('f-zero').value, 30) }); };
@@ -105,7 +108,7 @@ async function tRegionsChanged() {
   T.poolAll = all;
   // typy objektov
   var counts = {}; all.forEach(function (o) { counts[o.type] = (counts[o.type] || 0) + 1; });
-  var order = ['countries', 'regions', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
+  var order = ['countries', 'regions', 'districts', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
   var types = Object.keys(counts).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || typeLabel(a).localeCompare(typeLabel(b), I18N.lang); });
   var F = form(), prev = F.types && F.types.some(function (x) { return counts[x]; }) ? F.types : types;
   chips($('f-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev, function () { saveForm({ types: chipVals($('f-types')) }); tFilter(); });
@@ -116,7 +119,7 @@ async function tRegionsChanged() {
   tScene();
 }
 // Vlastné objekty z tabuľky učiteľa: typ a oblasť sa porovnávajú s kódmi aj s názvami v jazyku aplikácie.
-var TYPE_SYN = [[/^(stat|staty|krajina|krajiny|country|countries)$/, 'countries'], [/^(kraj|kraje|region|regiony|regions|okres|okresy|zupa|zupy)\b/, 'regions'],
+var TYPE_SYN = [[/^(stat|staty|krajina|krajiny|country|countries)$/, 'countries'], [/^(kraj|kraje|region|regiony|regions|zupa|zupy)\b/, 'regions'], [/^(okres|okresy|districts?)\b/, 'districts'],
   [/^(mesto|mesta|obec|obce|sidlo|sidla|city|cities|town|towns)\b/, 'cities'], [/^(rieka|rieky|potok|potoky|river|rivers)\b/, 'rivers'],
   [/^(jazero|jazera|nadrz|nadrze|vodna nadrz|vodne nadrze|priehrada|pleso|plesa|lake|lakes)\b/, 'lakes'], [/^(more|moria|zaliv|zalivy|prieliv|prielivy|sea|seas|bay)\b/, 'seas'],
   [/^(ocean|oceany|oceans)\b/, 'oceans'], [/^(pohorie|pohoria|mountains?)\b/, 'mountains'], [/^(vrch|vrchy|stit|stity|hora|peaks?)\b/, 'peaks'],
@@ -169,10 +172,10 @@ function tSetMode(m) {
   tSlots();
 }
 // Náhodný objekt z ponuky. Vyvažuje obťažnosti a typy; pri výmene uprednostní rovnaký typ a obťažnosť.
-function tRandom(exclude, prefer) {
+// Náhodný objekt na doplnenie prázdnych políčok (Auto): vyvažuje obťažnosti a typy.
+function tRandom(exclude) {
   var avail = T.pool.filter(function (x) { return !exclude[x.id]; });
   if (!avail.length) return null;
-  if (prefer) { var same = avail.filter(function (x) { return x.type === prefer.type && x.diff === prefer.diff; }); if (same.length) return same[Math.floor(Math.random() * same.length)]; }
   var cd = {}, ct = {};
   T.slots.forEach(function (o) { if (o) { cd[o.diff] = (cd[o.diff] || 0) + 1; ct[o.type] = (ct[o.type] || 0) + 1; } });
   var m = Math.min.apply(null, avail.map(function (x) { return cd[x.diff] || 0; }));
@@ -187,8 +190,12 @@ function tRefill() { T.slots = T.slots.map(function () { return null; }); tFillE
 
 /* ---------- políčka objektov (vyhľadávanie s ponukou) ---------- */
 function tSlots() {
-  var box = $('slots'); box.innerHTML = '';
+  // Ak práve píšeš do niektorého políčka, po prekreslení v ňom ostaneš.
+  var box = $('slots'), act = document.activeElement, keep = -1;
+  if (act && box.contains(act) && act.tagName === 'INPUT') keep = Array.prototype.indexOf.call(box.querySelectorAll('input'), act);
+  box.innerHTML = '';
   T.slots.forEach(function (o, i) { box.appendChild(slotRow(i)); });
+  if (keep >= 0 && box.querySelectorAll('input')[keep]) box.querySelectorAll('input')[keep].focus();
   var filled = T.slots.filter(Boolean).length;
   $('pool-info').textContent = !chipVals($('f-regions')).length ? t('t.pick_region')
     : t('t.pool_info', { n: T.pool.length, filled: filled, total: T.slots.length }) + (T.pool.length < T.slots.length ? ' ' + t('t.pool_short') : '');
@@ -224,8 +231,10 @@ function slotRow(i) {
   };
   inp.onblur = function () { list.hidden = true; var cur = T.slots[i]; inp.value = cur ? cur.name : ''; hint.hidden = false; };
   var dice = el('button', { type: 'button', class: 'icon', title: t('t.dice'), 'aria-label': t('t.dice'), text: '🎲', onclick: function () {
-    var x = tRandom(Object.assign(usedIds(i), T.slots[i] ? (function () { var e = {}; e[T.slots[i].id] = 1; return e; })() : {}), T.slots[i]);
-    if (x) { T.slots[i] = x; tSlots(); }
+    // Kocka: úplne náhodný iný objekt z celej ponuky filtra (bez ohľadu na typ a obťažnosť), okrem už vybraných.
+    var ex = usedIds(i); if (T.slots[i]) ex[T.slots[i].id] = 1;
+    var avail = T.pool.filter(function (x) { return !ex[x.id]; });
+    if (avail.length) { T.slots[i] = avail[Math.floor(Math.random() * avail.length)]; tSlots(); }
   } });
   var clr = el('button', { type: 'button', class: 'icon', title: t('t.clear'), 'aria-label': t('t.clear'), text: '✕', disabled: !o, onclick: function () { T.slots[i] = null; tSlots(); } });
   return el('li', { class: 'slot' }, [el('span', { class: 'n', text: (i + 1) + '.' }), el('div', { class: 'combo' }, [inp, hint, list]), dice, clr]);
