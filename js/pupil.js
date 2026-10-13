@@ -117,6 +117,12 @@ function pupilQuestion() {
 }
 function pupilTimer() {
   var S = P.S, left = (S.deadline - Date.now()) / 1000;
+  // Návrat do testu sa kontroluje aj tu: niektoré telefóny po prepnutí aplikácie nepošlú udalosť o návrate.
+  if (S.awayAt && !document.hidden) { pupilCheckAway(false); if (P.phase !== 'guess') return; }
+  // Systémové okno cez stránku (asistent, vyhľadávanie z obrazovky) môže zobrať stránke zameranie bez udalosti blur.
+  // Len ak prehliadač zameranie vôbec hlási (inak by sa trestalo neprávom).
+  if (document.hasFocus()) P.hadFocus = true;
+  else if (P.hadFocus && !document.hidden && $('p-blur').hidden) pupilBlur();
   $('g-sec').textContent = t('p.seconds', { n: Math.max(0, Math.ceil(left)) });
   $('g-bar').firstElementChild.style.width = Math.max(0, left / S.time * 100) + '%';
   $('g-bar').classList.toggle('low', left <= Math.min(10, S.time / 3));
@@ -152,14 +158,16 @@ function pupilNext() {
 // Odchod = skrytá karta alebo iná aplikácia na viac než 1 s, zatvorenie stránky, alebo iné okno na viac než 4 s. Stráži sa len počas otázky.
 function pupilGuard() {
   document.addEventListener('visibilitychange', function () { if (document.hidden) pupilAway(); else { pupilCheckAway(false); if (P.poll) pupilPoll(); } });
-  window.addEventListener('pagehide', function () { P.unloading = true; pupilAway(); });
-  window.addEventListener('blur', function () {
-    if (P.phase !== 'guess' || document.hidden) return;
-    $('p-blur').hidden = false; clearTimeout(P.blurTimer);
-    P.blurTimer = setTimeout(function () { if (P.phase === 'guess' && !document.hasFocus()) { $('p-blur').hidden = true; pupilLeft(); } }, AWAY_BLUR_MS);
-  });
-  window.addEventListener('focus', function () { clearTimeout(P.blurTimer); $('p-blur').hidden = true; });
+  window.addEventListener('pagehide', pupilAway);
+  window.addEventListener('pageshow', function () { if (!document.hidden) pupilCheckAway(false); });
+  window.addEventListener('blur', pupilBlur);
+  window.addEventListener('focus', function () { clearTimeout(P.blurTimer); $('p-blur').hidden = true; if (!document.hidden) pupilCheckAway(false); });
   $('p-blur').onclick = function () { window.focus(); };
+}
+function pupilBlur() {
+  if (P.phase !== 'guess' || document.hidden) return;
+  $('p-blur').hidden = false; clearTimeout(P.blurTimer);
+  P.blurTimer = setTimeout(function () { if (P.phase === 'guess' && !document.hasFocus()) { $('p-blur').hidden = true; pupilLeft(); } else $('p-blur').hidden = true; }, AWAY_BLUR_MS);
 }
 function pupilAway() {
   var S = P.S; if (!S || P.phase !== 'guess' || S.awayAt) return;
@@ -167,7 +175,7 @@ function pupilAway() {
 }
 function pupilCheckAway(afterReload) {
   // Mimo otázky sa odchod nevyhodnocuje (napr. hneď po obnovení stránky, kým sa test znova načíta).
-  var S = P.S; if (!S || !S.awayAt || P.phase !== 'guess' || P.unloading) return;
+  var S = P.S; if (!S || !S.awayAt || P.phase !== 'guess') return;
   var dt = Date.now() - S.awayAt, same = S.awayIdx === S.idx && !S.res[S.order[S.idx]];
   S.awayAt = 0; pSave();
   if (same && (afterReload || dt >= AWAY_HIDDEN_MS)) pupilLeft();
