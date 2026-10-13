@@ -1,0 +1,16 @@
+{
+  "regions": [
+    {
+      "code": "sk",
+      "bbox": [16.75, 47.65, 22.65, 49.7],
+      "objects": ["sk/regions.json", "sk/cities.json", "sk/rivers.json", "sk/peaks.json"],
+      "base": ["sk/base_land.json", "sk/base_surroundings.json", "sk/base_borders.json"]
+    },
+    {
+      "code": "eu",
+      "bbox": [-25.0, 34.0, 45.0, 71.5],
+      "objects": ["eu/countries.json", "eu/cities.json", "eu/rivers.json", "eu/lakes.json", "eu/seas.json", "eu/mountains.json", "eu/islands.json", "eu/peninsulas.json"],
+      "base": ["eu/base_land.json", "eu/base_surroundings.json"]
+    }
+  ]
+}

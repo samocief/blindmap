@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Slepá mapa · učiteľ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c4f8a'/%3E%3Cpath d='M7 22l6-12 5 8 3-4 4 8z' fill='%23f5f7ea'/%3E%3Ccircle cx='21' cy='9' r='3' fill='%23ff74b4'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 data-i18n="app.title">Slepá mapa</h1>
+    <a id="t-sheet" class="small" target="_blank" rel="noopener" hidden data-i18n="t.open_sheet"></a>
+  </header>
+
+  <section id="t-load" data-screen="t"><p class="muted"><span class="spin"></span><span data-i18n="common.loading">Načítavam…</span></p></section>
+
+  <section id="t-connect" data-screen="t" hidden>
+    <div class="panel">
+      <h2 data-i18n="t.connect_title"></h2>
+      <p id="t-connect-err" class="alert" hidden></p>
+      <ol class="rules" style="list-style:decimal">
+        <li data-i18n-html="t.connect_1"></li>
+        <li data-i18n-html="t.connect_2"></li>
+        <li data-i18n-html="t.connect_3"></li>
+      </ol>
+      <p class="small muted" data-i18n-html="t.connect_help"></p>
+    </div>
+  </section>
+
+  <section id="t-app" data-screen="t" hidden>
+    <nav class="tabs" role="tablist">
+      <button type="button" id="tab-new" data-i18n="t.tab_new"></button>
+      <button type="button" id="tab-tests" data-i18n="t.tab_tests"></button>
+    </nav>
+    <p id="t-status" class="small" hidden></p>
+
+    <!-- nový test -->
+    <div id="v-new" class="stack" hidden>
+      <div class="panel">
+        <h2 data-i18n="t.step1"></h2>
+        <div class="row">
+          <label for="f-cls"><span data-i18n="t.class"></span><select id="f-cls"></select></label>
+          <label for="f-title"><span data-i18n="t.title_opt"></span><input id="f-title" maxlength="60" autocomplete="off"></label>
+        </div>
+        <fieldset><legend data-i18n="t.regions"></legend><div id="f-regions" class="chips"></div></fieldset>
+        <fieldset><legend data-i18n="t.types"></legend><div id="f-types" class="chips"></div><p id="f-types-msg" class="small muted" hidden></p></fieldset>
+        <div class="row">
+          <label for="f-dmin"><span data-i18n="t.diff_from"></span><select id="f-dmin"></select></label>
+          <label for="f-dmax"><span data-i18n="t.diff_to"></span><select id="f-dmax"></select></label>
+          <label for="f-n"><span data-i18n="t.count"></span><input id="f-n" type="number" min="1" max="40" inputmode="numeric"></label>
+          <label for="f-time"><span data-i18n="t.time"></span><input id="f-time" type="number" min="5" max="600" inputmode="numeric"></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 data-i18n="t.step2"></h2>
+          <div class="seg" role="group"><button type="button" id="m-auto" data-i18n="t.mode_auto"></button><button type="button" id="m-manual" data-i18n="t.mode_manual"></button></div>
+        </div>
+        <p id="pool-info" class="small muted"></p>
+        <ol id="slots" class="slots"></ol>
+        <div class="row"><button type="button" id="refill" data-i18n="t.refill"></button><button type="button" id="clear-all" data-i18n="t.clear_all"></button></div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="t.step3"></h2>
+        <fieldset><legend data-i18n="t.on_map"></legend><div id="f-base" class="chips"></div></fieldset>
+        <div class="mapbox fixed" id="prev-box"><svg id="prev-map" class="map pan" role="img"></svg><div class="mapmsg" id="prev-msg"></div></div>
+        <label class="chip" for="prev-show" style="align-self:flex-start"><input type="checkbox" id="prev-show" checked> <span data-i18n="t.show_chosen"></span></label>
+        <div class="row">
+          <label for="f-full"><span data-i18n="t.full_pct"></span><input id="f-full" inputmode="decimal"></label>
+          <label for="f-zero"><span data-i18n="t.zero_pct"></span><input id="f-zero" inputmode="decimal"></label>
+        </div>
+        <p id="f-km" class="small muted"></p>
+      </div>
+
+      <div class="row"><button class="primary big" id="start" type="button" data-i18n="t.start"></button><p id="start-msg" class="small" hidden></p></div>
+    </div>
+
+    <!-- spustený test -->
+    <div id="v-started" class="stack" hidden>
+      <div class="panel" style="align-items:center;text-align:center">
+        <h2 id="started-title"></h2>
+        <p data-i18n="t.started_text"></p>
+        <div class="qr" id="started-qr" style="width:min(320px,80vw)"></div>
+        <p class="small"><a id="started-link" target="_blank" rel="noopener"></a></p>
+        <div class="row" style="justify-content:center">
+          <button type="button" id="started-full" data-i18n="t.qr_full"></button>
+          <button type="button" class="primary" id="started-open" data-i18n="t.open_overview"></button>
+          <button type="button" id="started-new" data-i18n="t.new_again"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- zoznam testov -->
+    <div id="v-tests" class="stack" hidden><div id="tests-list"></div></div>
+
+    <!-- jeden test -->
+    <div id="v-test" class="stack" hidden>
+      <p id="test-msg" class="small" hidden></p>
+      <div id="test-body" class="stack" hidden>
+        <div class="panel">
+          <div class="testhead">
+            <div class="stack tight" style="flex:1 1 260px">
+              <h2><span id="test-title"></span> <span id="test-state" class="badge"></span></h2>
+              <p id="test-meta" class="small muted"></p>
+              <div class="row">
+                <button type="button" id="test-toggle"></button>
+                <button type="button" id="test-qr-btn" data-i18n="t.qr_full"></button>
+              </div>
+              <p class="small muted" id="test-toggle-hint"></p>
+            </div>
+            <div class="qr" id="test-qr"></div>
+          </div>
+        </div>
+        <nav class="tabs" role="tablist">
+          <button type="button" id="sub-over-b" data-i18n="t.sub_over"></button>
+          <button type="button" id="sub-class-b" data-i18n="t.sub_class"></button>
+          <button type="button" id="sub-score-b" data-i18n="t.sub_score"></button>
+        </nav>
+
+        <div id="sub-over" class="stack" hidden>
+          <p id="over-sum" class="small muted"></p>
+          <div id="over-table" class="tablebox"></div>
+        </div>
+
+        <div id="sub-class" class="stack" hidden>
+          <div class="objnav">
+            <button type="button" class="icon" id="class-prev" data-i18n-attr="aria-label:t.prev_obj">←</button>
+            <label for="class-obj"><span data-i18n="t.object"></span><select id="class-obj"></select></label>
+            <button type="button" class="icon" id="class-next" data-i18n-attr="aria-label:t.next_obj">→</button>
+          </div>
+          <p id="class-kind" class="small muted"></p>
+          <div class="mapbox fixed" id="class-box"><svg id="class-map" class="map pan" role="img"></svg></div>
+          <div class="legend small muted">
+            <span><span class="dot" style="background:var(--tip)"></span><span data-i18n="t.legend_tips"></span></span>
+            <span><span class="dot" style="background:var(--ok)"></span><span data-i18n="map.legend_ok"></span></span>
+            <label class="chip" for="class-names"><input type="checkbox" id="class-names"> <span data-i18n="t.show_names"></span></label>
+          </div>
+          <div id="class-stats" class="score"></div>
+          <div id="class-rank" class="tablebox"></div>
+          <div class="row"><button type="button" id="class-copy" data-i18n="t.copy_stats"></button><p id="class-msg" class="small" hidden></p></div>
+        </div>
+
+        <div id="sub-score" class="stack" hidden>
+          <div class="panel">
+            <h3 data-i18n="t.score_title"></h3>
+            <div class="row">
+              <label for="sc-full"><span data-i18n="t.full_km"></span><input id="sc-full" inputmode="decimal"></label>
+              <label for="sc-zero"><span data-i18n="t.zero_km"></span><input id="sc-zero" inputmode="decimal"></label>
+            </div>
+            <p id="sc-info" class="small muted"></p>
+            <div class="row">
+              <button type="button" class="primary" id="sc-save" data-i18n="t.save_scoring"></button>
+              <button type="button" id="sc-export" data-i18n="t.export_all"></button>
+            </div>
+            <p id="sc-msg" class="small" hidden></p>
+          </div>
+          <div id="sc-table" class="tablebox"></div>
+          <div id="sc-image" class="panel" hidden>
+            <div class="row"><button type="button" id="sc-img-dl" data-i18n="t.download"></button><button type="button" id="sc-img-save" data-i18n="t.save_drive"></button><p id="sc-img-msg" class="small" hidden></p></div>
+            <img class="sheet" id="sc-img" alt="" hidden>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot2" id="t-foot" hidden><span id="t-conn"></span><button type="button" class="linkbtn" id="t-disconnect" data-i18n="t.disconnect"></button></footer>
+</div>
+
+<div id="qr-cover" class="cover" hidden>
+  <div class="qrbig" id="qr-box"><b id="qr-title"></b><div class="qr" id="qr-big"></div><span id="qr-link" class="small"></span><button type="button" id="qr-close" data-i18n="common.close"></button></div>
+</div>
+
+<script src="js/qrcode.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/core.js"></script>
+<script src="js/data.js"></script>
+<script src="js/map.js"></script>
+<script src="js/teacher.js"></script>
+</body>
+</html>
