@@ -37,6 +37,8 @@ legend{font-weight:600;font-size:.9rem;padding:0;margin-bottom:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{flex:0 0 auto;flex-direction:row;align-items:center;gap:6px;font-weight:400;font-size:.95rem;border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--bg);cursor:pointer;min-height:40px}
 .chip:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
+.chip:has(input:disabled){opacity:.45;cursor:not-allowed;border-style:dashed}
+.invalid{border-color:var(--warn)!important;box-shadow:0 0 0 2px var(--warn)}
 button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;cursor:pointer;min-height:44px;touch-action:manipulation}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 a.button{display:inline-flex;align-items:center;justify-content:center;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;min-height:44px;text-decoration:none}
@@ -71,6 +73,8 @@ ul.rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 /* žiak */
 .names{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
 .namebtn{text-align:left;padding:14px;min-height:54px}
+.namebtn.teacher{border-style:dashed;color:var(--muted)}
+.names .sep{grid-column:1/-1;border-top:1px solid var(--line);margin:6px 0 2px}
 .game{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:1200px;margin:0 auto;gap:0}
 .hud{padding:10px 14px 8px;display:flex;flex-direction:column;gap:6px}
 .task{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
@@ -139,6 +143,13 @@ tr.sel td{background:var(--bg)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.95rem}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
 .objnav{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:end}
+.avgbox{display:flex;align-items:flex-end;gap:8px 20px;flex-wrap:wrap}
+.avgbox .bigpct{margin-top:2px}
+.listbtn{align-self:flex-start}
+.qrbig .bad{font-size:1rem;text-align:center}
+td.absent{color:var(--muted)}
+td.act{text-align:right;white-space:nowrap}
+body.dozor #t-nav,body.dozor #sub-tabs,body.dozor #test-dozor-btn{display:none!important}
 footer.foot2{margin-top:28px;color:var(--muted);font-size:.85rem;display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
 /* telefón na šírku: menej miesta nad a pod mapou */
 @media (max-height:520px) and (orientation:landscape){
@@ -155,4 +166,22 @@ footer.foot2{margin-top:28px;color:var(--muted);font-size:.85rem;display:flex;ga
   .slot .n{padding-top:12px}
   .combo .hint{position:static;transform:none;display:block;margin:3px 0 0 4px;white-space:normal}
   th,td{padding:8px 8px}
+}
+
+/* papier pre dozor (tlač) */
+#print-sheet{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;color:#000}
+  body > *:not(#print-sheet){display:none!important}
+  #print-sheet{display:block!important;font-size:12pt;line-height:1.4}
+  #print-sheet h1{font-size:20pt;margin:0 0 4px}
+  #print-sheet h2{font-size:14pt;margin:14px 0 6px}
+  #print-sheet .pr-qrs{display:flex;gap:10mm;margin:8mm 0}
+  #print-sheet .pr-qr{flex:1 1 0;border:1px solid #999;border-radius:4mm;padding:5mm;text-align:center}
+  #print-sheet .pr-qr h2{margin:0 0 4mm}
+  #print-sheet .qr{width:62mm;margin:0 auto;padding:0}
+  #print-sheet .pr-url{font-size:7pt;color:#444;overflow-wrap:anywhere;margin-top:3mm}
+  #print-sheet ol{margin:0;padding-left:1.3em}
+  #print-sheet li{margin-bottom:2mm}
 }

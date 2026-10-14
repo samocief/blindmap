@@ -1,5 +1,5 @@
 /* Slepá mapa: stránka žiaka. Odkaz z QR kódu má tvar index.html?s=<skript učiteľa>&t=<test>. */
-var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, keys: null, S: null, view: null, pin: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, rview: null, R: null, rsel: -1 };
+var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, keys: null, S: null, view: null, pin: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, wait: null, rview: null, R: null, rsel: -1 };
 var AWAY_HIDDEN_MS = 1000, AWAY_BLUR_MS = 4000, POLL_MS = 8000;
 
 function pShow(id) { show(id, 'p'); $('p-wrap').hidden = id === 'p-game'; }
@@ -8,6 +8,8 @@ function pLoading(msg) { $('p-load-msg').textContent = msg || t('common.loading'
 function sessKey() { return 'sm-test-' + P.t; }
 function pSave() { store(sessKey(), P.S); }
 function firstName(label) { var p = String(label).split(' '); return p.length > 1 ? p.slice(1).join(' ') : label; }
+// Oslovenie: v zozname triedy je „Priezvisko Meno“, externý hráč píše „Meno Priezvisko“.
+function greetName(S) { return S.extName ? String(S.name).split(' ')[0] : firstName(S.name); }
 
 async function pupilStart() {
   var s = param('s'), testId = param('t');
@@ -26,47 +28,84 @@ async function pupilStart() {
   document.title = (info.title ? info.title + ' · ' : '') + t('app.title');
   var map = info.map || {};
   P.scenePromise = buildScene(map.bbox || [-180, -60, 180, 85], map.base || []).then(function (sc) { P.scene = sc; return sc; });
-  var saved = store(sessKey());
+  pupilRoute();
+}
+function pupilRoute() {
+  var info = P.info, saved = store(sessKey());
   if (info.state === 'closed') {
     if (saved && saved.pupilId) pupilResults(); else pFail(t('p.closed'));
     return;
   }
   if (saved && saved.done && saved.pupilId) { P.S = saved; pupilFinish(); return; }
-  if (saved && saved.pupilId) pupilLogin(saved.pupilId, saved); else pupilNames();
+  if (info.state === 'ready') { pupilWait(); return; }
+  if (saved && saved.pupilId) pupilLogin(saved.pupilId, saved, saved.extName); else pupilNames();
+}
+
+/* ---------- čakanie, kým učiteľ alebo dozor test spustí ---------- */
+function pupilWait() {
+  var info = P.info;
+  $('p-wait-sub').textContent = [info.open ? '' : t('p.class', { cls: info.cls }), info.title].filter(Boolean).join(' · ');
+  pShow('p-wait');
+  clearTimeout(P.wait);
+  var tick = function () {
+    api('pupilState', { t: P.t }).then(function (r) {
+      if (r.state === 'ready') { P.wait = setTimeout(tick, 4000 + Math.random() * 3000); return; }
+      // test sa začal (alebo už skončil): načíta sa znova, zoznam mien mohol medzitým pribudnúť
+      return apiRetry('pupilInit', { t: P.t }, 3).then(function (info2) { P.info = info2; pupilRoute(); });
+    }).catch(function () { P.wait = setTimeout(tick, 6000); });
+  };
+  P.wait = setTimeout(tick, 2500 + Math.random() * 2500);
 }
 
 /* ---------- výber mena ---------- */
+// Trieda: žiak ťukne na svoje meno (na konci je Učiteľ). Externý test: hráč si napíše meno sám.
 function pupilNames(err) {
-  var info = P.info;
-  $('p-pick-cls').textContent = t('p.class', { cls: info.cls }) + (info.title ? ' · ' + info.title : '');
-  var box = $('p-names'); box.innerHTML = '';
-  info.names.forEach(function (n) {
-    box.appendChild(el('button', { type: 'button', class: 'namebtn', text: n.label + (n.done ? ' ✓' : ''), disabled: n.done, title: n.done ? t('p.already_done') : null, onclick: function () { pupilPick(n); } }));
-  });
-  if (!info.names.length) box.appendChild(el('p', { class: 'muted', text: t('p.no_names') }));
+  var info = P.info, box = $('p-names'), form = $('p-ext');
+  $('p-pick-title').textContent = t(info.open ? 'p.open_title' : 'p.who');
+  $('p-pick-cls').textContent = [info.open ? '' : t('p.class', { cls: info.cls }), info.title].filter(Boolean).join(' · ');
+  box.innerHTML = ''; box.hidden = !!info.open; form.hidden = !info.open;
+  if (info.open) {
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var n = $('p-ext-name').value.replace(/\s+/g, ' ').trim();
+      if (!n) { pupilNames(t('err.bad_name')); return; }
+      pupilPick({ id: '', label: n, ext: true });
+    };
+  } else {
+    var nameBtn = function (n) {
+      var label = n.teacher ? t('p.teacher') : n.label;
+      return el('button', { type: 'button', class: 'namebtn' + (n.teacher ? ' teacher' : ''), text: label + (n.done ? ' ✓' : ''), disabled: n.done, title: n.done ? t('p.already_done') : null, onclick: function () { pupilPick({ id: n.id, label: label }); } });
+    };
+    var kids = info.names.filter(function (n) { return !n.teacher; }), adults = info.names.filter(function (n) { return n.teacher; });
+    kids.forEach(function (n) { box.appendChild(nameBtn(n)); });
+    if (!kids.length) box.appendChild(el('p', { class: 'muted', text: t('p.no_names') }));
+    if (adults.length) { box.appendChild(el('div', { class: 'sep' })); adults.forEach(function (n) { box.appendChild(nameBtn(n)); }); }
+  }
   $('p-pick-err').textContent = err || ''; $('p-pick-err').hidden = !err;
   pShow('p-pick');
 }
 function pupilPick(n) {
   $('p-confirm-name').textContent = n.label;
-  $('p-confirm-go').onclick = function () { pupilLogin(n.id, null); };
+  $('p-confirm-go').onclick = function () { pupilLogin(n.id, null, n.ext ? n.label : ''); };
   $('p-confirm-back').onclick = function () { pupilNames(); };
   pShow('p-confirm');
 }
-async function pupilLogin(pupilId, saved) {
+async function pupilLogin(pupilId, saved, extName) {
   pLoading();
   var r;
-  try { r = await apiRetry('pupilLogin', { t: P.t, p: pupilId, d: P.device }, 3); }
+  try { r = await apiRetry('pupilLogin', { t: P.t, p: pupilId, n: extName || '', d: P.device }, 3); }
   catch (e) {
     if (saved) store(sessKey(), null);
+    if (e.code === 'not_started') { pupilWait(); return; }
     if (e.code === 'closed') { pFail(t('p.closed')); return; }
     if (e.code === 'done' && saved) { pFail(t('err.done')); return; }
-    if (e.code === 'taken' || e.code === 'done' || e.code === 'not_in_class') { pupilNames(errText(e)); return; }
+    if (['taken', 'done', 'not_in_class', 'name_taken', 'bad_name'].indexOf(e.code) >= 0) { pupilNames(errText(e)); return; }
     pFail(errText(e)); return;
   }
   P.objs = r.objects; P.keys = r.keys;
-  var same = saved && saved.order && saved.order.length === r.keys.length && saved.order.every(function (k) { return r.keys.indexOf(k) >= 0; });
-  P.S = same ? saved : { pupilId: pupilId, order: shuffle(r.keys), idx: -1, res: {}, deadline: 0, done: false, sent: false, leaves: 0, awayAt: 0, awayIdx: -1, ended: false };
+  var pid = r.pid || pupilId;
+  var same = saved && saved.pupilId === pid && saved.order && saved.order.length === r.keys.length && saved.order.every(function (k) { return r.keys.indexOf(k) >= 0; });
+  P.S = same ? saved : { pupilId: pid, extName: extName || '', order: shuffle(r.keys), idx: -1, res: {}, deadline: 0, done: false, sent: false, leaves: 0, awayAt: 0, awayIdx: -1, ended: false };
   P.S.name = r.name; P.S.time = r.time; P.S.scoring = r.scoring;
   P.S.names = {}; r.keys.forEach(function (k) { P.S.names[k] = { name: r.objects[k].name, type: r.objects[k].type }; });
   pSave();
@@ -76,7 +115,7 @@ async function pupilLogin(pupilId, saved) {
 }
 function pupilIntro() {
   var S = P.S, go = $('p-intro-go');
-  $('p-intro-hello').textContent = t('p.hello', { name: firstName(S.name) });
+  $('p-intro-hello').textContent = t('p.hello', { name: greetName(S) });
   $('p-intro-n').innerHTML = esc(t('p.intro_n', { n: S.order.length })).replace(/\*(.+?)\*/g, '<b>$1</b>');
   $('p-intro-time').textContent = t('p.rule_time', { n: S.time });
   go.disabled = true; go.textContent = t('p.loading_map');
@@ -95,7 +134,7 @@ function pupilOverlay(v) { return P.pin ? drawDot(P.pin, v.proj, v.pal.tip, v.pa
 function pupilQuestion() {
   pShow('p-game');
   var S = P.S, k = S.order[S.idx], o = P.objs[k];
-  $('g-name').textContent = o.name; $('g-kind').textContent = typeOne(o.type);
+  $('g-name').textContent = taskText(o);
   $('g-i').textContent = S.idx + 1; $('g-n').textContent = S.order.length;
   P.pin = null;
   if (!P.view) {
@@ -206,7 +245,7 @@ function pupilFinish() {
   P.phase = 'idle'; clearInterval(P.tick);
   var S = P.S, items = pupilItems(), sum = 0;
   items.forEach(function (it) { sum += pctFor(it.why ? null : it.d, S.scoring.full, S.scoring.zero); });
-  $('p-end-title').textContent = S.ended ? t('p.end_ended') : t('p.end_done', { name: firstName(S.name) });
+  $('p-end-title').textContent = S.ended ? t('p.end_ended') : t('p.end_done', { name: greetName(S) });
   $('p-end-ended').hidden = !S.ended;
   $('p-end-pct').textContent = fmtPct(items.length ? sum / items.length : 0);
   pShow('p-end');
@@ -264,7 +303,7 @@ async function pupilResults() {
     var pc = pctFor(it.why ? null : it.d, R.scoring.full, R.scoring.zero);
     var b = el('button', { type: 'button', onclick: function () { pupilSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      el('span', {}, [el('b', { text: it.name }), ' ', el('span', { class: 'small muted', text: typeOne(it.type) })]),
+      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.type) + ': ' }), el('b', { text: it.name })]),
       el('span', { class: 'r' }, [it.why ? t('why.' + it.why) : fmtKm(it.d), el('span', { text: fmtPct(pc) })])]);
     list.appendChild(el('li', {}, [b]));
   });

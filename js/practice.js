@@ -1,7 +1,8 @@
 /* Slepá mapa: precvičovanie pre kohokoľvek. Bez tabuľky a bez prihlásenia, nič sa neukladá mimo prehliadača.
- * Odkaz môže mať prednastavené filtre: cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20
+ * Odkaz môže mať prednastavené filtre: cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20&l=sk/base_land.json,sk/rivers.json
+ * (l = vrstvy na mape, súbory z data/index.json)
  */
-var C = { regions: [], pool: [], all: [], items: [], idx: 0, scene: null, sceneKey: '', view: null, rview: null, pin: null, phase: 'idle', tick: null, deadline: 0, time: 0, scoring: null, rsel: -1, seq: 0 };
+var C = { regions: [], pool: [], all: [], items: [], idx: 0, scene: null, sceneKey: '', view: null, rview: null, pin: null, phase: 'idle', tick: null, deadline: 0, time: 0, scoring: null, rsel: -1, seq: 0, linkBase: null };
 var C_KEY = 'sm-practice2', C_PFULL = 1, C_PZERO = 30, C_WRONG = 0.7;
 
 function cShow(id) { show(id, 'c'); $('c-wrap').hidden = id === 'c-game'; }
@@ -20,6 +21,7 @@ async function practiceStart() {
   if (d) { S.dmin = +d[1]; S.dmax = +d[2]; }
   if (param('n')) S.n = +param('n');
   if (param('s') !== '') S.time = +param('s');
+  if (param('l')) C.linkBase = list(param('l'));
   cSave(S);
   ['c-dmin', 'c-dmax'].forEach(function (id) { var s = $(id); for (var i = 1; i <= 5; i++) s.appendChild(el('option', { value: String(i), text: String(i) })); });
   [0, 10, 15, 20, 30, 60].forEach(function (x) { $('c-time').appendChild(el('option', { value: String(x), text: x ? t('c.time_s', { n: x }) : t('c.time_none') })); });
@@ -37,7 +39,7 @@ async function practiceStart() {
 function chipsC(box, items, checked, onchange) {
   box.innerHTML = '';
   items.forEach(function (it, i) {
-    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value });
+    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
     inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
     box.appendChild(el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]));
   });
@@ -66,9 +68,20 @@ async function cRegions() {
   var order = ['countries', 'regions', 'districts', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
   var types = Object.keys(counts).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
   var S = cSet(), prev = (S.types || []).filter(function (x) { return counts[x]; });
-  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cPoolInfo(); });
+  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cLock(); cPoolInfo(); });
+  cBaseChips(codes);
   cPoolInfo();
 }
+// Čo bude na mape: podkladové vrstvy a celé typy objektov („Všetky rieky“). Typ, ktorý sa hádá, je zošedený.
+function cBaseChips(codes) {
+  var S = cSet(), on = S.base || [], seen = S.seen || [], items = layerItems(C.regions, codes), all = items.map(function (x) { return x.value; });
+  var checked = items.filter(function (x) { return C.linkBase ? C.linkBase.indexOf(x.value) >= 0 : seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
+  C.linkBase = null;
+  chipsC($('c-base'), items, checked, function () { cSave({ base: layersAfterChange($('c-base'), cSet().base) }); });
+  cSave({ seen: uniq(seen.concat(all)), base: uniq(on.filter(function (f) { return all.indexOf(f) < 0; }).concat(checked)) });
+  cLock();
+}
+function cLock() { lockLayers($('c-base'), vals($('c-types')), cSet().base); }
 function cPoolOf(F) { return C.all.filter(function (o) { return F.types.indexOf(o.type) >= 0 && o.diff >= F.dmin && o.diff <= F.dmax; }); }
 function cPoolInfo() {
   var F = cForm(), n = cPoolOf(F).length;
@@ -97,11 +110,12 @@ async function cBegin(objects) {
   var objs = objects || cPick(cPoolOf(F), F.n);
   if (!objs.length) { cShow('c-setup'); return; }
   $('c-load-msg').textContent = t('p.loading_map'); cShow('c-load');
-  var bbox = null, refs = [];
+  var bbox = null, refs = [], files = vals($('c-base'));
   F.regions.forEach(function (c) {
     var r = regionOf(c); if (!r) return;
     bbox = bboxUnion(bbox, r.bbox || geomBBox(objs[0].g));
-    r.base.forEach(function (b) { refs.push({ file: b.file, style: layerStyle(b.name, b.raster) }); });
+    r.base.forEach(function (b) { if (files.indexOf(b.file) >= 0) refs.push({ file: b.file, style: layerStyle(b.name, b.raster) }); });
+    r.objects.forEach(function (o) { if (files.indexOf(o.file) >= 0) refs.push({ file: o.file, style: layerStyle(o.type, false) }); });
   });
   var key = JSON.stringify([bbox, refs]);
   if (key !== C.sceneKey) { C.scene = await buildScene(bbox, refs); C.sceneKey = key; C.view = null; }
@@ -122,7 +136,7 @@ function cOverlay(v) {
 function cQuestion() {
   cShow('c-game');
   var it = C.items[C.idx];
-  $('g-name').textContent = it.o.name; $('g-kind').textContent = typeOne(it.o.type);
+  $('g-name').textContent = taskText(it.o);
   $('g-i').textContent = C.idx + 1; $('g-n').textContent = C.items.length;
   C.pin = null; C.phase = 'guess';
   if (!C.view) {
@@ -177,7 +191,7 @@ function cEnd() {
   C.items.forEach(function (it, i) {
     ul.appendChild(el('li', {}, [el('button', { type: 'button', onclick: function () { cSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      el('span', {}, [el('b', { text: it.o.name }), ' ', el('span', { class: 'small muted', text: typeOne(it.o.type) })]),
+      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.o.type) + ': ' }), el('b', { text: it.o.name })]),
       el('span', { class: 'r' }, [fmtKm(it.d), el('span', { text: fmtPct(it.pct) })])])]));
   });
   cShow('c-end');

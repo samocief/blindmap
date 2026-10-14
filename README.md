@@ -17,6 +17,7 @@ Testovanie slepej mapy pre celú triedu. Žiaci naskenujú QR kód, na mobile ť
 | `data/` | mapy a objekty na hádanie, popis v [DATA.md](DATA.md) |
 | `source/objekty.xlsx` | hlavný zoznam objektov, z ktorého FME vyrába `data/` |
 | `apps-script/Code.gs` | skript do tabuľky učiteľa |
+| `CHANGELOG.md` | [zoznam zmien](CHANGELOG.md) po verziách |
 
 Ukážkové dáta v `data/` sú z Natural Earth (verejná doména) a slúžia na vyskúšanie.
 
@@ -53,6 +54,15 @@ Odkaz aj QR kód z tohto okna sú kľúčom k tabuľke. Žiakom ich neukazuj.
 2. **Nasadiť → Spravovať nasadenia** → ceruzka → Verzia: **Nová verzia** → Nasadiť. Adresa ostane rovnaká.
 3. Hárky Nastavenia, Objekty, Sedenie, staré Výsledky a `_balíky` môžeš zmazať. Starý hárok Testy sa sám premenuje na „Testy (verzia 1)“. Stĺpec Skupina v hárku Žiaci sa ignoruje.
 
+### Aktualizácia skriptu
+
+Keď nová verzia aplikácie zmení aj skript (v [zozname zmien](CHANGELOG.md) je to napísané), aplikácia učiteľa ukáže upozornenie. Vtedy:
+
+1. V tabuľke **Rozšírenia → Apps Script**, obsah `Code.gs` zmaž a vlož nový `apps-script/Code.gs`. Ulož.
+2. **Nasadiť → Spravovať nasadenia** → ceruzka → Verzia: **Nová verzia** → **Nasadiť**. Adresa ostane rovnaká, QR kódy a odkazy platia ďalej.
+
+Kým skript nevymeníš, aplikácia funguje po starom, len bez noviniek.
+
 ### Vlastné objekty
 
 Hárok **Vlastné objekty** (vytvorí sa sám): Názov | Typ | Oblasť | Obtiažnosť | Súradnice. Súradnice skopíruj z Google Máp (pravé tlačidlo na mieste, napr. `48.7297, 19.1498`). Typ môže byť „mesto“, „vrch“, „rieka“… alebo čokoľvek iné, Oblasť kód (`sk`) alebo názov (Slovensko). Tieto objekty sa v aplikácii ponúkajú spolu s katalógom, ale vidíš ich len ty.
@@ -65,21 +75,35 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 
 ## 3. Test v triede
 
-1. **Nový test:** trieda, oblasť, typy objektov, obtiažnosť, počet, čas na tip.
-2. **Výber objektov:**
-   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Kockou pri objekte ho vymeníš za iný, najradšej rovnakého typu a obtiažnosti; písaním do políčka si ho vyberieš sám.
+1. **Nový test:** trieda a názov testu (obe povinné, vždy začínajú prázdne), oblasť, typy objektov, obtiažnosť, počet, čas na tip. Posledná možnosť v zozname tried je **Externí**: hráči bez zoznamu, každý si napíše svoje meno (napr. kamaráti alebo iná skupina).
+2. **Výber objektov:** zoznam je predvolene skrytý, aby ho žiaci nevideli na projektore. Otvoríš ho tlačidlom **Zobraziť zoznam**.
+   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Kockou pri objekte ho vymeníš za iný, písaním do políčka si ho vyberieš sám.
    - **Manuál** začne s prázdnymi políčkami. Píš názov (diakritika ani veľké písmená nevadia) a vyber z ponuky, ktorá obsahuje len objekty vyhovujúce filtrom.
-3. **Mapa a hodnotenie:** čo bude na mape (obrys, okolie, hranice, reliéf, prípadne všetky rieky…) a hranice percent v % uhlopriečky mapy. Náhľad ukazuje vybrané objekty.
-4. **Spustiť test** → QR kód. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie.
-5. Počas testu žiak po každom tipe vidí len odchýlku v km a percentá, nie správnu polohu. Odchod z aplikácie: prvýkrát 0 % za dané miesto, druhýkrát koniec testu.
-6. V **Prehľade** vidíš, kto píše a kto odovzdal. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
-7. **Tipy triedy:** tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
+3. **Mapa a hodnotenie:** čo bude na mape (obrys, okolie, hranice, reliéf, prípadne všetky rieky…) a hranice percent v % uhlopriečky mapy. Typ, ktorý sa práve hádá, sa na mapu dať nedá (je zošedený). Náhľad ukazuje vybrané objekty len po zaškrtnutí.
+4. **Spustiť test** → QR kód. Alebo **Pripraviť na neskôr**: žiaci po naskenovaní čakajú, kým test spustíš ty alebo dozor (pozri nižšie).
+5. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie. Na konci zoznamu je **Učiteľ**, ak chceš hrať s triedou. Do priemeru sa nepočíta.
+6. Počas testu žiak po každom tipe vidí len odchýlku v km a percentá, nie správnu polohu. Odchod z aplikácie: prvýkrát 0 % za dané miesto, druhýkrát koniec testu.
+7. V **Prehľade** vidíš, kto píše a kto odovzdal, a veľké číslo **Priemer triedy**. Percentá jednotlivých žiakov ukáže až prepínač **Zobraziť výsledky žiakov**. Pri neprihlásenom žiakovi ťukni **Neprítomný**: v tabuľke dostane „neprítomný“ a nepočíta sa do priemeru (ak sa predsa prihlási, označenie zmizne). **Kopírovať výsledky pre Excel** skopíruje mená a percentá.
+8. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
+9. **Tipy triedy** (až po uzavretí testu): tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
 
 Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: percentá, odchýlky v km pri každom objekte a príznaky (odchod z testu, pokus o prihlásenie z iného zariadenia).
+
+### Dozor a suplovanie
+
+Test môžeš pripraviť pre inú triedu alebo na hodinu, keď nebudeš v škole:
+
+1. Vytvor test tlačidlom **Pripraviť na neskôr**.
+2. Klikni **Dozor** (hneď po vytvorení alebo neskôr v Testy → Otvoriť) a **Vytlačiť papier pre dozor**. Na papieri sú dva QR kódy: pre žiakov a pre dozor, a krátky návod.
+3. Dozor naskenuje svoj kód. Vidí len prehľad tohto jedného testu: spustí ho, označí neprítomných, na konci ho uzavrie a skopíruje výsledky do Excelu. K iným testom ani k tabuľke sa nedostane.
+
+Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 ## 4. Precvičovanie
 
 `https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
-V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20` (oblasť, typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu).
+Rovnako ako učiteľ si vyberie, čo bude na mape (reliéf, hranice, všetky rieky…). Typ, ktorý práve hádá, je zošedený.
+
+V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára vrátane vrstiev mapy, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20&l=sk/base_land.json,sk/base_relief.png` (oblasť, typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu, súbory vrstiev mapy).
 

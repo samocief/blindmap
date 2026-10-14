@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.0', dataUrl: 'data/' };
+var APP = { version: '2.1', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }
@@ -32,6 +32,14 @@ function shuffle(a, rand) { rand = rand || Math.random; a = a.slice(); for (var 
 function uniq(a) { var o = {}, r = []; a.forEach(function (x) { if (!o[x]) { o[x] = 1; r.push(x); } }); return r; }
 function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }), m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+// Porovnanie verzií „2.1“ a „2.0“: záporné, ak a je staršia.
+function cmpVer(a, b) {
+  var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
+  for (var i = 0; i < Math.max(x.length, y.length); i++) { var d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
+  return 0;
+}
+// Texty v jazykovom súbore začínajú veľkým písmenom; uprostred vety sa prvé písmeno zmenší.
+function low(s) { s = String(s || ''); return s.charAt(0).toLocaleLowerCase(I18N.lang) + s.slice(1); }
 
 /* ---------- texty v jazykoch ---------- */
 // Texty sú v lang/<jazyk>.json. Hodnota môže mať zástupné znaky {meno} alebo tvary pre počet {"one":…, "few":…, "other":…}.
@@ -67,6 +75,8 @@ function fmtPct(p) { return t('common.pct', { v: nf(Math.round(p * 100), 0) }); 
 function typeLabel(type) { return has('type.' + type) ? t('type.' + type) : String(type || ''); }
 // Typ jedného objektu (rieka), typeLabel je množné číslo pre zoznamy (rieky).
 function typeOne(type) { return has('type1.' + type) ? t('type1.' + type) : typeLabel(type); }
+// Zadanie počas hry: „Rieka: Nitra“.
+function taskText(o) { return t('common.task', { type: typeOne(o.type), name: o.name }); }
 function regionLabel(code, names) {
   if (names && typeof names === 'object') { if (names[I18N.lang]) return names[I18N.lang]; if (names.sk) return names.sk; }
   return has('region.' + code) ? t('region.' + code) : String(code).toUpperCase();

@@ -21,11 +21,21 @@
       <p id="p-fail-practice" hidden><a class="button primary big" href="cvicenie.html" data-i18n="p.practice"></a></p>
     </section>
 
+    <section id="p-wait" data-screen="p" hidden>
+      <h1 data-i18n="p.wait_title"></h1>
+      <p class="muted" id="p-wait-sub"></p>
+      <p class="note"><span class="spin"></span><span data-i18n="p.wait_text"></span></p>
+    </section>
+
     <section id="p-pick" data-screen="p" hidden>
-      <h1 data-i18n="p.who">Kto si?</h1>
+      <h1 id="p-pick-title" data-i18n="p.who">Kto si?</h1>
       <p class="muted" id="p-pick-cls"></p>
       <p id="p-pick-err" class="alert" hidden></p>
       <div id="p-names" class="names"></div>
+      <form id="p-ext" class="panel" hidden>
+        <label for="p-ext-name"><span data-i18n="p.name_label"></span><input id="p-ext-name" maxlength="40" autocomplete="name" autocapitalize="words" data-i18n-attr="placeholder:p.name_ph"></label>
+        <div><button class="primary big" type="submit" data-i18n="p.name_go"></button></div>
+      </form>
     </section>
 
     <section id="p-confirm" data-screen="p" hidden>
@@ -93,7 +103,7 @@
   <section id="p-game" data-screen="p" class="game" hidden>
     <div class="hud">
       <div class="task">
-        <div><div class="kind" id="g-kind"></div><div class="name" id="g-name"></div></div>
+        <div class="name" id="g-name"></div>
         <div class="count"><b id="g-i"></b> / <span id="g-n"></span><br><span id="g-sec"></span></div>
       </div>
       <div class="bar" id="g-bar"><i></i></div>

@@ -117,3 +117,32 @@ function layerStyle(name, raster) {
   if (/cities|mesta|obce|peaks|vrchy|caves|jaskyne|points|body/.test(n)) return 'dots';
   return 'auto';
 }
+
+/* ---------- ponuka vrstiev na mapu (aplikácia učiteľa aj precvičovanie) ---------- */
+// Podkladové vrstvy vybraných oblastí (predvolene zapnuté) a celé súbory objektov, napr. „Všetky rieky“ (predvolene vypnuté).
+function layerItems(regions, codes) {
+  var items = [];
+  codes.forEach(function (c) {
+    var r = regions.filter(function (x) { return x.code === c; })[0]; if (!r) return;
+    var pre = codes.length > 1 ? regionLabel(c, r.names) + ': ' : '';
+    r.base.forEach(function (b) { items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: true }); });
+    r.objects.forEach(function (o) { items.push({ value: o.file, label: pre + t('t.layer_all', { type: low(typeLabel(o.type)) }), def: false, type: o.type }); });
+  });
+  return items;
+}
+// Typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne.
+// Keď sa typ odškrtne, vrstva dostane späť zapamätaný stav (remembered = zoznam zapnutých súborov).
+function lockLayers(box, types, remembered) {
+  box.querySelectorAll('input[data-type]').forEach(function (i) {
+    var off = types.indexOf(i.getAttribute('data-type')) >= 0;
+    if (off) i.checked = false; else if (i.disabled) i.checked = (remembered || []).indexOf(i.value) >= 0;
+    i.disabled = off;
+    i.parentNode.title = off ? t('t.layer_locked') : '';
+  });
+}
+// Zapamätané zapnuté vrstvy po zmene: zošedené vrstvy si nechajú svoj predošlý stav.
+function layersAfterChange(box, remembered) {
+  var en = [], on = [];
+  box.querySelectorAll('input').forEach(function (i) { if (!i.disabled) { en.push(i.value); if (i.checked) on.push(i.value); } });
+  return uniq((remembered || []).filter(function (f) { return en.indexOf(f) < 0; }).concat(on));
+}

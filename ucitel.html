@@ -34,7 +34,7 @@
   </section>
 
   <section id="t-app" data-screen="t" hidden>
-    <nav class="tabs" role="tablist">
+    <nav class="tabs" role="tablist" id="t-nav">
       <button type="button" id="tab-new" data-i18n="t.tab_new"></button>
       <button type="button" id="tab-tests" data-i18n="t.tab_tests"></button>
     </nav>
@@ -45,8 +45,8 @@
       <div class="panel">
         <h2 data-i18n="t.step1"></h2>
         <div class="row">
-          <label for="f-cls"><span data-i18n="t.class"></span><select id="f-cls"></select></label>
-          <label for="f-title"><span data-i18n="t.title_opt"></span><input id="f-title" maxlength="60" autocomplete="off"></label>
+          <label for="f-cls"><span data-i18n="t.class"></span><select id="f-cls" required></select></label>
+          <label for="f-title"><span data-i18n="t.title"></span><input id="f-title" maxlength="60" autocomplete="off" required data-i18n-attr="placeholder:t.title_ph"></label>
         </div>
         <fieldset><legend data-i18n="t.regions"></legend><div id="f-regions" class="chips"></div></fieldset>
         <fieldset><legend data-i18n="t.types"></legend><div id="f-types" class="chips"></div><p id="f-types-msg" class="small muted" hidden></p></fieldset>
@@ -64,8 +64,11 @@
           <div class="seg" role="group"><button type="button" id="m-auto" data-i18n="t.mode_auto"></button><button type="button" id="m-manual" data-i18n="t.mode_manual"></button></div>
         </div>
         <p id="pool-info" class="small muted"></p>
-        <ol id="slots" class="slots"></ol>
-        <div class="row"><button type="button" id="refill" data-i18n="t.refill"></button><button type="button" id="clear-all" data-i18n="t.clear_all"></button></div>
+        <button type="button" id="list-toggle" class="listbtn" aria-controls="list-box"></button>
+        <div id="list-box" class="stack tight" hidden>
+          <ol id="slots" class="slots"></ol>
+          <div class="row"><button type="button" id="refill" data-i18n="t.refill"></button><button type="button" id="clear-all" data-i18n="t.clear_all"></button></div>
+        </div>
       </div>
 
       <div class="panel">
@@ -80,19 +83,25 @@
         <p id="f-km" class="small muted"></p>
       </div>
 
-      <div class="row"><button class="primary big" id="start" type="button" data-i18n="t.start"></button><button class="big" id="practice" type="button" data-i18n="t.practice_link"></button><p id="start-msg" class="small" hidden></p></div>
+      <div class="stack tight">
+        <div class="row"><button class="primary big" id="start" type="button" data-i18n="t.start"></button><button class="big" id="prepare" type="button" data-i18n="t.prepare"></button><button class="big" id="practice" type="button" data-i18n="t.practice_link"></button></div>
+        <p id="start-msg" class="small" hidden></p>
+        <p class="small muted" id="start-hint" data-i18n="t.start_hint"></p>
+      </div>
     </div>
 
     <!-- spustený test -->
     <div id="v-started" class="stack" hidden>
       <div class="panel" style="align-items:center;text-align:center">
         <h2 id="started-title"></h2>
-        <p data-i18n="t.started_text"></p>
+        <p id="started-text"></p>
         <div class="qr" id="started-qr" style="width:min(320px,80vw)"></div>
         <p class="small"><a id="started-link" target="_blank" rel="noopener"></a></p>
         <div class="row" style="justify-content:center">
+          <button type="button" class="primary" id="started-go" data-i18n="t.start_test" hidden></button>
           <button type="button" id="started-full" data-i18n="t.qr_full"></button>
-          <button type="button" class="primary" id="started-open" data-i18n="t.open_overview"></button>
+          <button type="button" id="started-dozor" data-i18n="t.dozor"></button>
+          <button type="button" id="started-open" data-i18n="t.open_overview"></button>
           <button type="button" id="started-new" data-i18n="t.new_again"></button>
         </div>
       </div>
@@ -103,6 +112,12 @@
 
     <!-- jeden test -->
     <div id="v-test" class="stack" hidden>
+      <div id="dz-help" class="panel" hidden>
+        <h2 data-i18n="t.dz_title"></h2>
+        <ol class="rules" style="list-style:decimal">
+          <li data-i18n-html="t.dz_1"></li><li data-i18n-html="t.dz_2"></li><li data-i18n-html="t.dz_3"></li><li data-i18n-html="t.dz_4"></li><li data-i18n-html="t.dz_5"></li>
+        </ol>
+      </div>
       <p id="test-msg" class="small" hidden></p>
       <div id="test-body" class="stack" hidden>
         <div class="panel">
@@ -113,24 +128,36 @@
               <div class="row">
                 <button type="button" id="test-toggle"></button>
                 <button type="button" id="test-qr-btn" data-i18n="t.qr_full"></button>
+                <button type="button" id="test-dozor-btn" data-i18n="t.dozor"></button>
               </div>
               <p class="small muted" id="test-toggle-hint"></p>
+              <label class="chip" for="show-res" style="align-self:flex-start"><input type="checkbox" id="show-res"> <span data-i18n="t.show_results"></span></label>
             </div>
             <div class="qr" id="test-qr"></div>
           </div>
         </div>
-        <nav class="tabs" role="tablist">
+        <nav class="tabs" role="tablist" id="sub-tabs">
           <button type="button" id="sub-over-b" data-i18n="t.sub_over"></button>
           <button type="button" id="sub-class-b" data-i18n="t.sub_class"></button>
           <button type="button" id="sub-score-b" data-i18n="t.sub_score"></button>
         </nav>
 
         <div id="sub-over" class="stack" hidden>
+          <div class="avgbox">
+            <div><span class="small muted" id="avg-label"></span><div class="bigpct" id="avg-pct"></div></div>
+            <p class="small muted" id="avg-note"></p>
+          </div>
           <p id="over-sum" class="small muted"></p>
           <div id="over-table" class="tablebox"></div>
+          <div class="row"><button type="button" id="over-copy" data-i18n="t.copy_results"></button><p id="over-msg" class="small" hidden></p></div>
         </div>
 
         <div id="sub-class" class="stack" hidden>
+          <div id="class-gate" class="panel" hidden>
+            <p data-i18n="t.class_wait"></p>
+            <div><button type="button" id="class-force" data-i18n="t.class_force"></button></div>
+          </div>
+          <div id="class-body" class="stack">
           <div class="objnav">
             <button type="button" class="icon" id="class-prev" data-i18n-attr="aria-label:t.prev_obj">←</button>
             <label for="class-obj"><span data-i18n="t.object"></span><select id="class-obj"></select></label>
@@ -146,6 +173,7 @@
           <div id="class-stats" class="score"></div>
           <div id="class-rank" class="tablebox"></div>
           <div class="row"><button type="button" id="class-copy" data-i18n="t.copy_stats"></button><p id="class-msg" class="small" hidden></p></div>
+          </div>
         </div>
 
         <div id="sub-score" class="stack" hidden>
@@ -172,12 +200,14 @@
     </div>
   </section>
 
-  <footer class="foot2" id="t-foot" hidden><span id="t-conn"></span><button type="button" class="linkbtn" id="t-disconnect" data-i18n="t.disconnect"></button></footer>
+  <footer class="foot2" id="t-foot" hidden><span id="t-conn"></span><span id="t-ver"></span><button type="button" class="linkbtn" id="t-disconnect" data-i18n="t.disconnect"></button></footer>
 </div>
 
 <div id="qr-cover" class="cover" hidden>
-  <div class="qrbig" id="qr-box"><b id="qr-title"></b><div class="qr" id="qr-big"></div><span id="qr-link" class="small"></span><button type="button" id="qr-close" data-i18n="common.close"></button></div>
+  <div class="qrbig" id="qr-box"><b id="qr-title"></b><p id="qr-warn" class="bad" hidden></p><div class="qr" id="qr-big"></div><span id="qr-link" class="small"></span>
+    <div class="row" style="justify-content:center"><button type="button" id="qr-print" class="primary" data-i18n="t.print_dozor" hidden></button><button type="button" id="qr-close" data-i18n="common.close"></button></div></div>
 </div>
+<div id="print-sheet"></div>
 
 <script src="js/qrcode.js"></script>
 <script src="js/geo.js"></script>

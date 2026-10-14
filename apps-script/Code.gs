@@ -1,5 +1,5 @@
 /**
- * Slepá mapa, verzia 2: skript tabuľky učiteľa (Google Apps Script).
+ * Slepá mapa, verzia 2.1: skript tabuľky učiteľa (Google Apps Script).
  *
  * Aplikácia beží na GitHub Pages (APP_URL). Tento skript je len most k tabuľke učiteľa:
  * číta zoznam žiakov, ukladá testy a zapisuje výsledky. Údaje žiakov ostávajú v tabuľke učiteľa.
@@ -7,17 +7,22 @@
  * Nasadenie: Nasadiť > Nové nasadenie > Webová aplikácia, spustiť ako „Ja", prístup „Ktokoľvek".
  * Po úprave kódu: Nasadiť > Spravovať nasadenia > ceruzka > Verzia: Nová verzia > Nasadiť (adresa ostane rovnaká).
  */
-const VERSION = '2.0';
+const VERSION = '2.1';
 const APP_URL = 'https://samocief.github.io/slepamapa/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
 const PUPIL_HEAD = ['Trieda', 'Meno', 'Aktívny'];
 const CUSTOM_HEAD = ['Názov', 'Typ', 'Oblasť', 'Obtiažnosť', 'Súradnice'];
 const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
-  '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa'];
+  '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa', 'režim'];
 const RES_FIXED = ['odoslané', 'žiak', 'výsledok (%)'];
 const RES_TAIL = ['tipy (šírka, dĺžka)', 'príznak'];
-const STATE = { open: 'otvorený', closed: 'uzavretý' };
+const STATE = { ready: 'pripravený', open: 'otvorený', closed: 'uzavretý' };
+const MODE = { cls: 'trieda', open: 'externí' };   // externí: bez zoznamu, každý hráč si napíše meno
+const OPEN_CLASS = 'Externí';
+const TEACHER = 'Učiteľ';                        // jedno meno navyše v každej triede, nepočíta sa do priemeru
+const ABSENT = 'neprítomný';
+const DOZOR_OK = { tTest: 1, tSetTest: 1, tUnlock: 1, tAbsent: 1 };   // čo smie odkaz pre dozor (len jeden test)
 const WHY = { none: 'bez tipu', leave: 'odchod', ended: 'ukončené' };
 const CHUNK = 40000;
 
@@ -133,6 +138,16 @@ function ensureSheet_(name, head, hidden) {
   }
   return sh;
 }
+// Doplní stĺpce, ktoré pribudli v novšej verzii, na koniec hlavičky existujúceho hárka.
+function ensureCols_(sh, head) {
+  const last = Math.max(1, sh.getLastColumn());
+  const have = sh.getRange(1, 1, 1, last).getValues()[0].map(function (h) { return normName(h); });
+  const miss = head.filter(function (h) { return have.indexOf(normName(h)) < 0; });
+  if (!miss.length) return;
+  const at = sh.getLastColumn() + 1;
+  if (sh.getMaxColumns() < at + miss.length - 1) sh.insertColumnsAfter(sh.getMaxColumns(), at + miss.length - 1 - sh.getMaxColumns());
+  sh.getRange(1, at, 1, miss.length).setValues([miss]).setFontWeight('bold').setBackground('#d9d9d9');
+}
 function ensureBaseSheets_() {
   if (!sheetByNames_(SH.pupils)) ensureSheet_(SH.pupils[0], PUPIL_HEAD);
   if (!sheetByNames_(SH.custom)) ensureSheet_(SH.custom[0], CUSTOM_HEAD);
@@ -150,6 +165,15 @@ function teacherKey_() {
   return k;
 }
 function auth_(req) { if (!req.k || req.k !== teacherKey_()) fail_('auth'); }
+// Kľúč dozoru platí len pre jeden test a len na prehľad, spustenie, uzavretie, odomknutie a neprítomných.
+function dozorKey_(testId) {
+  const sig = Utilities.computeHmacSha256Signature('dozor|' + testId, teacherKey_());
+  return Utilities.base64EncodeWebSafe(sig).replace(/=+$/, '').slice(0, 16);
+}
+function dozorAuth_(req) {
+  if (!DOZOR_OK[req.a] || !req.t || String(req.dk) !== dozorKey_(String(req.t))) fail_('auth');
+  req.dozor = true;
+}
 
 /* ---------- vstupné body ---------- */
 function doPost(e) {
@@ -167,13 +191,13 @@ function out_(obj) { return ContentService.createTextOutput(JSON.stringify(obj))
 const ROUTES = {
   ping: function () { return { ok: true, v: VERSION }; },
   pupilInit: pupilInit_, pupilLogin: pupilLogin_, pupilEvent: pupilEvent_, pupilSubmit: pupilSubmit_, pupilState: pupilState_, pupilResult: pupilResult_,
-  tInit: tInit_, tCreateTest: tCreateTest_, tTest: tTest_, tSetTest: tSetTest_, tUnlock: tUnlock_, tSaveImage: tSaveImage_
+  tInit: tInit_, tCreateTest: tCreateTest_, tTest: tTest_, tSetTest: tSetTest_, tUnlock: tUnlock_, tAbsent: tAbsent_, tSaveImage: tSaveImage_
 };
 function handle_(req) {
   try {
     const fn = ROUTES[req && req.a];
     if (!fn) return { error: 'bad_request', msg: String(req && req.a) };
-    if (/^t[A-Z]/.test(req.a)) auth_(req);
+    if (/^t[A-Z]/.test(req.a)) { if (req.dk && !req.k) dozorAuth_(req); else auth_(req); }
     return fn(req) || { ok: true };
   } catch (err) {
     const m = String(err && err.message || err);
@@ -278,15 +302,17 @@ function testsTable_() {
       sh.setName(name); sh = null;
     }
   }
-  ensureSheet_(SH.tests, TEST_HEAD);
+  ensureCols_(ensureSheet_(SH.tests, TEST_HEAD), TEST_HEAD);
   return tableOf_(ss_().getSheetByName(SH.tests));
 }
 function testObj_(t, row) {
   const g = function (p) { const i = t.col(p); return i < 0 ? '' : row[i]; };
   let map = null; try { map = JSON.parse(s_(g('mapa')) || 'null'); } catch (e) { map = null; }
+  const st = normName(g('stav'));
   return {
     id: s_(g('id testu')), created: s_(g('vytvoreny')), cls: s_(g('trieda')), regions: s_(g('oblast')), types: s_(g('typy')), diff: s_(g('obtiaznost') || g('obtaznost')),
-    n: num_(g('pocet')) || 0, time: num_(g('cas')) || 30, state: normName(g('stav')) === normName(STATE.closed) ? 'closed' : 'open',
+    n: num_(g('pocet')) || 0, time: num_(g('cas')) || 30, state: st === normName(STATE.closed) ? 'closed' : st === normName(STATE.ready) ? 'ready' : 'open',
+    open: normName(g('rezim')) === normName(MODE.open),
     scoring: { full: num_(g('100')) || 0, zero: num_(g('0 % od')) || 1 }, diag: num_(g('uhlopriecka')) || 0,
     names: s_(g('objekty')).split(';').map(function (x) { return x.trim(); }).filter(String),
     keys: s_(g('id objektov')).split(';').map(function (x) { return x.trim(); }).filter(String),
@@ -370,10 +396,11 @@ function createResultsSheet_(id, names) {
   return sh;
 }
 // Riadky výsledkov. Stĺpce objektov idú v poradí keys (id objektov testu).
+// Neprítomný žiak má riadok s textom „neprítomný“ namiesto percent; učiteľ má riadok s menom Učiteľ.
 function readResults_(test) {
   const sh = ss_().getSheetByName(resultsName_(test.id));
   if (!sh) return [];
-  const t = tableOf_(sh), cN = t.need('ziak'), cS = t.col('odoslane'), cT = t.col('tipy'), cF = t.col('priznak'), first = RES_FIXED.length;
+  const t = tableOf_(sh), cN = t.need('ziak'), cS = t.col('odoslane'), cT = t.col('tipy'), cF = t.col('priznak'), cR = t.col('vysledok'), first = RES_FIXED.length;
   const back = {}; Object.keys(WHY).forEach(function (k) { back[normName(WHY[k])] = k; });
   const out = [];
   t.rows.forEach(function (row, ri) {
@@ -385,9 +412,34 @@ function readResults_(test) {
       else { km[k] = null; why[k] = back[normName(v)] || 'none'; }
     });
     let tips = {}; try { tips = JSON.parse(String(row[cT]) || '{}'); } catch (e) { tips = {}; }
-    out.push({ row: ri + 2, pupilId: pupilKey_(test.cls, row[cN]), name: s_(row[cN]), sent: s_(row[cS]), km: km, why: why, tips: tips, flag: cF >= 0 ? s_(row[cF]) : '' });
+    const rv = cR >= 0 ? row[cR] : 0;
+    out.push({ row: ri + 2, pupilId: pupilKey_(test.cls, row[cN]), name: s_(row[cN]), sent: s_(row[cS]), km: km, why: why, tips: tips, flag: cF >= 0 ? s_(row[cF]) : '',
+      absent: typeof rv !== 'number' && normName(rv) === normName(ABSENT), teacher: !test.open && normName(row[cN]) === normName(TEACHER) });
   });
   return out;
+}
+// Zmaže riadky „neprítomný“ daného žiaka (prišiel neskôr alebo učiteľ označenie zrušil).
+function clearAbsentRows_(test, label) {
+  const sh = ss_().getSheetByName(resultsName_(test.id));
+  if (!sh || sh.getLastRow() < 2) return;
+  const vals = sh.getRange(2, 1, sh.getLastRow() - 1, RES_FIXED.length).getValues();
+  for (let i = vals.length - 1; i >= 0; i--) {
+    if (normName(vals[i][1]) === normName(label) && typeof vals[i][2] !== 'number' && normName(vals[i][2]) === normName(ABSENT)) sh.deleteRow(i + 2);
+  }
+}
+function teacherId_(test) { return pupilKey_(test.cls, TEACHER); }
+function cleanName_(s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f<>"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40); }
+// Kto sa prihlasuje: žiak zo zoznamu triedy, učiteľ, alebo pri externom teste meno, ktoré si hráč sám napísal.
+function player_(test, pupilId, name) {
+  if (test.open) {
+    const n = cleanName_(name);
+    if (!normName(n)) fail_('bad_name');
+    return { id: pupilKey_(test.cls, n), label: n };
+  }
+  if (pupilId === teacherId_(test)) return { id: pupilId, label: TEACHER, teacher: true };
+  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.active && p.id === pupilId; })[0];
+  if (!me) fail_('not_in_class');
+  return { id: me.id, label: me.label };
 }
 function pctOf_(km, keys, sc) { let s = 0; keys.forEach(function (k) { s += pctFor(km[k], sc.full, sc.zero); }); return keys.length ? s / keys.length : 0; }
 
@@ -396,30 +448,46 @@ function pupilInit_(req) {
   const test = testCached_(String(req.t || ''));
   if (!test) fail_('no_test');
   const L = logins_(test.id);
-  const names = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
-    .map(function (p) { const e = L.p[p.id]; return { id: p.id, label: p.label, done: !!(e && e.done) }; })
-    .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
-  return { id: test.id, cls: test.cls, state: test.state, time: test.time, n: test.keys.length, lang: test.lang, title: test.title, map: test.map, names: names };
+  let names = [];
+  if (!test.open) {
+    names = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
+      .map(function (p) { const e = L.p[p.id]; return { id: p.id, label: p.label, done: !!(e && e.done) }; })
+      .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
+    const tid = teacherId_(test), te = L.p[tid];
+    names.push({ id: tid, label: TEACHER, done: !!(te && te.done), teacher: true });
+  }
+  return { id: test.id, cls: test.cls, state: test.state, open: test.open, time: test.time, n: test.keys.length, lang: test.lang, title: test.title, map: test.map, names: names };
 }
 function pupilLogin_(req) {
-  const testId = String(req.t || ''), pupilId = String(req.p || ''), device = String(req.d || '').slice(0, 32);
+  const testId = String(req.t || ''), device = String(req.d || '').slice(0, 32);
   const test = testCached_(testId);
   if (!test) fail_('no_test');
+  if (test.state === 'ready') fail_('not_started');
   if (test.state !== 'open') fail_('closed');
-  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.active && p.id === pupilId; })[0];
-  if (!me) fail_('not_in_class');
+  const me = player_(test, String(req.p || ''), req.n);
+  let wasAbsent = false;
   withLock_(function () {
-    const L = logins_(testId), e = L.p[pupilId];
-    if (e && e.done) fail_('done');
-    if (e && e.d !== device) {
-      L.f.push({ p: pupilId, t: now_('HH:mm:ss'), k: 'pokus o prihlásenie z iného zariadenia' });
-      saveLogins_(testId, L);
-      fail_('taken');
+    const L = logins_(testId), e = L.p[me.id];
+    if (test.open) {
+      if (e && e.d !== device) fail_('name_taken');
+      if (e && e.done) fail_('done');
+    } else {
+      if (e && e.done) fail_('done');
+      if (e && e.d !== device) {
+        L.f.push({ p: me.id, t: now_('HH:mm:ss'), k: 'pokus o prihlásenie z iného zariadenia' });
+        saveLogins_(testId, L);
+        fail_('taken');
+      }
     }
-    if (!e) { L.p[pupilId] = { d: device, t: now_('HH:mm:ss') }; saveLogins_(testId, L); }
+    if (!e) {
+      L.p[me.id] = { d: device, t: now_('HH:mm:ss'), n: me.label };
+      if (L.a && L.a[me.id]) { delete L.a[me.id]; wasAbsent = true; }
+      saveLogins_(testId, L);
+    }
+    if (wasAbsent) clearAbsentRows_(test, me.label);
   });
   const pack = loadPack_(testId);
-  return { ok: true, name: me.label, time: test.time, scoring: test.scoring, keys: pack.keys, objects: pack.objects };
+  return { ok: true, pid: me.id, name: me.label, time: test.time, scoring: test.scoring, keys: pack.keys, objects: pack.objects };
 }
 // Žiak opustil test (iná karta alebo aplikácia). Zapíše sa hneď, aby to učiteľ videl v prehľade.
 function pupilEvent_(req) {
@@ -438,8 +506,11 @@ function pupilSubmit_(req) {
   if (!test) fail_('no_test');
   const L0 = logins_(testId), e0 = L0.p[pupilId];
   if (!e0 || e0.d !== device) fail_('not_logged');
-  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pupilId; })[0];
-  if (!me) fail_('not_in_class');
+  let label = '';
+  if (test.open) label = e0.n || '';
+  else if (pupilId === teacherId_(test)) label = TEACHER;
+  else { const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pupilId; })[0]; label = me ? me.label : ''; }
+  if (!label) fail_('not_in_class');
   const pack = loadPack_(testId), keys = pack.keys, byKey = {};
   (req.tips || []).forEach(function (x) { if (x && x.k) byKey[String(x.k)] = x; });
   const km = {}, cells = [], tipOut = {}, notes = { none: [], leave: [], ended: [] };
@@ -460,9 +531,9 @@ function pupilSubmit_(req) {
     if (notes.leave.length) flags.push('odchod z testu: ' + notes.leave.join(', '));
     if (notes.ended.length) flags.push('test ukončený po druhom odchode, nedokončené: ' + notes.ended.join(', '));
     if (notes.none.length) flags.push('bez tipu: ' + notes.none.join(', '));
-    const row = [now_(), me.label, pct].concat(cells).concat([JSON.stringify(tipOut), flags.join('; ')]);
+    const row = [now_(), label, pct].concat(cells).concat([JSON.stringify(tipOut), flags.join('; ')]);
     sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setValues([row]);
-    L.p[pupilId] = { d: device, t: e ? e.t : now_('HH:mm:ss'), done: 1 };
+    L.p[pupilId] = { d: device, t: e ? e.t : now_('HH:mm:ss'), n: label, done: 1 };
     saveLogins_(testId, L);
   });
   return { ok: true, pct: pct };
@@ -480,55 +551,64 @@ function pupilResult_(req) {
   if (test.state !== 'closed') fail_('not_closed');
   const e = logins_(testId).p[pupilId];
   if (!e || e.d !== device) fail_('not_logged');
-  const mine = readResults_(test).filter(function (r) { return r.pupilId === pupilId.split('#')[0]; }).pop();
+  const mine = readResults_(test).filter(function (r) { return r.pupilId === pupilId.split('#')[0] && !r.absent; }).pop();
   if (!mine) fail_('no_result');
   const pack = loadPack_(testId);
   return { name: mine.name, cls: test.cls, title: test.title, sent: mine.sent, keys: pack.keys, objects: pack.objects, km: mine.km, why: mine.why, tips: mine.tips,
     scoring: test.scoring, pct: pctOf_(mine.km, pack.keys, test.scoring), map: test.map };
 }
 
-/* ---------- učiteľ (s kľúčom) ---------- */
+/* ---------- učiteľ (s kľúčom) a dozor (s kľúčom jedného testu) ---------- */
 function tInit_() {
   ensureBaseSheets_();
   const classes = {};
   readPupils_().filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();
   const tests = t.rows.map(function (r) { return testObj_(t, r); }).filter(function (x) { return x.id; })
-    .map(function (x) { return { id: x.id, created: x.created, cls: x.cls, regions: x.regions, title: x.title, n: x.keys.length, state: x.state }; });
+    .map(function (x) { return { id: x.id, created: x.created, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keys.length, state: x.state }; });
   return { v: VERSION, classes: classes, tests: tests, custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName() };
 }
-// cfg: {cls, title, regions, types, diff, time, full, zero, diag, lang, map:{bbox, base}, keys, names}; pack: {keys, objects}
+// cfg: {cls, open, state, title, regions, types, diff, time, full, zero, diag, lang, map:{bbox, base}, names}; pack: {keys, objects}
 function tCreateTest_(req) {
-  const cfg = req.cfg || {}, pack = req.pack || {};
-  if (!cfg.cls || !pack.keys || !pack.keys.length) fail_('bad_request');
+  const cfg = req.cfg || {}, pack = req.pack || {}, open = !!cfg.open;
+  const cls = open ? OPEN_CLASS : String(cfg.cls || '').trim();
+  if (!cls || !pack.keys || !pack.keys.length) fail_('bad_request');
   return withLock_(function () {
     const t = testsTable_();
-    let id = String(cfg.cls).replace(/[^0-9A-Za-z]/g, '').slice(0, 8) + '-' + now_('yyMMdd-HHmm');
+    let id = cls.replace(/[^0-9A-Za-z]/g, '').slice(0, 8) + '-' + now_('yyMMdd-HHmm');
     const ids = t.rows.map(function (r) { return s_(r[t.need('id testu')]); });
     for (let k = 97; ids.indexOf(id) >= 0 || ss_().getSheetByName(resultsName_(id)); k++) id = id.replace(/[a-z]?$/, String.fromCharCode(k));
     const row = t.head.map(function () { return ''; });
     const put = function (p, v) { const i = t.col(p); if (i >= 0) row[i] = v; };
-    put('id testu', id); put('vytvoreny', now_('yyyy-MM-dd HH:mm')); put('trieda', cfg.cls); put('oblast', String(cfg.regions || ''));
+    put('id testu', id); put('vytvoreny', now_('yyyy-MM-dd HH:mm')); put('trieda', cls); put('oblast', String(cfg.regions || ''));
     put('typy', String(cfg.types || '')); put('obtiaznost', String(cfg.diff || '')); put('obtaznost', String(cfg.diff || '')); put('pocet', pack.keys.length); put('cas', Number(cfg.time) || 30);
-    put('stav', STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
+    put('stav', cfg.state === 'ready' ? STATE.ready : STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
     put('objekty', (cfg.names || []).join('; ')); put('id objektov', pack.keys.join('; ')); put('nazov', String(cfg.title || '')); put('jazyk', String(cfg.lang || 'sk'));
-    put('mapa', JSON.stringify(cfg.map || null));
+    put('mapa', JSON.stringify(cfg.map || null)); put('rezim', open ? MODE.open : MODE.cls);
     const r = t.sheet.getLastRow() + 1;
     t.sheet.getRange(r, 1, 1, row.length).setNumberFormat('@').setValues([row.map(function (v) { return typeof v === 'number' ? v : String(v); })]);
     t.sheet.getRange(r, t.col('100') + 1, 1, 3).setNumberFormat('0.0');
     createResultsSheet_(id, cfg.names || pack.keys);
     try { pruneLogins_(); } catch (e) { /* upratovanie nie je dôležité */ }
     savePack_(id, JSON.stringify({ v: 2, keys: pack.keys, objects: pack.objects }));
-    return { id: id };
+    return { id: id, cls: cls, dk: dozorKey_(id) };
   });
 }
 function tTest_(req) {
   const f = findTest_(String(req.t || ''));
   if (!f) fail_('no_test');
-  const test = f.test;
-  const pupils = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
-    .map(function (p) { return { id: p.id, label: p.label }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
-  const out = { test: test, pupils: pupils, logins: logins_(test.id), results: readResults_(test) };
+  const test = f.test, L = logins_(test.id);
+  let pupils;
+  if (test.open) {
+    // externí hráči: zoznam vzniká z prihlásení
+    pupils = Object.keys(L.p).map(function (id) { return { id: id, label: L.p[id].n || id }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
+  } else {
+    pupils = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
+      .map(function (p) { return { id: p.id, label: p.label }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
+    pupils.push({ id: teacherId_(test), label: TEACHER, teacher: true });
+  }
+  const out = { test: test, pupils: pupils, logins: L, results: readResults_(test) };
+  if (!req.dozor) out.dk = dozorKey_(test.id);
   if (req.withPack) out.pack = loadPack_(test.id);
   return out;
 }
@@ -536,18 +616,19 @@ function tSetTest_(req) {
   const f = findTest_(String(req.t || ''));
   if (!f) fail_('no_test');
   const patch = req.patch || {}, t = f.t;
+  if (req.dozor && patch.scoring) fail_('auth');
   const set = function (p, v) { const i = t.col(p); if (i >= 0) t.sheet.getRange(f.rowIndex, i + 1).setValue(v); };
-  if (patch.state) set('stav', patch.state === 'closed' ? STATE.closed : STATE.open);
+  if (patch.state) set('stav', STATE[patch.state] || STATE.open);
   if (patch.scoring) {
     const full = Number(patch.scoring.full), zero = Number(patch.scoring.zero);
     if (!(zero > full && full >= 0)) fail_('bad_request');
     set('100', full); set('0 % od', zero);
-    // prepočet percent v hárku výsledkov
+    // prepočet percent v hárku výsledkov (riadky neprítomných ostávajú)
     const sh = ss_().getSheetByName(resultsName_(f.test.id));
     if (sh && sh.getLastRow() > 1) {
       const test = f.test; test.scoring = { full: full, zero: zero };
       const rng = sh.getRange(2, 3, sh.getLastRow() - 1, 1), vals = rng.getValues();
-      readResults_(test).forEach(function (r) { vals[r.row - 2][0] = pctOf_(r.km, test.keys, test.scoring); });
+      readResults_(test).forEach(function (r) { if (!r.absent) vals[r.row - 2][0] = pctOf_(r.km, test.keys, test.scoring); });
       rng.setValues(vals);
     }
   }
@@ -557,6 +638,33 @@ function tSetTest_(req) {
 function tUnlock_(req) {
   const testId = String(req.t || '');
   withLock_(function () { const L = logins_(testId); delete L.p[String(req.p || '')]; saveLogins_(testId, L); });
+  return { ok: true };
+}
+// Neprítomný žiak: v hárku výsledkov dostane riadok s textom „neprítomný“. on=false označenie zruší.
+function tAbsent_(req) {
+  const f = findTest_(String(req.t || ''));
+  if (!f) fail_('no_test');
+  const test = f.test, pid = String(req.p || '');
+  if (test.open || pid === teacherId_(test)) fail_('bad_request');
+  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pid; })[0];
+  if (!me) fail_('not_in_class');
+  withLock_(function () {
+    const L = logins_(test.id);
+    L.a = L.a || {};
+    if (req.on) {
+      if (L.p[pid]) fail_('logged_in');
+      if (!L.a[pid]) {
+        const sh = ss_().getSheetByName(resultsName_(test.id)) || createResultsSheet_(test.id, test.names);
+        const row = [now_(), me.label, ABSENT].concat(test.keys.map(function () { return ''; })).concat(['', ABSENT]);
+        sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setValues([row]);
+        L.a[pid] = 1;
+      }
+    } else {
+      delete L.a[pid];
+      clearAbsentRows_(test, me.label);
+    }
+    saveLogins_(test.id, L);
+  });
   return { ok: true };
 }
 function tSaveImage_(req) {

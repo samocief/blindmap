@@ -312,7 +312,7 @@ function sheetPng(scene, rec) {
   rec.items.forEach(function (it, i) {
     var col = i < rows ? 0 : 1, x = 40 + col * (W / 2 - 20), y = ty + (i % rows) * 44;
     s += '<circle cx="' + (x + 15) + '" cy="' + (y - 8) + '" r="15" fill="' + pal.tip + '"/><text x="' + (x + 15) + '" y="' + (y - 2) + '" font-size="18" font-weight="800" text-anchor="middle" fill="#fff" ' + F + '>' + (i + 1) + '</text>';
-    s += '<text x="' + (x + 44) + '" y="' + y + '" font-size="24" font-weight="600" fill="' + pal.ink + '" ' + F + '>' + esc(it.name) + '<tspan font-size="19" font-weight="400" fill="' + pal.muted + '" dx="10">' + esc(typeOne(it.type)) + '</tspan></text>';
+    s += '<text x="' + (x + 44) + '" y="' + y + '" font-size="24" fill="' + pal.muted + '" ' + F + '>' + esc(typeOne(it.type) + ': ') + '<tspan font-weight="600" fill="' + pal.ink + '">' + esc(it.name) + '</tspan></text>';
     s += '<text x="' + (x + W / 2 - 80) + '" y="' + y + '" font-size="24" font-weight="800" text-anchor="end" fill="' + pal.ink + '" ' + F + '>' + esc(it.why ? t('why.' + it.why) : fmtKm(it.d)) +
       '<tspan font-weight="400" fill="' + pal.muted + '" dx="14">' + esc(fmtPct(pctFor(it.why ? null : it.d, rec.scoring.full, rec.scoring.zero))) + '</tspan></text>';
   });
