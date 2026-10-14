@@ -12,8 +12,8 @@ const APP_URL = 'https://samocief.github.io/slepamapa/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
 const PUPIL_HEAD = ['Trieda', 'Meno', 'Aktívny'];
-const CUSTOM_HEAD = ['Názov', 'Typ', 'Oblasť', 'Obťažnosť', 'Súradnice'];
-const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obťažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
+const CUSTOM_HEAD = ['Názov', 'Typ', 'Oblasť', 'Obtiažnosť', 'Súradnice'];
+const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
   '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa'];
 const RES_FIXED = ['odoslané', 'žiak', 'výsledok (%)'];
 const RES_TAIL = ['tipy (šírka, dĺžka)', 'príznak'];
@@ -244,12 +244,12 @@ function readPupils_() {
   });
   return out;
 }
-// Hárok Vlastné objekty: Názov | Typ | Oblasť | Obťažnosť | Súradnice („48.73, 19.15“ ako z Google Máp).
+// Hárok Vlastné objekty: Názov | Typ | Oblasť | Obtiažnosť | Súradnice („48.73, 19.15“ ako z Google Máp).
 function readCustom_() {
   const sh = sheetByNames_(SH.custom);
   if (!sh) return [];
   const t = tableOf_(sh), out = [];
-  const cN = t.col(['nazov', 'name']), cT = t.col(['typ', 'type']), cR = t.col(['oblast', 'region']), cD = t.col(['obtaznost', 'difficulty']), cX = t.col(['suradnice', 'coordinates']);
+  const cN = t.col(['nazov', 'name']), cT = t.col(['typ', 'type']), cR = t.col(['oblast', 'region']), cD = t.col(['obtiaznost', 'obtaznost', 'difficulty']), cX = t.col(['suradnice', 'coordinates']);
   if (cN < 0 || cX < 0) return [];
   t.rows.forEach(function (row, i) {
     const name = s_(row[cN]), ll = parseLatLon_(row[cX]);
@@ -285,7 +285,7 @@ function testObj_(t, row) {
   const g = function (p) { const i = t.col(p); return i < 0 ? '' : row[i]; };
   let map = null; try { map = JSON.parse(s_(g('mapa')) || 'null'); } catch (e) { map = null; }
   return {
-    id: s_(g('id testu')), created: s_(g('vytvoreny')), cls: s_(g('trieda')), regions: s_(g('oblast')), types: s_(g('typy')), diff: s_(g('obtaznost')),
+    id: s_(g('id testu')), created: s_(g('vytvoreny')), cls: s_(g('trieda')), regions: s_(g('oblast')), types: s_(g('typy')), diff: s_(g('obtiaznost') || g('obtaznost')),
     n: num_(g('pocet')) || 0, time: num_(g('cas')) || 30, state: normName(g('stav')) === normName(STATE.closed) ? 'closed' : 'open',
     scoring: { full: num_(g('100')) || 0, zero: num_(g('0 % od')) || 1 }, diag: num_(g('uhlopriecka')) || 0,
     names: s_(g('objekty')).split(';').map(function (x) { return x.trim(); }).filter(String),
@@ -509,7 +509,7 @@ function tCreateTest_(req) {
     const row = t.head.map(function () { return ''; });
     const put = function (p, v) { const i = t.col(p); if (i >= 0) row[i] = v; };
     put('id testu', id); put('vytvoreny', now_('yyyy-MM-dd HH:mm')); put('trieda', cfg.cls); put('oblast', String(cfg.regions || ''));
-    put('typy', String(cfg.types || '')); put('obtaznost', String(cfg.diff || '')); put('pocet', pack.keys.length); put('cas', Number(cfg.time) || 30);
+    put('typy', String(cfg.types || '')); put('obtiaznost', String(cfg.diff || '')); put('obtaznost', String(cfg.diff || '')); put('pocet', pack.keys.length); put('cas', Number(cfg.time) || 30);
     put('stav', STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
     put('objekty', (cfg.names || []).join('; ')); put('id objektov', pack.keys.join('; ')); put('nazov', String(cfg.title || '')); put('jazyk', String(cfg.lang || 'sk'));
     put('mapa', JSON.stringify(cfg.map || null));

@@ -66,7 +66,7 @@ Jeden súbor GeoJSON (FeatureCollection) na oblasť a typ, súradnice v **EPSG:4
 |---|---|---|
 | `id` | odporúčaný | Jedinečný a stály identifikátor v celom katalógu, napr. `rivers-hron`. Rovnaký objekt vo viacerých oblastiach (Dunaj v `sk` aj `eu`) má v oboch súboroch rovnaké `id`, aplikácia ho potom započíta raz. Bez `id` si ho aplikácia vytvorí z typu a názvu. |
 | `name` | áno | Názov, ktorý žiak hľadá (slovensky). |
-| `difficulty` | áno | Obťažnosť 1 až 5 (aplikácia prijme aj názov `Level`). |
+| `difficulty` | áno | Obtiažnosť 1 až 5 (aplikácia prijme aj názov `Level`). |
 | `name_en`, `name_de` … | nie | Preklady názvu na neskôr. |
 | `active` | nie | `0` objekt skryje (inak sa vynecháva už vo FME). |
 
@@ -108,7 +108,7 @@ Hlavný zoznam, ktorý upravuješ ručne. Jeden riadok = jeden objekt, aj keď p
 
 Ukážkový `source/objekty.xlsx` so všetkými stĺpcami je v repozitári. Hárok Typy v ňom je len prehľad kódov.
 
-Štatistiky z testov dostaneš v aplikácii učiteľa: test → Tipy triedy → **Kopírovať štatistiky pre Excel**. Skopíruje sa tabuľka `id, názov, tipov, medián, priemer, návrh obťažnosti`, ktorú vložíš vedľa svojho zoznamu a podľa `id` prenesieš obťažnosť.
+Štatistiky z testov dostaneš v aplikácii učiteľa: test → Tipy triedy → **Kopírovať štatistiky pre Excel**. Skopíruje sa tabuľka `id, názov, tipov, medián, priemer, návrh obtiažnosti`, ktorú vložíš vedľa svojho zoznamu a podľa `id` prenesieš obtiažnosť.
 
 ## Postup vo FME
 

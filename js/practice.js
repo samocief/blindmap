@@ -75,7 +75,7 @@ function cPoolInfo() {
   $('c-pool').textContent = F.regions.length ? t('c.pool', { n: n }) : t('t.pick_region');
   $('c-go').disabled = !n;
 }
-// Náhodný výber vyvážený podľa obťažnosti a typu (ako Auto v aplikácii učiteľa).
+// Náhodný výber vyvážený podľa obtiažnosti a typu (ako Auto v aplikácii učiteľa).
 function cPick(pool, n) {
   var chosen = [], used = {}, cd = {}, ct = {};
   while (chosen.length < n) {

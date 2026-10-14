@@ -171,8 +171,8 @@ function tSetMode(m) {
   if (m === 'manual') T.slots = T.slots.map(function () { return null; }); else tFillEmpty();
   tSlots();
 }
-// Náhodný objekt z ponuky. Vyvažuje obťažnosti a typy; pri výmene uprednostní rovnaký typ a obťažnosť.
-// Náhodný objekt na doplnenie prázdnych políčok (Auto): vyvažuje obťažnosti a typy.
+// Náhodný objekt z ponuky. Vyvažuje obtiažnosti a typy; pri výmene uprednostní rovnaký typ a obtiažnosť.
+// Náhodný objekt na doplnenie prázdnych políčok (Auto): vyvažuje obtiažnosti a typy.
 function tRandom(exclude) {
   var avail = T.pool.filter(function (x) { return !exclude[x.id]; });
   if (!avail.length) return null;
@@ -231,7 +231,7 @@ function slotRow(i) {
   };
   inp.onblur = function () { list.hidden = true; var cur = T.slots[i]; inp.value = cur ? cur.name : ''; hint.hidden = false; };
   var dice = el('button', { type: 'button', class: 'icon', title: t('t.dice'), 'aria-label': t('t.dice'), text: '🎲', onclick: function () {
-    // Kocka: úplne náhodný iný objekt z celej ponuky filtra (bez ohľadu na typ a obťažnosť), okrem už vybraných.
+    // Kocka: úplne náhodný iný objekt z celej ponuky filtra (bez ohľadu na typ a obtiažnosť), okrem už vybraných.
     var ex = usedIds(i); if (T.slots[i]) ex[T.slots[i].id] = 1;
     var avail = T.pool.filter(function (x) { return !ex[x.id]; });
     if (avail.length) { T.slots[i] = avail[Math.floor(Math.random() * avail.length)]; tSlots(); }
@@ -337,7 +337,7 @@ function tQrShow(title, url) {
   $('qr-link').innerHTML = ''; $('qr-link').appendChild(el('a', { href: url, target: '_blank', rel: 'noopener', text: url }));
   $('qr-cover').hidden = false;
 }
-// Odkaz na precvičovanie s rovnakými filtrami ako formulár (oblasť, typy, obťažnosť, počet, čas). Bez tabuľky a bez mien.
+// Odkaz na precvičovanie s rovnakými filtrami ako formulár (oblasť, typy, obtiažnosť, počet, čas). Bez tabuľky a bez mien.
 function tPractice() {
   var a = +$('f-dmin').value, b = +$('f-dmax').value, time = parseInt($('f-time').value, 10) || 0;
   var q = 'r=' + chipVals($('f-regions')).join(',') + '&t=' + chipVals($('f-types')).join(',') + '&d=' + Math.min(a, b) + '-' + Math.max(a, b) +

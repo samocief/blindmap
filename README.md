@@ -55,7 +55,7 @@ Odkaz aj QR kód z tohto okna sú kľúčom k tabuľke. Žiakom ich neukazuj.
 
 ### Vlastné objekty
 
-Hárok **Vlastné objekty** (vytvorí sa sám): Názov | Typ | Oblasť | Obťažnosť | Súradnice. Súradnice skopíruj z Google Máp (pravé tlačidlo na mieste, napr. `48.7297, 19.1498`). Typ môže byť „mesto“, „vrch“, „rieka“… alebo čokoľvek iné, Oblasť kód (`sk`) alebo názov (Slovensko). Tieto objekty sa v aplikácii ponúkajú spolu s katalógom, ale vidíš ich len ty.
+Hárok **Vlastné objekty** (vytvorí sa sám): Názov | Typ | Oblasť | Obtiažnosť | Súradnice. Súradnice skopíruj z Google Máp (pravé tlačidlo na mieste, napr. `48.7297, 19.1498`). Typ môže byť „mesto“, „vrch“, „rieka“… alebo čokoľvek iné, Oblasť kód (`sk`) alebo názov (Slovensko). Tieto objekty sa v aplikácii ponúkajú spolu s katalógom, ale vidíš ich len ty.
 
 ### Zdieľanie s inými učiteľmi
 
@@ -65,21 +65,21 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 
 ## 3. Test v triede
 
-1. **Nový test:** trieda, oblasť, typy objektov, obťažnosť, počet, čas na tip.
+1. **Nový test:** trieda, oblasť, typy objektov, obtiažnosť, počet, čas na tip.
 2. **Výber objektov:**
-   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obťažnosti a typov). Kockou pri objekte ho vymeníš za iný, najradšej rovnakého typu a obťažnosti; písaním do políčka si ho vyberieš sám.
+   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Kockou pri objekte ho vymeníš za iný, najradšej rovnakého typu a obtiažnosti; písaním do políčka si ho vyberieš sám.
    - **Manuál** začne s prázdnymi políčkami. Píš názov (diakritika ani veľké písmená nevadia) a vyber z ponuky, ktorá obsahuje len objekty vyhovujúce filtrom.
 3. **Mapa a hodnotenie:** čo bude na mape (obrys, okolie, hranice, reliéf, prípadne všetky rieky…) a hranice percent v % uhlopriečky mapy. Náhľad ukazuje vybrané objekty.
 4. **Spustiť test** → QR kód. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie.
 5. Počas testu žiak po každom tipe vidí len odchýlku v km a percentá, nie správnu polohu. Odchod z aplikácie: prvýkrát 0 % za dané miesto, druhýkrát koniec testu.
 6. V **Prehľade** vidíš, kto píše a kto odovzdal. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
-7. **Tipy triedy:** tipy celej triedy pri každom objekte, medián a návrh obťažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
+7. **Tipy triedy:** tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
 
 Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: percentá, odchýlky v km pri každom objekte a príznaky (odchod z testu, pokus o prihlásenie z iného zariadenia).
 
 ## 4. Precvičovanie
 
-`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obťažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
+`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
-V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20` (oblasť, typy, obťažnosť od-do, počet, sekundy na tip, 0 = bez limitu).
+V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20` (oblasť, typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu).
 
