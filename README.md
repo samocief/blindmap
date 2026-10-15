@@ -103,7 +103,7 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 `https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
-Rovnako ako učiteľ si vyberie, čo bude na mape (reliéf, hranice, všetky rieky…). Typ, ktorý práve hádá, je zošedený.
+Rovnako ako učiteľ si vyberie, čo bude na mape (reliéf, hranice, všetky rieky…). Na rozdiel od testu si môže zapnúť aj typ, ktorý práve hádá, napríklad všetky rieky pri precvičovaní riek. Je to ľahší režim: nehľadá, kde rieka tečie, ale ktorá z nakreslených je tá správna. Predvolene je táto vrstva vypnutá.
 
 V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára vrátane vrstiev mapy, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20&l=sk/base_land.json,sk/base_relief.png` (oblasť, typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu, súbory vrstiev mapy).
 

@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.1.1 (2026-10-15)
+
+Skript tabuľky sa nemení.
+
+- Precvičovanie: typ, ktorý sa hádá, už nie je vo vrstvách zošedený. Žiak si môže zapnúť napríklad všetky rieky pri precvičovaní riek (ľahší režim). Predvolene je vrstva vypnutá. V aplikácii učiteľa pri teste zošedenie ostáva, odkaz na precvičovanie od učiteľa ju preto nezapne.
+
 ## 2.1 (2026-10-14)
 
 Úpravy po prvom teste so žiakmi. **Skript tabuľky treba vymeniť.**

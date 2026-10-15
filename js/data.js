@@ -130,7 +130,7 @@ function layerItems(regions, codes) {
   });
   return items;
 }
-// Typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne.
+// Test: typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne (precvičovanie to nepoužíva).
 // Keď sa typ odškrtne, vrstva dostane späť zapamätaný stav (remembered = zoznam zapnutých súborov).
 function lockLayers(box, types, remembered) {
   box.querySelectorAll('input[data-type]').forEach(function (i) {

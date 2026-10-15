@@ -68,20 +68,19 @@ async function cRegions() {
   var order = ['countries', 'regions', 'districts', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
   var types = Object.keys(counts).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
   var S = cSet(), prev = (S.types || []).filter(function (x) { return counts[x]; });
-  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cLock(); cPoolInfo(); });
+  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cPoolInfo(); });
   cBaseChips(codes);
   cPoolInfo();
 }
-// Čo bude na mape: podkladové vrstvy a celé typy objektov („Všetky rieky“). Typ, ktorý sa hádá, je zošedený.
+// Čo bude na mape: podkladové vrstvy a celé typy objektov („Všetky rieky“).
+// Na rozdiel od testu sa dá zapnúť aj typ, ktorý sa hádá (ľahší režim: žiak vyberá z nakreslených riek). Predvolene je vypnutý.
 function cBaseChips(codes) {
   var S = cSet(), on = S.base || [], seen = S.seen || [], items = layerItems(C.regions, codes), all = items.map(function (x) { return x.value; });
   var checked = items.filter(function (x) { return C.linkBase ? C.linkBase.indexOf(x.value) >= 0 : seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
   C.linkBase = null;
   chipsC($('c-base'), items, checked, function () { cSave({ base: layersAfterChange($('c-base'), cSet().base) }); });
   cSave({ seen: uniq(seen.concat(all)), base: uniq(on.filter(function (f) { return all.indexOf(f) < 0; }).concat(checked)) });
-  cLock();
 }
-function cLock() { lockLayers($('c-base'), vals($('c-types')), cSet().base); }
 function cPoolOf(F) { return C.all.filter(function (o) { return F.types.indexOf(o.type) >= 0 && o.diff >= F.dmin && o.diff <= F.dmax; }); }
 function cPoolInfo() {
   var F = cForm(), n = cPoolOf(F).length;
