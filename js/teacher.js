@@ -76,14 +76,7 @@ function tTab(name) {
 }
 
 /* ---------- formulár nového testu ---------- */
-function chips(box, items, checked, onchange) {
-  box.innerHTML = '';
-  items.forEach(function (it, i) {
-    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
-    inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
-    box.appendChild(el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]));
-  });
-}
+function chips(box, items, checked, onchange) { renderChips(box, items, checked, onchange); }
 function chipVals(box) { return Array.prototype.slice.call(box.querySelectorAll('input:checked')).map(function (i) { return i.value; }); }
 function regionByCode(code) { return T.regions.filter(function (r) { return r.code === code; })[0]; }
 function tForm() {
@@ -123,9 +116,9 @@ async function tRegionsChanged() {
   tBaseChips(codes);
   $('pool-info').textContent = codes.length ? t('common.loading') : t('t.pick_region');
   var files = [];
-  codes.forEach(function (c) { var r = regionByCode(c); if (r) r.objects.forEach(function (o) { files.push({ file: o.file, type: o.type, region: c }); }); });
+  codes.forEach(function (c) { var r = regionByCode(c); if (r) r.objects.forEach(function (o) { files.push({ entry: o, region: c }); }); });
   var lists;
-  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.file, f.type, f.region); })); }
+  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.entry, f.entry.type, f.region); })); }
   catch (e) { if (seq === T.loadSeq) tStatus('t-status', errText(e), 'bad'); lists = []; }
   if (seq !== T.loadSeq) return;
   var byId = {}, all = [];
@@ -137,10 +130,9 @@ async function tRegionsChanged() {
   T.poolAll = all;
   // typy objektov
   var counts = {}; all.forEach(function (o) { counts[o.type] = (counts[o.type] || 0) + 1; });
-  var order = ['countries', 'regions', 'districts', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
-  var types = Object.keys(counts).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || typeLabel(a).localeCompare(typeLabel(b), I18N.lang); });
+  var types = sortTypes(Object.keys(counts));
   var F = form(), prev = F.types && F.types.some(function (x) { return counts[x]; }) ? F.types : types;
-  chips($('f-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev, function () { saveForm({ types: chipVals($('f-types')) }); tLockLayers(); tFilter(); tScene(); });
+  chips($('f-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')', theme: themeOfType(x) }; }), prev, function () { saveForm({ types: chipVals($('f-types')) }); tLockLayers(); tFilter(); tScene(); });
   tLockLayers();
   $('f-types-msg').textContent = types.length ? '' : t('t.no_objects'); $('f-types-msg').hidden = !!types.length;
   // výber z minulého razu ostane, ak sa ešte dá
@@ -153,7 +145,7 @@ var TYPE_SYN = [[/^(stat|staty|krajina|krajiny|country|countries)$/, 'countries'
   [/^(mesto|mesta|obec|obce|sidlo|sidla|city|cities|town|towns)\b/, 'cities'], [/^(rieka|rieky|potok|potoky|river|rivers)\b/, 'rivers'],
   [/^(jazero|jazera|nadrz|nadrze|vodna nadrz|vodne nadrze|priehrada|pleso|plesa|lake|lakes)\b/, 'lakes'], [/^(more|moria|zaliv|zalivy|prieliv|prielivy|sea|seas|bay)\b/, 'seas'],
   [/^(ocean|oceany|oceans)\b/, 'oceans'], [/^(pohorie|pohoria|mountains?)\b/, 'mountains'], [/^(vrch|vrchy|stit|stity|hora|peaks?)\b/, 'peaks'],
-  [/^(nizina|niziny|kotlina|kotliny|lowlands?|basins?)\b/, 'lowlands'], [/^(ostrov|ostrovy|islands?)\b/, 'islands'], [/^(polostrov|polostrovy|peninsulas?)\b/, 'peninsulas'],
+  [/^(nizina|niziny|kotlina|kotliny|lowlands?|basins?)\b/, 'lowlands'], [/^(sedlo|sedla|priesmyk|priesmyky|saddles?|pass|passes)\b/, 'saddles'], [/^(ostrov|ostrovy|islands?)\b/, 'islands'], [/^(polostrov|polostrovy|peninsulas?)\b/, 'peninsulas'],
   [/^(pust|puste|deserts?)\b/, 'deserts'], [/^(narodny park|narodne parky|chranene|parks?)\b/, 'parks'], [/^(jaskyna|jaskyne|caves?)\b/, 'caves']];
 function typeCode(text) {
   var n = normName(text); if (!n) return 'other';
@@ -240,7 +232,7 @@ function tSlots() {
 function slotRow(i) {
   var o = T.slots[i], act = -1, items = [];
   var inp = el('input', { type: 'text', value: o ? o.name : '', placeholder: t('t.slot_ph'), autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': t('t.slot_aria', { n: i + 1 }), class: o ? 'filled' : '' });
-  var hint = el('span', { class: 'hint', text: o ? typeOne(o.type) + ' · ' + o.diff : '' });
+  var hint = el('span', { class: 'hint', text: o ? typeOne(o.type) + (o.note ? ' ' + o.note : '') + ' · ' + o.diff : '' });
   var list = el('ul', { class: 'sugg', hidden: true, role: 'listbox' });
   function render() {
     var q = normName(inp.value), used = usedIds(i);
@@ -250,7 +242,7 @@ function slotRow(i) {
     list.innerHTML = '';
     items.forEach(function (x, j) {
       list.appendChild(el('li', { class: j === act ? 'act' : '', role: 'option', onmousedown: function (e) { e.preventDefault(); }, onclick: function () { pick(x); } },
-        [el('b', { text: x.name }), el('span', { text: typeOne(x.type) + ' · ' + t('t.diff_short', { n: x.diff }) + (x.custom ? ' · ' + t('t.custom') : '') })]));
+        [el('b', { text: x.name }), el('span', { text: typeOne(x.type) + (x.note ? ' ' + x.note : '') + ' · ' + t('t.diff_short', { n: x.diff }) + (x.custom ? ' · ' + t('t.custom') : '') })]));
     });
     if (!items.length) list.appendChild(el('li', { class: 'empty', text: T.pool.length ? t('t.no_match') : t('t.pool_empty') }));
     list.hidden = false;
@@ -287,15 +279,7 @@ function tBaseChips(codes) {
   tLockLayers();
 }
 function tLockLayers() { lockLayers($('f-base'), chipVals($('f-types')), form().base); }
-function tBaseRefs() {
-  var files = chipVals($('f-base')), refs = [];
-  chipVals($('f-regions')).forEach(function (c) {
-    var r = regionByCode(c); if (!r) return;
-    r.base.forEach(function (b) { if (files.indexOf(b.file) >= 0) refs.push({ file: b.file, style: layerStyle(b.name, b.raster) }); });
-    r.objects.forEach(function (o) { if (files.indexOf(o.file) >= 0) refs.push({ file: o.file, style: layerStyle(o.type, false) }); });
-  });
-  return refs;
-}
+function tBaseRefs() { return sceneRefs(T.regions, chipVals($('f-regions')), chipVals($('f-base'))); }
 function tScene() {
   var codes = chipVals($('f-regions')), bbox = tBBox(codes), refs = tBaseRefs();
   if (!bbox) { $('prev-msg').textContent = t('t.pick_region'); $('prev-map').innerHTML = ''; T.scene = null; T.pview = null; tScoringInfo(); return; }

@@ -36,20 +36,15 @@ async function practiceStart() {
   cShow('c-setup');
   cRegions();
 }
-function chipsC(box, items, checked, onchange) {
-  box.innerHTML = '';
-  items.forEach(function (it, i) {
-    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
-    inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
-    box.appendChild(el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]));
-  });
-}
+function chipsC(box, items, checked, onchange) { renderChips(box, items, checked, onchange); }
 function vals(box) { return Array.prototype.slice.call(box.querySelectorAll('input:checked')).map(function (i) { return i.value; }); }
 function cForm() {
   var a = +$('c-dmin').value, b = +$('c-dmax').value;
   return { regions: vals($('c-regions')), types: vals($('c-types')), dmin: Math.min(a, b), dmax: Math.max(a, b),
     n: Math.max(1, Math.min(50, parseInt($('c-n').value, 10) || 10)), time: +$('c-time').value || 0 };
 }
+// Popis na mape po tipe: pri EČV aj názov okresu („BJ · Bardejov“).
+function objLabel(o) { return o.note ? o.name + ' · ' + o.note : o.name; }
 function regionOf(code) { return C.regions.filter(function (r) { return r.code === code; })[0]; }
 
 async function cRegions() {
@@ -57,18 +52,17 @@ async function cRegions() {
   cSave({ regions: codes });
   $('c-go').disabled = true; $('c-pool').textContent = codes.length ? t('common.loading') : t('t.pick_region');
   var files = [];
-  codes.forEach(function (c) { var r = regionOf(c); if (r) r.objects.forEach(function (o) { files.push({ file: o.file, type: o.type, region: c }); }); });
+  codes.forEach(function (c) { var r = regionOf(c); if (r) r.objects.forEach(function (o) { files.push({ entry: o, region: c }); }); });
   var lists = [];
-  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.file, f.type, f.region); })); } catch (e) { $('c-pool').textContent = errText(e); }
+  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.entry, f.entry.type, f.region); })); } catch (e) { $('c-pool').textContent = errText(e); }
   if (seq !== C.seq) return;
   var byId = {}, all = [];
   lists.forEach(function (l) { l.forEach(function (o) { if (!byId[o.id]) { byId[o.id] = o; all.push(o); } }); });
   C.all = all;
   var counts = {}; all.forEach(function (o) { counts[o.type] = (counts[o.type] || 0) + 1; });
-  var order = ['countries', 'regions', 'districts', 'cities', 'rivers', 'lakes', 'seas', 'oceans', 'mountains', 'peaks', 'lowlands', 'islands', 'peninsulas', 'deserts', 'parks', 'caves'];
-  var types = Object.keys(counts).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+  var types = sortTypes(Object.keys(counts));
   var S = cSet(), prev = (S.types || []).filter(function (x) { return counts[x]; });
-  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')' }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cPoolInfo(); });
+  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')', theme: themeOfType(x) }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cPoolInfo(); });
   cBaseChips(codes);
   cPoolInfo();
 }
@@ -109,13 +103,8 @@ async function cBegin(objects) {
   var objs = objects || cPick(cPoolOf(F), F.n);
   if (!objs.length) { cShow('c-setup'); return; }
   $('c-load-msg').textContent = t('p.loading_map'); cShow('c-load');
-  var bbox = null, refs = [], files = vals($('c-base'));
-  F.regions.forEach(function (c) {
-    var r = regionOf(c); if (!r) return;
-    bbox = bboxUnion(bbox, r.bbox || geomBBox(objs[0].g));
-    r.base.forEach(function (b) { if (files.indexOf(b.file) >= 0) refs.push({ file: b.file, style: layerStyle(b.name, b.raster) }); });
-    r.objects.forEach(function (o) { if (files.indexOf(o.file) >= 0) refs.push({ file: o.file, style: layerStyle(o.type, false) }); });
-  });
+  var bbox = null, refs = sceneRefs(C.regions, F.regions, vals($('c-base')));
+  F.regions.forEach(function (c) { var r = regionOf(c); if (r) bbox = bboxUnion(bbox, r.bbox || geomBBox(objs[0].g)); });
   var key = JSON.stringify([bbox, refs]);
   if (key !== C.sceneKey) { C.scene = await buildScene(bbox, refs); C.sceneKey = key; C.view = null; }
   C.scoring = { full: round1(C.scene.diag * C_PFULL / 100), zero: round1(C.scene.diag * C_PZERO / 100) };
@@ -127,7 +116,7 @@ function cOverlay(v) {
   if (C.phase === 'reveal' && it) {
     s += drawTarget(it.o.g, v.proj, v.pal, 0, true);
     if (it.c && it.d > 0) s += drawConn(it.c, measure(it.o.g, it.c).near, v.proj, v.pal, 0);
-    s += drawLabel(anchorOf(it.o.g), v.proj, it.o.name, v.pal.ok, v.pal.halo, v.uPx(), 14, it.o.g.t === 'pt' ? -15 : 0, true);
+    s += drawLabel(anchorOf(it.o.g), v.proj, objLabel(it.o), v.pal.ok, v.pal.halo, v.uPx(), 14, it.o.g.t === 'pt' ? -15 : 0, true);
   }
   if (C.pin) s += drawDot(C.pin, v.proj, v.pal.tip, v.pal.halo, 16, 0);
   return s;
@@ -190,7 +179,7 @@ function cEnd() {
   C.items.forEach(function (it, i) {
     ul.appendChild(el('li', {}, [el('button', { type: 'button', onclick: function () { cSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.o.type) + ': ' }), el('b', { text: it.o.name })]),
+      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.o.type) + ': ' }), el('b', { text: it.o.name }), it.o.note ? el('span', { class: 'muted', text: ' · ' + it.o.note }) : null]),
       el('span', { class: 'r' }, [fmtKm(it.d), el('span', { text: fmtPct(it.pct) })])])]));
   });
   cShow('c-end');
@@ -201,7 +190,7 @@ function cEndOverlay(v) {
   var s = '', u = v.uPx(), sel = C.rsel;
   C.items.forEach(function (it, i) { s += drawTarget(it.o.g, v.proj, v.pal, 0, i === sel); });
   C.items.forEach(function (it) { if (it.c && it.d > 0) s += drawConn(it.c, measure(it.o.g, it.c).near, v.proj, v.pal, 0); });
-  C.items.forEach(function (it, i) { if (i === sel || sel < 0) s += drawLabel(anchorOf(it.o.g), v.proj, it.o.name, v.pal.ok, v.pal.halo, u, i === sel ? 15 : 12, it.o.g.t === 'pt' ? -14 : 0, i === sel); });
+  C.items.forEach(function (it, i) { if (i === sel || sel < 0) s += drawLabel(anchorOf(it.o.g), v.proj, objLabel(it.o), v.pal.ok, v.pal.halo, u, i === sel ? 15 : 12, it.o.g.t === 'pt' ? -14 : 0, i === sel); });
   C.items.forEach(function (it, i) { if (it.c) s += drawNumDot(it.c, v.proj, i + 1, v.pal.tip, u, i === sel ? 28 : 22); });
   return s;
 }

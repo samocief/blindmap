@@ -13,14 +13,15 @@ data/
     cities.json           objekty na hádanie, jeden súbor na typ
     rivers.json
     ...
+    difficulty.csv        tabuľka obtiažností (podľa id)
     base_land.json        podkladové vrstvy, len sa kreslia
-    base_relief.jpg       raster
-    base_relief.jgw       world file k rastru
+    base_relief.png       raster
+    base_relief.pgw       world file k rastru
   eu/                     Európa
   ...
 source/
-  objekty.xlsx            hlavný zoznam objektov (upravuješ ručne)
-  objekty.fmw             FME workspace, ktorý z neho vyrobí súbory v data/
+  sk_upload.py            príprava dát Slovenska z výstupu FME (pozri nižšie)
+  objekty.xlsx            starší spôsob: hlavný zoznam objektov (upravuješ ručne)
 ```
 
 Kódy oblastí sú ľubovoľné, aplikácia ich berie z `index.json`. Pre tieto kódy má pripravené názvy: `sk` Slovensko, `eu` Európa, `as` Ázia, `af` Afrika, `na` Severná Amerika, `sa` Južná Amerika, `au` Austrália a Oceánia, `an` Antarktída, `world` Svet, `ao` Atlantický oceán, `po` Tichý oceán, `io` Indický oceán, `ar` Severný ľadový oceán. Iný kód sa zobrazí veľkými písmenami, kým preň nepribudne názov v `lang/sk.json` (sekcia `region`).
@@ -46,7 +47,10 @@ Píše sa ručne (alebo ho zapíše FME) a mení sa, len keď pribudne alebo zmi
 
 - `regions`: poradie je poradie tlačidiel v aplikácii.
 - `bbox`: výrez mapy `[západ, juh, východ, sever]` v stupňoch. Nepovinný, bez neho sa výrez určí z objektov. Odporúčam ho vyplniť, mapa je potom vždy rovnaká.
-- `objects`: súbory s objektmi na hádanie.
+- `objects`: súbory s objektmi na hádanie. Položka môže byť aj objekt, ktorý zo súboru vyrobí ďalší typ, napríklad EČV z okresov:
+  `{"file": "sk/districts.json", "type": "plates", "nameField": "abbrev", "noteField": "name", "difficultyMap": {"1": 4, "2": 4, "3": 5, "4": 5, "5": 5}}`.
+  `nameField` je atribút, ktorý sa hádá namiesto názvu, `noteField` sa ukáže po tipe v precvičovaní, `difficultyMap` prepočíta obtiažnosť.
+- `difficulty`: nepovinná tabuľka obtiažností (súbor v `data/` alebo celá adresa zverejneného Google Sheetu vo formáte CSV), alebo zoznam takých tabuliek. Pozri nižšie.
 - `base`: podkladové vrstvy. Učiteľ si pri teste vyberá, ktoré budú na mape (predvolene všetky).
 - Nepovinne `"name": {"sk": "Slovensko", "en": "Slovakia"}`, ak chceš oblasť pomenovať inak, než je v jazykovom súbore.
 
@@ -66,7 +70,7 @@ Jeden súbor GeoJSON (FeatureCollection) na oblasť a typ, súradnice v **EPSG:4
 |---|---|---|
 | `id` | odporúčaný | Jedinečný a stály identifikátor v celom katalógu, napr. `rivers-hron`. Rovnaký objekt vo viacerých oblastiach (Dunaj v `sk` aj `eu`) má v oboch súboroch rovnaké `id`, aplikácia ho potom započíta raz. Bez `id` si ho aplikácia vytvorí z typu a názvu. |
 | `name` | áno | Názov, ktorý žiak hľadá (slovensky). |
-| `difficulty` | áno | Obtiažnosť 1 až 5 (aplikácia prijme aj názov `Level`). |
+| `difficulty` | nie | Obtiažnosť 1 až 5 (aplikácia prijme aj názov `Level`). Ak je oblasť v `index.json` napojená na tabuľku obtiažností, má prednosť tabuľka. Bez obtiažnosti má objekt 3. |
 | `name_en`, `name_de` … | nie | Preklady názvu na neskôr. |
 | `active` | nie | `0` objekt skryje (inak sa vynecháva už vo FME). |
 
@@ -80,7 +84,8 @@ Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotn
 |---|---|---|---|
 | `countries` | štáty | `peaks` | vrchy |
 | `regions` | kraje a regióny | `lowlands` | nížiny a kotliny |
-| `districts` | okresy | | |
+| `districts` | okresy | `saddles` | sedlá a priesmyky |
+| `plates` | EČV okresov | | |
 | `cities` | mestá | `islands` | ostrovy |
 | `rivers` | rieky | `peninsulas` | polostrovy |
 | `lakes` | jazerá a vodné nádrže | `deserts` | púšte |
@@ -90,7 +95,38 @@ Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotn
 
 Každý súbor objektov si učiteľ môže dať aj na mapu (napr. „všetky rieky“). Vodstvo sa kreslí modrou, mestá a vrchy ako bodky, štáty a kraje ako hranice, ostatné jemnou hnedou čiarou.
 
-## objekty.xlsx
+V aplikácii sú typy zoskupené do tém: vodstvo (rieky, jazerá, moria, oceány), povrch (pohoria, nížiny, vrchy, sedlá, jaskyne, ostrovy, polostrovy, púšte), ochrana prírody, obyvateľstvo (mestá), štáty a administratívne členenie (kraje, okresy, EČV). Rovnako sú zoskupené aj vrstvy na mapu.
+
+## Tabuľka obtiažností
+
+Obtiažnosť sa drží oddelene od geometrie, aby nový export z FME neprepísal ručné úpravy. Tabuľka je CSV s hlavičkou v prvom riadku, oddeľovač `;`, `,` alebo tabulátor:
+
+```
+class;id;name;difficulty;abbrev;subclass
+river;Q202598;Váh;1;;
+district;D100005;Bardejov;2;BJ;
+```
+
+- Aplikácia číta len `id` a `difficulty` (pri EČV aj `abbrev`, ak ho nemá GeoJSON). Ostatné stĺpce (`name`, `ele`, `area` …) sú pre teba na triedenie.
+- Voliteľný stĺpec `active` s hodnotou `0` objekt z aplikácie vyradí.
+- Tabuľka môže mať viac blokov za sebou, každý so svojou hlavičkou (riadok so stĺpcami `id` a `difficulty`).
+- Objekt, ktorý v tabuľke chýba, dostane obtiažnosť z GeoJSON, inak 3.
+
+Keď tabuľku presunieš do Google Sheets: **Súbor → Zdieľať → Zverejniť na webe → hárok → CSV**, odkaz vlož do `index.json` namiesto `"sk/difficulty.csv"`. Zverejnené CSV sa po úprave obnoví o pár minút.
+
+## Príprava dát Slovenska (sk_upload.py)
+
+`python3 source/sk_upload.py <priečinok s výstupom FME> data/sk` urobí z výstupu FME (`city.json`, `river.json`, `water.json`, `peak.json`, `saddle.json`, `cave.json`, `protected.json`, `region.json`, `district.json`, `landform.json`, `country.json`, `hillshade.png` + `.wld`, `sk_difficulty_edit.csv`) súbory pre aplikáciu:
+
+- premenuje ich na typy aplikácie (water → lakes, protected → parks …), `landform` rozdelí podľa `subclass` na `mountains` a `lowlands`,
+- opraví názvy riek (cudzie a dvojjazyčné tvary na slovenské) a orezané názvy pohorí, Východoslovenskú pahorkatinu a Dolnomoravský úval zaradí do nížin,
+- v GeoJSON nechá len `id` a `name` (pri okresoch aj `abbrev`), MultiPoint zmení na Point,
+- vyrobí `base_land.json` (obrys SR), `base_borders.json` (hranice krajov), reliéf oreže podľa obrysu a susedné štáty v `base_surroundings.json` prispôsobí obrysu,
+- skopíruje tabuľku obtiažností do `difficulty.csv`.
+
+Potrebuje Python 3, na hranice, reliéf a okolie aj knižnice `shapely` a `Pillow`. Vypíše, čo zmenil.
+
+## objekty.xlsx (starší spôsob)
 
 Hlavný zoznam, ktorý upravuješ ručne. Jeden riadok = jeden objekt, aj keď patrí do viacerých oblastí.
 

@@ -1,0 +1,799 @@
+class;id;name;difficulty;abbrev;subclass
+cave;Q133949;Demänovská jaskyňa Slobody;1;;
+cave;Q815098;Belianska jaskyňa;1;;
+cave;Q1585579;Harmanecká jaskyňa;1;;
+cave;Q1186716;Demänovská ľadová jaskyňa;1;;
+cave;Q284340;Dobšinská ľadová jaskyňa;1;;
+cave;Q908287;Jaskyňa Domica;2;;
+cave;Q1011733;Gombasecká jaskyňa;2;;
+cave;Q1259107;Jaskyňa Driny;2;;
+cave;Q20861310;Záskočie;3;;
+cave;Q920499;Jasovská jaskyňa;3;;
+cave;Q3493701;Ardovská jaskyňa;3;;
+cave;Q24947086;Jaskyňa v ponore Jašteričieho jazera;3;;
+cave;Q640870;Silická ľadnica;3;;
+cave;Q285306;Krásnohorská jaskyňa;4;;
+cave;Q113559087;Sedmička;4;;
+cave;Q9393800;Čertova diera;4;;
+cave;Q12771664;Milada;4;;
+cave;Q11793337;Nová brzotínska jaskyňa;5;;
+cave;Q9294485;Hrušovská jaskyňa;5;;
+cave;Q1075804;Ochtinská aragonitová jaskyňa;2;;
+cave;Q2297701;Važecká jaskyňa;3;;
+cave;Q11766458;Majkova jaskyňa;5;;
+cave;Q25455452;Almási-zsomboly;5;;
+cave;Q3494739;Diviačia priepasť;5;;
+cave;Q11793332;Nová muflónia priepasť;5;;
+cave;Q3493669;Brázda;5;;
+cave;Q9396944;Šingliarova priepasť;5;;
+cave;Q9368548;Veľká Salanka;5;;
+cave;Q56340494;Stará Brzotínska jaskyňa;5;;
+cave;Q11724084;Jelenia priepasť;5;;
+cave;Q86683295;Veľká Ružínska jaskyňa;5;;
+country;C100195;Slovenská republika;1;;
+district;D100002;Banská Bystrica;1;BB;
+district;D100112;Nitra;1;NR;
+district;D100175;Prešov;1;PO;
+district;D100215;Trenčín;1;TN;
+district;D100217;Trnava;1;TT;
+district;D100241;Žilina;1;ZA;
+district;D100012;Bratislava I;1;BA I;
+district;D100013;Bratislava II;1;BA II;
+district;D100014;Bratislava III;1;BA III;
+district;D100015;Bratislava IV;1;BA IV;
+district;D100016;Bratislava V;1;BA V;
+district;D100005;Bardejov;2;BJ;
+district;D100018;Brezno;2;BR;
+district;D100023;Čadca;2;CA;
+district;D100059;Dunajská Streda;2;DS;
+district;D100067;Humenné;2;HE;
+district;D100077;Komárno;2;KN;
+district;D100078;Košice - okolie;2;KS;
+district;D100101;Lučenec;2;LC;
+district;D100097;Liptovský Mikuláš;2;LM;
+district;D100094;Levice;2;LV;
+district;D100103;Malacky;2;MA;
+district;D100107;Michalovce;2;MI;
+district;D100105;Martin;2;MT;
+district;D100116;Nové Zámky;2;NZ;
+district;D100177;Prievidza;2;PD;
+district;D100171;Poprad;2;PP;
+district;D100181;Rimavská Sobota;2;RS;
+district;D100182;Rožňava;2;RV;
+district;D100200;Spišská Nová Ves;2;SN;
+district;D100213;Trebišov;2;TV;
+district;D100246;Zvolen;2;ZV;
+district;D100057;Dolný Kubín;2;DK;
+district;D100060;Galanta;2;GA;
+district;D100079;Košice I;2;KE I;
+district;D100080;Košice II;2;KE II;
+district;D100081;Košice III;2;KE III;
+district;D100082;Košice IV;2;KE IV;
+district;D100075;Kežmarok;2;KK;
+district;D100095;Levoča;2;LE;
+district;D100115;Nové Mesto nad Váhom;2;NM;
+district;D100111;Námestovo;2;NO;
+district;D100172;Považská Bystrica;2;PB;
+district;D100156;Pezinok;2;PK;
+district;D100158;Piešťany;3;PN;
+district;D100184;Ružomberok;3;RK;
+district;D100188;Senec;3;SC;
+district;D100189;Senica;3;SE;
+district;D100191;Skalica;3;SI;
+district;D100210;Svidník;3;SK;
+district;D100203;Stará Ľubovňa;3;SL;
+district;D100197;Snina;3;SV;
+district;D100212;Topoľčany;3;TO;
+district;D100225;Veľký Krtíš;3;VK;
+district;D100230;Vranov nad Topľou;3;VT;
+district;D100239;Žiar nad Hronom;3;ZH;
+district;D100001;Bánovce nad Bebravou;3;BN;
+district;D100003;Banská Štiavnica;3;BS;
+district;D100055;Detva;3;DT;
+district;D100063;Hlohovec;3;HC;
+district;D100068;Ilava;3;IL;
+district;D100088;Krupina;3;KA;
+district;D100092;Kysucké Nové Mesto;3;KM;
+district;D100106;Medzilaborce;3;ML;
+district;D100109;Myjava;3;MY;
+district;D100155;Partizánske;3;PE;
+district;D100178;Púchov;3;PU;
+district;D100179;Revúca;3;RA;
+district;D100186;Šaľa;3;SA;
+district;D100185;Sabinov;3;SB;
+district;D100198;Sobrance;3;SO;
+district;D100222;Tvrdošín;3;TS;
+district;D100244;Zlaté Moravce;3;ZM;
+district;D100022;Bytča;3;BY;
+district;D100061;Gelnica;3;GL;
+district;D100170;Poltár;3;PT;
+district;D100208;Stropkov;3;SP;
+district;D100220;Turčianske Teplice;3;TR;
+district;D100235;Žarnovica;3;ZC;
+peak;P100062;Gerlachovský štít;1;;
+peak;P100098;Lomnický štít;1;;
+peak;Q672936;Rysy;1;;
+peak;P100087;Kriváň;1;;
+peak;P100058;Ďumbier;1;;
+peak;P100052;Chopok;1;;
+peak;Q686513;Kráľova hoľa;1;;
+peak;Q595780;Babia Góra / Babia hora;1;;
+peak;P100224;Veľký Choč;1;;
+peak;Q2298346;Veľký Rozsutec;1;;
+peak;P100168;Poľana;1;;
+peak;P100190;Sitno;1;;
+peak;P100236;Záruby;1;;
+peak;P100245;Zobor;1;;
+peak;Q836644;Ťažký štít;2;;
+peak;P100194;Slavkovský štít;2;;
+peak;Q2783579;Volovec / Wołowiec;2;;
+peak;Q1735189;Kasprov vrch / Kasprowy Wierch;2;;
+peak;Q1421203;Veľký Kriváň;2;;
+peak;Q16591238;Prašivá;2;;
+peak;Q3501904;Chleb;2;;
+peak;P100153;Ostredok;2;;
+peak;P100076;Kľak;2;;
+peak;P100231;Vtáčnik;2;;
+peak;Q3198358;Kojšovská hoľa;2;;
+peak;Q571753;Veľká Rača;2;;
+peak;Q153054;Кременець / Krzemieniec / Kremenec;2;;
+peak;P100227;Vihorlat;2;;
+peak;Q11743543;Koprovské plece;3;;
+peak;Q1018683;Bystrá;3;;
+peak;Q3504334;Hrubý štít / Szpiglasowy Wierch;3;;
+peak;Q9192478;Temnosmrečinská veža / Ciemnosmreczyńska Turnia;3;;
+peak;Q11744818;Končistá / Kończysty Wierch;3;;
+peak;Q9359134;Poľská Tomanová / Tomanowy Wierch Polski;3;;
+peak;Q9303722;Rakoń / Rákoň;3;;
+peak;Q9174818;Bobrowiec / Bobrovec;3;;
+peak;Q11702821;Grześ / Lúčna;3;;
+peak;Q11723469;Javorina;3;;
+peak;Q11772027;Mała Babia Góra / Malá Babia hora;3;;
+peak;Q276446;Stolica;3;;
+peak;Q3502588;Minčol;3;;
+peak;Q11766258;Magura;3;;
+peak;Q11838545;Čergov;3;;
+peak;Q31560708;Ostrá;3;;
+peak;Q1787773;Veľká Javorina;3;;
+peak;Q11892307;Veľký Tribeč;3;;
+peak;Q21198136;Šiator;3;;
+peak;Q12774899;Putikov vŕšok;3;;
+peak;Q3132319;Mięguszowiecki Szczyt Wielki / Veľký Mengusovský štít;4;;
+peak;Q3284720;Malé Rysy / Niżnie Rysy;4;;
+peak;Q11783967;Mięguszowiecki Szczyt Czarny / Východný Mengusovský štít;4;;
+peak;Q1664928;Mięguszowiecki Szczyt Pośredni / Prostredný Mengusovský štít;4;;
+peak;Q9196971;Cubryna / Čubrina;4;;
+peak;Q1714138;Volia veža / Wołowa Turnia;4;;
+peak;Q9293124;Hincova veža / Hińczowa Turnia;4;;
+peak;Q110427608;Igła Milówki / Veľká mengusovská ihla;4;;
+peak;Q9192151;Chłopek;4;;
+peak;Q9397111;Żabia Turnia Mięguszowiecka / Žabia veža;4;;
+peak;Q260733;Snežná kopa;4;;
+peak;Q2741323;Svinica / Świnica;4;;
+peak;Q9396450;Świnicka Kopa;4;;
+peak;Q3594409;Żabi Koń;4;;
+peak;Q3556467;Veľký Žabí štít / Żabi Szczyt Wyżni;4;;
+peak;Q9340000;Spadowa Kopa;4;;
+peak;Q3544114;Klin / Starorobociański Wierch;4;;
+peak;Q9385703;Druhý Mních / Zadni Mnich;4;;
+peak;Q9183560;Blyšť / Błyszcz;4;;
+peak;Q3495667;Valentková / Walentkowy Wierch;4;;
+peak;Q392972;Żabi Mnich;4;;
+peak;Q11134872;Jarząbczy Wierch / Hrubý vrch;4;;
+peak;Q60856157;Niżnia Walentkowa Baszta / Nižná Valentkova bašta;4;;
+peak;Q11826408;Prostredná kopa / Pośrednia Turnia;4;;
+peak;Q2855198;Veľká Kamenistá / Kamienista;4;;
+peak;Q2582708;Kresanica / Krzesanica;4;;
+peak;Q60854990;Hrubý zub / Szpiglasowy Ząb;4;;
+peak;Q60856195;Vyšný Valentkov zub / Wyżnia Walentkowa Czuba;4;;
+peak;Q60856192;Mała Walentkowa Czuba / Malý Valentkov zub;4;;
+peak;Q60856268;Pośrednia Walentkowa Czuba / Prostredný Valentkov zub;4;;
+peak;Q3342333;Niżni Żabi Szczyt;4;;
+peak;Q957545;Krajná Kopa / Skrajna Turnia;4;;
+peak;Q11772508;Malolučniak / Małołączniak;4;;
+peak;Q11690580;Ciemniak / Temniak;4;;
+peak;Q9397107;Żabia Lalka;4;;
+peak;Q769933;Vyšný kostúr / Wyżni Kostur;4;;
+peak;Q9397105;Żabia Czuba;4;;
+peak;Q11770837;Marusarzowa Turnia;4;;
+peak;Q65166691;Chałubińského vežička / Turniczka Chałubińskiego;4;;
+peak;Q9338770;Smreczyński Wierch / Smrečiny;4;;
+peak;Q3495327;Gładki Wierch / Hladký štít;4;;
+peak;Q11792499;Niżni Kostur / Nižný kostúr;4;;
+peak;Q11801284;Owcze Turniczki;4;;
+peak;Q31568230;Kopa brán;4;;
+peak;Q9169549;Beskid / Beskyd;4;;
+peak;Q11743304;Kondratova kopa / Kopa Kondracka;4;;
+peak;Q9274624;Goričkova kopa / Goryczkowa Czuba;4;;
+peak;Q9347852;Suchy Wierch Kondracki / Suchá kopa;4;;
+peak;Q11826357;Pośredni Goryczkowy Wierch / Prostredný Goričkový vrch;4;;
+peak;Q9347857;Suchy Wierch Tomanowy / Suchý vrch;4;;
+peak;Q9293147;Holý vrch / Hlinov vrch;4;;
+peak;Q9264716;Furkaska / Veľká Furkaska;4;;
+peak;Q11802329;Palenica/BRTS;4;;
+peak;Q1391567;Čierna hora;4;;
+peak;Q9310198;Jarabá skala / Rabia Skała;4;;
+peak;Q9198729;Čierťaž / Czertez;4;;
+peak;Q11723461;Javorina / Jaworzyna;4;;
+peak;Q9177824;Borsukov vrch / Borsuk;4;;
+peak;Q1277020;Veľký Lopeník;4;;
+peak;Q18341559;Wysoki Groń / Vysoký grúň;4;;
+peak;Q11734421;Kamenný hrb / Kamienny Horb;4;;
+peak;Q31551705;Železný vrch;4;;
+peak;Q31551722;Železník;4;;
+peak;Q9372792;Veľká hora;4;;
+peak;Q31553173;Rožok/Ріжок;4;;
+peak;Q11795478;Karkuláž / Obycz;4;;
+peak;Q26230695;Lipovec / Hársas-hegy;4;;
+peak;Q110002679;Pohanský hrad;4;;
+peak;Q31559890;Ragáč;4;;
+peak;Q9337357;Sivá veža / Siwy Zwornik;5;;
+peak;Q9394322;Deravá / Łopata;5;;
+peak;Q9284120;Głazista Turnia / Stoly;5;;
+peak;Q1092617;Zlatý stôl;5;;
+peak;Q104403142;Siminy;5;;
+peak;Q11711533;Ihla;5;;
+peak;Q611685;Kozí kameň;5;;
+peak;Q13403201;Repisko;5;;
+peak;Q65175834;Zlatoidská hora;5;;
+peak;Q9372830;Wielka Rycerzowa / Rycierova hora;5;;
+peak;Q9248977;Ďurkovec;5;;
+peak;Q9294471;Hrubki / Hrúbky;5;;
+peak;Q11723462;Jaworzyna / Javorina;5;;
+peak;Q11787912;Mędralowa / Beskydok;5;;
+peak;Q11832520;Płasza;5;;
+peak;Q11692316;Čelo / Czoło;5;;
+peak;Q11772092;Malá Rača / Mała Racza;5;;
+peak;Q15703484;Májov / Majów;5;;
+peak;Q12763193;Biela skala;5;;
+peak;Q11702560;Gruba Buczyna / Hrubá bučina;5;;
+peak;Q9372782;Veľká Červenková / Wielka Czerwenkowa;5;;
+peak;Q9164923;Bania / Priehybok;5;;
+peak;Q11799433;Orło / Orol;5;;
+peak;Q11739178;Kykula / Kikula;5;;
+peak;Q11766397;Majcherová / Majcherowa;5;;
+peak;Q11797129;Okrąglik / Kruhliak;5;;
+peak;Q108887444;Stinská/Стинка;5;;
+peak;Q11748049;Krawców Wierch;5;;
+peak;Q3507306;Velký Polom / Veľký Polom;5;;
+peak;Q1955808;Vysoké Skalky / Wysoka;5;;
+peak;Q9372964;Veľký Príslop / Wielki Przysłop;5;;
+peak;Q11795584;Uplaz / Obłaz;5;;
+peak;Q11837508;Vetrová skala/Вітрова-Скала;5;;
+peak;Q2026062;Eliaszówka / Eliášovka;5;;
+peak;Q9338649;Smerekowa / Vysoká;5;;
+peak;Q9347044;Strop / Stryb;5;;
+peak;Q16956668;Kalnica / Кальниця;5;;
+peak;Q9324545;Rypi Wierch / Rypy;5;;
+peak;Q11752559;Lacková / Lackowa;5;;
+peak;Q31520429;Popriečny vrch / Попрічний Верх;5;;
+peak;Q31522013;Holica / Голиця;5;;
+peak;Q12778434;Veľký Grič;5;;
+peak;Q9373226;Vrchriečky / Wierchliczka;5;;
+peak;Q9169570;Westka / Studienky;5;;
+peak;Q18042171;Beskydek;5;;
+peak;Q28673598;Grúnik / Syhła;5;;
+peak;Q9257734;Fakľovka;5;;
+peak;Q20493397;Czerenin / Černiny;5;;
+peak;Q9169572;Beskid Krzyżowski / Beskyd;5;;
+peak;Q9380245;Šľachovky / Wysoki Wierch;5;;
+peak;Q897554;Nagy-Milic / Veľký Milič;5;;
+peak;Q31793687;Głęboki Wierch / Hlboký vrch;5;;
+peak;Q11216056;Bobek/Bobok;5;;
+peak;Q9337514;Skaľanka / Skalanka;5;;
+peak;Q11833193;Rabsztyn / Rabštín;5;;
+peak;Q18042181;Kykuľa / Kikula;5;;
+peak;Q9178656;Bralo;5;;
+peak;Q11385692;Čapec;5;;
+peak;Q124649111;Płaziny / Staviská;5;;
+peak;Q9394197;Lažna Skala / Łaźne Skały;5;;
+peak;Q31553057;Szcołb / Ščob;5;;
+peak;Q9165204;Baranie/Stávok;5;;
+peak;Q9350724;Szafranówka / Šafranovka;5;;
+peak;Q31551905;Góra Wertyszów;5;;
+peak;Q9375571;Vitkuľa / Witkula;5;;
+peak;Q16515528;Karancs/Karanč;5;;
+peak;Q26228770;Szurok-hegy;5;;
+peak;Q31554824;Kosmatec/Косматець;5;;
+peak;Q31553466;Poroňa / Poronya-tető;5;;
+saddle;Q11829799;Przełęcz pod Rysami;5;;
+saddle;Q16979459;Mała Wołowa Szczerbina / Západná volia štrbina;5;;
+saddle;Q16614841;Wielka Rogata Szczerbina / Veľká Rohatá štrbina;5;;
+saddle;Q16614850;Wielka Wołowa Szczerbina / Veľká volia štrbina;5;;
+saddle;Q16575717;Mała Rogata Szczerbina / Malá Rohatá štrbina;5;;
+saddle;Q9198108;Czarnostawiańska Przełęcz / Východné Mengusovské sedlo;5;;
+saddle;Q11783964;Vyšné Mengusovské sedlo / Mięguszowiecka Przełęcz Wyżnia;5;;
+saddle;Q9293121;Hincovo sedlo / Hińczowa Przełęcz;5;;
+saddle;Q9397109;Żabia Przełęcz Mięguszowiecka / Východná volia štrbina;5;;
+saddle;Q9397110;Wyżnia Żabia Przełęcz / Vyšné Žabie sedlo;5;;
+saddle;Q11783966;Mengusovské sedlo / Mięguszowiecka Przełęcz pod Chłopkiem;5;;
+saddle;Q9396454;Świnicka Szczerbina Wyżnia;5;;
+saddle;Q9396453;Świnicka Szczerbina Niżnia / Nižná svinicová štrbina;5;;
+saddle;Q9283993;Gąsienicowa Przełączka;5;;
+saddle;Q9380676;Wyżnia Spadowa Przełączka;5;;
+saddle;Q9397108;Żabia Przełęcz / Žabie sedlo;5;;
+saddle;Q9193024;Ciężka Przełączka/Ťažká štrbina;5;;
+saddle;Q11829455;Przełączka pod Zadnim Mnichem / Štrbina za Druhým Mníchom;5;;
+saddle;Q60855979;Vyšná Valentkova štrbina / Wyżnia Walentkowa Szczerbina;5;;
+saddle;Q9192481;Ciemnosmreczyńska Przełączka / Piargová štrbina;5;;
+saddle;Q60855984;Wyżnie Walentkowe Wrótka / Vyšné Valentkove vrátka;5;;
+saddle;Q9352099;Szpiglasowa Przełęcz;5;;
+saddle;Q60856273;Pośrednie Walentkowe Wrótka / Prostredné Valentkove vrátka;5;;
+saddle;Q9370313;Walentkowa Przełęcz;5;;
+saddle;Q60856271;Nižné Valentkove vrátka / Niżnie Walentkowe Wrótka;5;;
+saddle;Q11792528;Nižné Kôprovské sedlo;5;;
+saddle;Q9397118;Żabie Wrótka;5;;
+saddle;Q9170388;Wyżnia Białczańska Przełęcz;5;;
+saddle;Q8535700;Skrajna Przełęcz / Krajné sedlo;5;;
+saddle;Q9380659;Wyżnia Liptowska Ławka;5;;
+saddle;Q11770835;Marusarzowa Przełączka;5;;
+saddle;Q11829765;Przełęcz nad Wrotami / Sedlo nad Chałubińského bránou;5;;
+saddle;Q11788153;Mlynárovo sedlo;5;;
+saddle;Q11838631;Świnicka Przełęcz / Svinické sedlo;5;;
+saddle;Q11801271;Owcza Przełęcz;5;;
+saddle;Q11762027;Litvorové sedlo / Litworowa Przełęcz;5;;
+saddle;Q11792531;Niżnia Liptowska Ławka / Nižná liptovská lávka;5;;
+saddle;Q9170386;Białczańska Przelęcz;5;;
+saddle;Q9378158;Vráta Chałubińského / Wrota Chałubińskiego;5;;
+saddle;Q11826403;Stredný priesmyk Salatina;5;;
+saddle;Q723102;Hladké sedlo / Gładka Przełęcz;5;;
+saddle;Q9197953;Czarna Ławka;5;;
+saddle;Q9344182;Starobociańska Przełęcz / Račkovo sedlo;5;;
+saddle;Q3495520;Liliowe / Ľaliové sedlo;5;;
+saddle;Q9347779;Sucha Przełęcz / Suché sedlo;5;;
+saddle;Q9164950;Bystry Karb / Bystré sedlo;5;;
+saddle;Q9265074;Gaborowa Przełęcz / Gáborovo sedlo;5;;
+saddle;Q11772503;Malolučniacke sedlo / Małołącka Przełęcz;5;;
+saddle;Q11716836;Jamnícke sedlo;3;;
+saddle;Q9293141;Hlińska Przełęcz / Hlinské sedlo;5;;
+saddle;Q11829794;Przełęcz pod Kopą Kondracką / Kondracké sedlo;5;;
+saddle;Q9248963;Dziurawa Przełęcz/Deravá;5;;
+saddle;Q11792344;Niska Przełęcz / Sedlo pod Hrubým vrchom;5;;
+saddle;Q9274628;Nad Zakosy / Východné Goričkovo sedlo;5;;
+saddle;Q9274629;Goryczkowa Przełęcz Świńska / Horičkovo sedlo Svinické;5;;
+saddle;Q9338769;Smreczyńska Przełęcz / Smrečinské sedlo;5;;
+saddle;Q11832191;Pyszniańska Przełęcz / Pyšné sedlo;5;;
+saddle;Q9359124;Tomanovské sedlo / Tomanowa Przełęcz;5;;
+saddle;Q9394506;Łuczniańska Przełęcz/Lúčne sedlo;5;;
+saddle;Q11829492;Brána / Przełęcz Brona;5;;
+saddle;Q9174820;Bobrowiecka Przełęcz / Bobrovecké sedlo;5;;
+saddle;Q339666;Čertovica;2;;
+saddle;Q16592355;Przełęcz pod Czerteżem/Sedlo pod Čierťažou;5;;
+saddle;Q11829653;Przełęcz Półgórska;5;;
+saddle;Q12766921;Hliny / Przełęcz Glinne;5;;
+saddle;Q11829656;Przełęcz Rozdziela / Rozdiel;5;;
+saddle;Q11829761;Przełęcz nad Roztokami Górnymi / Ruské sedlo;5;;
+saddle;Q2576160;Przełęcz Tylicka/Kurovské sedlo;5;;
+saddle;Q11829734;Przełęcz Wysowska / Sedlo Blechnarka;5;;
+saddle;Q1126214;Dargovský priesmyk;2;;
+protected;P100126;NP: Nízke Tatry;1;;NP
+protected;P100141;NP: Tatry;1;;NP
+protected;P100117;NP: Malá Fatra;1;;NP
+protected;P100144;NP: Veľká Fatra;1;;NP
+protected;P100132;NP: Slovenský kras;1;;NP
+protected;P100130;NP: Poloniny;1;;NP
+protected;P100135;NP: Slovenský raj;1;;NP
+protected;P100118;NP: Muránska planina;1;;NP
+protected;P100128;NP: Pieniny;1;;NP
+protected;P100044;CHKO: Štiavnické vrchy;2;;CHKO
+protected;P100039;CHKO: Malé Karpaty;2;;CHKO
+protected;P100034;CHKO: Kysuce;2;;CHKO
+protected;P100032;CHKO: Horná Orava;2;;CHKO
+protected;P100045;CHKO: Strážovské vrchy;2;;CHKO
+protected;P100026;CHKO: Biele Karpaty;2;;CHKO
+protected;P100042;CHKO: Poľana;2;;CHKO
+protected;P100049;CHKO: Záhorie;2;;CHKO
+protected;P100031;CHKO: Dunajské luhy;2;;CHKO
+protected;P100047;CHKO: Vihorlat;2;;CHKO
+protected;P100043;CHKO: Ponitrie;3;;CHKO
+protected;P100048;CHKO: Východné Karpaty;3;;CHKO
+protected;P100036;CHKO: Latorica;3;;CHKO
+protected;P100028;CHKO: Cerová vrchovina;3;;CHKO
+city;Q1780;Bratislava;1;;
+city;Q25409;Košice;1;;
+city;Q26119;Prešov;1;;
+city;Q26397;Nitra;1;;
+city;Q25797;Žilina;1;;
+city;Q144983;Banská Bystrica;1;;
+city;Q26175;Trnava;1;;
+city;Q27001;Martin;1;;
+city;Q145002;Trenčín;1;;
+city;Q26393;Poprad;1;;
+city;Q208750;Prievidza;2;;
+city;Q11874;Zvolen;2;;
+city;Q319787;Považská Bystrica;2;;
+city;Q276362;Nové Zámky;2;;
+city;Q460925;Michalovce;2;;
+city;Q462840;Spišská Nová Ves;2;;
+city;Q210796;Komárno;2;;
+city;Q506693;Levice;2;;
+city;Q502264;Humenné;2;;
+city;Q27007;Bardejov;2;;
+city;Q272040;Liptovský Mikuláš;2;;
+city;Q27541;Ružomberok;2;;
+city;Q321074;Piešťany;2;;
+city;Q750423;Topoľčany;3;;
+city;Q728965;Lučenec;3;;
+city;Q481528;Dubnica nad Váhom;3;;
+city;Q754768;Partizánske;3;;
+city;Q337478;Čadca;3;;
+city;Q829812;Rimavská Sobota;3;;
+city;Q391361;Šaľa;3;;
+city;Q646393;Dunajská Streda;3;;
+city;Q256301;Trebišov;3;;
+city;Q842005;Vranov nad Topľou;3;;
+city;Q754773;Hlohovec;3;;
+city;Q465312;Brezno;3;;
+city;Q659424;Pezinok;3;;
+city;Q754788;Snina;3;;
+city;Q750407;Senica;3;;
+city;Q549849;Bánovce nad Bebravou;3;;
+city;Q376987;Nové Mesto nad Váhom;3;;
+city;Q589309;Dolný Kubín;3;;
+city;Q258481;Púchov;3;;
+city;Q837464;Malacky;3;;
+city;Q267888;Rožňava;3;;
+city;Q842011;Handlová;3;;
+city;Q429676;Sereď;3;;
+city;Q393925;Žiar nad Hronom;3;;
+city;Q327977;Kežmarok;3;;
+city;Q605521;Stará Ľubovňa;3;;
+city;Q460767;Galanta;3;;
+city;Q754790;Senec;3;;
+city;Q516578;Kysucké Nové Mesto;3;;
+city;Q11857;Detva;3;;
+city;Q649076;Skalica;4;;
+city;Q242478;Levoča;4;;
+city;Q673741;Veľký Krtíš;4;;
+city;Q207226;Zlaté Moravce;4;;
+city;Q847213;Revúca;4;;
+city;Q391068;Šamorín;4;;
+city;Q837460;Myjava;4;;
+city;Q837478;Sabinov;4;;
+city;Q833845;Svidník;4;;
+city;Q249935;Nová Dubnica;4;;
+city;Q653326;Holíč;4;;
+city;Q27907;Bytča;4;;
+city;Q846440;Moldava nad Bodvou;4;;
+city;Q60038;Štúrovo;4;;
+city;Q750413;Stropkov;4;;
+city;Q374095;Kolárovo;4;;
+city;Q392704;Šurany;4;;
+city;Q247620;Fiľakovo;4;;
+city;Q512771;Stará Turá;4;;
+city;Q842022;Veľké Kapušany;4;;
+city;Q509715;Tvrdošín;4;;
+city;Q264708;Vráble;4;;
+city;Q208110;Banská Štiavnica;4;;
+city;Q740469;Veľký Meder;4;;
+city;Q842018;Krompachy;4;;
+city;Q596044;Modra;4;;
+city;Q782928;Stupava;4;;
+city;Q377650;Námestovo;4;;
+city;Q856402;Hurbanovo;4;;
+city;Q847336;Sečovce;4;;
+city;Q390946;Šahy;4;;
+city;Q846431;Hriňová;4;;
+city;Q909291;Tornaľa;4;;
+city;Q135667;Kráľovský Chlmec;4;;
+city;Q182903;Turzovka;4;;
+city;Q338528;Liptovský Hrádok;4;;
+city;Q847350;Trstená;4;;
+city;Q756667;Krupina;4;;
+city;Q852318;Svit;4;;
+city;Q828850;Hnúšťa;4;;
+city;Q393609;Želiezovce;4;;
+city;Q268463;Nová Baňa;4;;
+city;Q837456;Vrútky;4;;
+city;Q135647;Turčianske Teplice;4;;
+city;Q909281;Krásno nad Kysucou;5;;
+city;Q578686;Medzilaborce;5;;
+city;Q393421;Žarnovica;5;;
+city;Q389942;Nemšová;5;;
+city;Q847118;Lipany;5;;
+city;Q846444;Vrbové;5;;
+city;Q605059;Spišská Belá;5;;
+city;Q241125;Sobrance;5;;
+city;Q842028;Gelnica;5;;
+city;Q909333;Rajec;5;;
+city;Q259694;Poltár;5;;
+city;Q568249;Sládkovičovo;5;;
+city;Q754776;Kremnica;5;;
+city;Q481564;Ilava;5;;
+city;Q135818;Brezová pod Bradlom;5;;
+city;Q389397;Gabčíkovo;5;;
+city;Q846424;Gbely;5;;
+city;Q279005;Dobšiná;5;;
+city;Q135649;Šaštín-Stráže;5;;
+city;Q629313;Nesvady;5;;
+city;Q247240;Svätý Jur;5;;
+city;Q788753;Bojnice;5;;
+city;Q852313;Veľký Šariš;5;;
+city;Q258439;Sliač;5;;
+city;Q612516;Vysoké Tatry;5;;
+city;Q846434;Strážske;5;;
+city;Q909301;Nováky;5;;
+city;Q1023443;Turany;5;;
+city;Q550357;Giraltovce;5;;
+city;Q212590;Čierna nad Tisou;5;;
+city;Q532555;Trenčianske Teplice;5;;
+city;Q690807;Leopoldov;5;;
+city;Q239637;Tlmače;5;;
+city;Q370445;Tisovec;5;;
+city;Q537778;Spišské Podhradie;5;;
+city;Q135727;Medzev;5;;
+city;Q780527;Hanušovce nad Topľou;5;;
+city;Q524405;Spišské Vlachy;5;;
+city;Q852324;Podolínec;5;;
+city;Q846853;Jelšava;5;;
+city;Q135655;Rajecké Teplice;5;;
+city;Q592301;Spišská Stará Ves;5;;
+city;Q901050;Modrý Kameň;5;;
+city;Q531445;Dudince;5;;
+river;Q202598;Váh;1;;
+river;Q213230;Hron;1;;
+river;Q1653;Dunaj;1;;
+river;Q748872;Ipeľ;1;;
+river;Q846744;Hornád;1;;
+river;Q369773;Nitra;1;;
+river;Q937294;Malý Dunaj;1;;
+river;Q179251;Morava;1;;
+river;Q644669;Ondava;2;;
+river;Q1066352;Topľa;2;;
+river;Q756302;Poprad;2;;
+river;Q852308;Laborec;2;;
+river;Q1186856;Torysa;2;;
+river;Q1757909;Turiec (TR);2;;
+river;Q1473319;Kysuca;2;;
+river;Q510481;Orava;2;;
+river;Q857442;Biely Váh;2;;
+river;Q134350;Tisa;2;;
+river;Q910765;Dudváh;3;;
+river;Q576032;Slaná;3;;
+river;Q743746;Hnilec;3;;
+river;Q1088686;Rimava;3;;
+river;Q1636357;Myjava;3;;
+river;Q1542726;Krupinica;3;;
+river;Q394119;Žitava;3;;
+river;Q1813485;Slatina;3;;
+river;Q1589047;Štiavnica;3;;
+river;Q336069;Olšava;3;;
+river;Q2628734;Čierna voda;3;;
+river;Q12044616;Perec;3;;
+river;Q2628611;Ida;3;;
+river;Q9348553;Svinka;3;;
+river;Q1967765;Nitrica;3;;
+river;Q3488944;Rudava;3;;
+river;Q4088050;Blh;3;;
+river;Q1967594;Muráň;3;;
+river;Q12770905;Malina;3;;
+river;Q791716;Bebrava;3;;
+river;Q4179702;Litava;3;;
+river;Q524569;Bodva;3;;
+river;Q2374301;Biela Orava;3;;
+river;Q603664;Latorica;3;;
+river;Q828570;Bodrog;3;;
+river;Q579916;Sekčov;4;;
+river;Q12764751;Dlhý kanál;4;;
+river;Q1808083;Rajčanka;4;;
+river;Q31927434;Stará Čierna voda;4;;
+river;Q12765008;Duša;4;;
+river;Q913054;Roňava;4;;
+river;Q1101133;Tisovník;4;;
+river;Q4138029;Gidra;4;;
+river;Q3895018;Stará rieka;4;;
+river;Q12777774;Trnávka (TT);4;;
+river;Q31927177;Sobranecký potok;4;;
+river;Q4145944;Gortva;4;;
+river;Q1093095;Cirocha;4;;
+river;Q4180974;Oľka;4;;
+river;Q12769728;Krivánsky potok;4;;
+river;Q341486;Čierny Váh;4;;
+river;Q1780209;Turiec (RA);4;;
+river;Q4345119;Paríž;4;;
+river;Q29054635;Čiližský potok;4;;
+river;Q4345610;Parná;4;;
+river;Q12764508;Derňa;4;;
+river;Q9364431;Udava;4;;
+river;Q20856421;Biskupický derivačný kanál;4;;
+river;Q12054236;Sikenica;4;;
+river;Q12776753;Stoličný potok;4;;
+river;Q3506677;Trnávka (TV);4;;
+river;Q12024476;Jelešňa;4;;
+river;Q3488931;Chvojnica;4;;
+river;Q3894513;Rimavica;4;;
+river;Q630741;Zolná;4;;
+river;Q109918089;Dolný Dudváh;4;;
+river;Q918709;Revúca;4;;
+river;Q1967185;Handlovka;4;;
+river;Q4335612;Oravica;4;;
+river;Q12767743;Jablonka;4;;
+river;Q136503776;Stará Žitava;4;;
+river;Q4177987;Radošinka;4;;
+river;Q12769092;Ketský potok;4;;
+river;Q11821661;Polhoranka;4;;
+river;Q12349023;Hučava;4;;
+river;Q2628604;Krtíš;5;;
+river;Q9189928;Chlmec;5;;
+river;Q4446862;Suchá;5;;
+river;Q1967755;Okna;5;;
+river;Q12773889;Plachtinský potok;5;;
+river;Q4087264;Bystrica;5;;
+river;Q11798291;Ondavka;5;;
+river;Q3244336;Krupský potok;5;;
+river;Q13440672;Malá Nitra;5;;
+river;Q65249856;Zohorský kanál;5;;
+river;Q11833507;Radomka;5;;
+river;Q9171337;Biela;5;;
+river;Q12778603;Vištucký potok;5;;
+river;Q840694;Dunajec;2;;
+landform;L100211;Tatry;1;;highland
+landform;L100114;Nízke Tatry;1;;highland
+landform;L100102;Malá Fatra;1;;highland
+landform;L100223;Veľká Fatra;1;;highland
+landform;L100164;Podtatranská kotlina;1;;lowland
+landform;L100169;Poľana;1;;highland
+landform;L100104;Malé Karpaty;1;;highland
+landform;L100083;Košická kotlina;1;;lowland
+landform;L100173;Považské podolie;1;;lowland
+landform;L100074;Juhoslovenská kotlina;1;;lowland
+landform;L100234;Východoslovenská rovina;1;;lowland
+landform;L100166;Podunajská rovina;1;;lowland
+landform;L100152;Oravské Beskydy;2;;highland
+landform;L100051;Chočské vrchy;2;;highland
+landform;L100201;Spišsko-gemerský kras;2;;highland
+landform;L100150;Oravská Magura;2;;highland
+landform;L100232;Vtáčnik;2;;highland
+landform;L100229;Volovské vrchy;2;;highland
+landform;L100086;Kremnické vrchy;2;;highland
+landform;L100207;Strážovské vrchy;2;;highland
+landform;L100228;Vihorlatské vrchy;2;;highland
+landform;L100064;Horehronské podolie;2;;lowland
+landform;L100205;Štiavnické vrchy;2;;highland
+landform;L100007;Biele Karpaty;2;;highland
+landform;L100196;Slovenský kras;2;;highland
+landform;L100066;Hornonitrianska kotlina;2;;lowland
+landform;L100149;Oravská kotlina;2;;lowland
+landform;L100247;Zvolenská kotlina;2;;lowland
+landform;L100219;Turčianska kotlina;2;;lowland
+landform;L100242;Žilinská kotlina;2;;lowland
+landform;L100110;Myjavská pahorkatina;2;;lowland
+landform;L100165;Podunajská pahorkatina;2;;lowland
+landform;L100206;Stolické vrchy;3;;highland
+landform;L100011;Branisko;3;;highland
+landform;L100216;Tribeč;3;;highland
+landform;L100240;Žiarska kotlina;3;;lowland
+landform;L100053;Chvojnícka pahorkatina;3;;lowland
+landform;L100010;Borská nížina;3;;lowland
+landform;L100226;Veporské vrchy;3;;highland
+landform;L100204;Starohorské vrchy;3;;highland
+landform;L100192;Skorušinské vrchy;3;;highland
+landform;L100096;Levočské vrchy;3;;highland
+landform;L100199;Spišská Magura;3;;highland
+landform;L100085;Kozie chrbty;3;;highland
+landform;L100091;Kysucké Beskydy;3;;highland
+landform;L100019;Bukovské vrchy;3;;highland
+landform;L100024;Čergov;3;;highland
+landform;L100163;Podtatranská brázda;3;;highland
+landform;L100090;Kysucká vrchovina;3;;highland
+landform;L100193;Slanské vrchy;3;;highland
+landform;L100000;Bachureň;3;;highland
+landform;L100071;Javorníky;3;;highland
+landform;L100108;Moravsko-sliezske Beskydy;3;;highland
+landform;L100161;Podbeskydská vrchovina;3;;highland
+landform;L100070;Javorie;3;;highland
+landform;L100174;Považský Inovec;3;;highland
+landform;L100099;Ľubovnianska vrchovina;3;;highland
+landform;L100054;Čierna hora;3;;highland
+landform;L100238;Žiar;3;;highland
+landform;L100157;Pieniny;3;;highland
+landform;L100065;Hornádska kotlina;3;;lowland
+landform;L100151;Oravská vrchovina;3;;highland
+landform;L100160;Podbeskydská brázda;3;;highland
+landform;L100180;Revúcka vrchovina;3;;highland
+landform;L100221;Turzovská vrchovina;3;;highland
+landform;L100167;Pohronský Inovec;3;;highland
+landform;L100093;Laborecká vrchovina;3;;highland
+landform;L100209;Súľovské vrchy;3;;highland
+landform;L100089;Krupinská planina;3;;highland
+landform;L100148;Ondavská vrchovina;3;;highland
+landform;L100187;Šarišská vrchovina;3;;highland
+landform;L100025;Cerová vrchovina;3;;highland
+landform;L100183;Rožňavská kotlina;3;;lowland
+landform;L100159;Pliešovská kotlina;3;;lowland
+landform;L100237;Zemplínske vrchy;3;;highland
+landform;L100009;Bodvianska pahorkatina;3;;lowland
+landform;L100233;Východoslovenská pahorkatina;3;;lowland
+landform;L100020;Burda;3;;highland
+landform;L100056;Dolnomoravský úval;3;;lowland
+landform;L100021;Busov;4;;highland
+landform;L100202;Spišsko-šarišské medzihorie;4;;highland
+landform;L100154;Ostrôžky;4;;highland
+landform;L100069;Jablunovské medzihorie;4;;highland
+landform;L100006;Beskydské predhorie;4;;highland
+water;Q189395;Zemplínska šírava;1;;
+water;Q737728;Oravská priehrada;1;;
+water;Q1130334;Liptovská Mara;1;;
+water;Q1192056;Vodná nádrž Veľká Domaša;1;;
+water;Q3510307;Vodné dielo Kráľová;1;;
+water;Q2639347;Morské oko;1;;
+water;Q12031829;Kuchajda;1;;
+water;Q12035133;Malý Draždiak;1;;
+water;Q207224;Zlaté piesky;1;;
+water;Q11868965;Vajnorské jazero;1;;
+water;Q11892181;Veľký Draždiak;1;;
+water;Q1318066;Ružín;2;;
+water;Q11826521;Sĺňava;2;;
+water;Q1662272;Vodná nádrž Starina;2;;
+water;Q10293969;Vodné dielo Žilina;2;;
+water;Q15630269;Vodná nádrž Hričov;2;;
+water;Q3366233;PVE Čierny Váh, horná nádrž;2;;
+water;Q835231;Nižné Temnosmrečinské pleso;2;;
+water;Q115171098;Chorvátske rameno;2;;
+water;Q265976;Popradské pleso;2;;
+water;Q112092716;Veľký Vindšachtský tajch;2;;
+water;Q12778732;Nosická priehrada;3;;
+water;Q12772628;Vodná nádrž Nová Bystrica;3;;
+water;Q12775591;vodná nádrž Ružiná;3;;
+water;Q11687873;Vodná nádrž Bešeňová;3;;
+water;Q16519990;vodná nádrž Málinec;3;;
+water;Q12778735;Vodná nádrž Teplý Vrch;3;;
+water;Q86687076;Vodná nádrž Bukovec;3;;
+water;Q1096740;Palcmanská Maša;3;;
+water;Q12769754;Vodná nádrž Krpeľany;3;;
+water;Q12776207;Slnečné jazerá;3;;
+water;Q3495657;Vodná nádrž Nitrianske Rudno;3;;
+water;Q10858023;Zelená voda;3;;
+water;Q12778737;vodná nádrž Môťová;3;;
+water;Q12778738;Vodná nádrž Tvrdošín;3;;
+water;Q12778734;Vodná nádrž Malá Lodina;3;;
+water;Q16519992;Turček;3;;
+water;Q9294451;vodná nádrž Hriňová;3;;
+water;Q5873521;Čiernovodské jazero;3;;
+water;Q12778733;Malá Domaša;3;;
+water;Q12778730;Vodná nádrž Duchonka;3;;
+water;Q3507369;Vyšné Temnosmrečinské pleso;3;;
+water;Q725076;Vyšné Wahlenbergovo pleso;3;;
+water;Q663056;Nižné Terianske pleso;3;;
+water;Q12042870;Vodná nádrž Horné Orešany;4;;
+water;Q11363868;Vodná nádrž Buková;4;;
+water;Q16519976;Vodná nádrž Mikšová;4;;
+water;Q113488975;Turniansky rybník;4;;
+water;Q20861276;Vodná nádrž Petrova Ves;4;;
+water;Q115181319;Kľúčovské rameno;4;;
+water;Q115251700;Starý Bodrog;4;;
+water;Q112748939;Číčovské mŕtve rameno;4;;
+water;Q137197586;Brzotínsky rybník;4;;
+water;Q25481984;Čerenec;4;;
+water;Q115182632;Komárňanské rameno;4;;
+water;Q392489;Štrbské pleso;1;;
+water;Q971706;Veľké Hincovo pleso;4;;
+water;Q12767029;Vodná nádrž Horná studená voda;4;;
+water;Q63993870;Jazero;4;;
+water;Q15249151;Vinianske jazero;4;;
+water;Q115197359;Stará Morava;4;;
+water;Q16520812;Rožkovianske rybníky;4;;
+water;Q82071152;Vodná nádrž Kuchyňa;4;;
+water;Q725087;Vyšné Žabie pleso Bielovodské;4;;
+water;Q37814024;Vodná stavba Trenčianske Teplice;4;;
+water;Q9396990;Šrek;4;;
+water;Q12776010;Sečovce;4;;
+water;Q12768803;Kalné jazero;4;;
+water;Q10422020;Štrkovecké jazero;4;;
+water;Q725064;Zelené Krivánske pleso;4;;
+water;Q725059;Nižné Žabie pleso Bielovodské;4;;
+water;Q12766677;Halčiansky tajch;4;;
+water;Q104704464;Senianske rybníky;5;;
+water;Q31927397;Zákruty;5;;
+water;Q11923268;vodní nádrž Mlýnky;5;;
+water;Q63677250;Kučišdorfská priehrada;5;;
+water;Q115171281;Išpánsky Dunaj;5;;
+water;Q82071316;Prvý rybník;5;;
+region;R100004;Banskobystrický kraj;1;;
+region;R100176;Prešovský kraj;1;;
+region;R100243;Žilinský kraj;1;;
+region;R100084;Košický kraj;1;;
+region;R100113;Nitriansky kraj;1;;
+region;R100214;Trenčiansky kraj;1;;
+region;R100218;Trnavský kraj;1;;
+region;R100017;Bratislavský kraj;1;;

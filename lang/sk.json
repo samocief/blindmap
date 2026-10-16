@@ -38,6 +38,7 @@
   "countries": "Štáty",
   "regions": "Kraje a regióny",
   "districts": "Okresy",
+  "plates": "EČV okresov",
   "cities": "Mestá",
   "rivers": "Rieky",
   "lakes": "Jazerá a vodné nádrže",
@@ -45,6 +46,7 @@
   "oceans": "Oceány",
   "mountains": "Pohoria",
   "peaks": "Vrchy",
+  "saddles": "Sedlá a priesmyky",
   "lowlands": "Nížiny a kotliny",
   "islands": "Ostrovy",
   "peninsulas": "Polostrovy",
@@ -57,6 +59,7 @@
   "countries": "Štát",
   "regions": "Kraj, región",
   "districts": "Okres",
+  "plates": "EČV okresu",
   "cities": "Mesto",
   "rivers": "Rieka",
   "lakes": "Jazero, vodná nádrž",
@@ -64,6 +67,7 @@
   "oceans": "Oceán",
   "mountains": "Pohorie",
   "peaks": "Vrch",
+  "saddles": "Sedlo, priesmyk",
   "lowlands": "Nížina, kotlina",
   "islands": "Ostrov",
   "peninsulas": "Polostrov",
@@ -80,6 +84,15 @@
   "relief": "Reliéf",
   "water": "Vodstvo",
   "bathymetry": "Hĺbky morí"
+ },
+ "theme": {
+  "water": "Vodstvo",
+  "relief": "Povrch",
+  "nature": "Ochrana prírody",
+  "people": "Obyvateľstvo",
+  "states": "Štáty",
+  "admin": "Administratívne členenie",
+  "other": "Ostatné"
  },
  "region": {
   "sk": "Slovensko",
@@ -376,7 +389,8 @@
   "pr_pupils": "Pre žiakov",
   "pr_dozor": "Pre dozor (žiakom neukazovať)",
   "need_script": "Táto funkcia potrebuje v tabuľke skript verzie 2.1.",
-  "layer_locked": "Tento typ sa práve hádá, preto nemôže byť na mape celý."
+  "layer_locked": "Tento typ sa práve hádá, preto nemôže byť na mape celý.",
+  "theme_toggle": "Zapnúť alebo vypnúť celú skupinu"
  },
  "c": {
   "title": "Precvičovanie slepej mapy",

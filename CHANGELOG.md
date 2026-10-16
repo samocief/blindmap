@@ -2,6 +2,19 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.2 (2026-10-17)
+
+Skript tabuľky sa nemení.
+
+**Dáta Slovenska**
+- Nové dáta z FME: rieky, vodné plochy, pohoria, nížiny a kotliny, vrchy, **sedlá a priesmyky** (nový typ), **jaskyne**, chránené územia, mestá, kraje a okresy. Nový reliéf, obrys SR a hranice krajov; susedné štáty sú prispôsobené novému obrysu.
+- Obtiažnosť je oddelená od geometrie: aplikácia ju berie z tabuľky `data/sk/difficulty.csv` podľa `id` (v teste aj v precvičovaní). Neskôr sa dá namiesto nej zadať odkaz na zverejnený Google Sheet.
+- **EČV okresov** ako samostatný typ: hľadá sa okres podľa EČV (napr. „EČV okresu: BJ“). Obtiažnosť 4 pre okresy s obtiažnosťou 1–2, 5 pre okresy s 3. V precvičovaní sa po tipe ukáže aj názov okresu.
+- Príprava dát je v skripte `source/sk_upload.py` (premenovanie súborov, opravy názvov riek a pohorí, úprava geometrie).
+
+**Vzhľad**
+- Typy objektov aj vrstvy „Čo bude na mape“ sú zoskupené do tém: vodstvo, povrch, ochrana prírody, obyvateľstvo, štáty, administratívne členenie. Ťuknutím na názov témy sa zapne alebo vypne celá skupina.
+
 ## 2.1.1 (2026-10-15)
 
 Skript tabuľky sa nemení.

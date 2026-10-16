@@ -3,13 +3,36 @@
     {
       "code": "sk",
       "bbox": [16.75, 47.65, 22.65, 49.7],
-      "objects": ["sk/regions.json", "sk/districts.json", "sk/cities.json", "sk/rivers.json", "sk/lakes.json", "sk/mountains.json", "sk/lowlands.json", "sk/parks.json"],
+      "difficulty": "sk/difficulty.csv",
+      "objects": [
+        "sk/rivers.json",
+        "sk/lakes.json",
+        "sk/mountains.json",
+        "sk/lowlands.json",
+        "sk/peaks.json",
+        "sk/saddles.json",
+        "sk/caves.json",
+        "sk/parks.json",
+        "sk/cities.json",
+        "sk/regions.json",
+        "sk/districts.json",
+        {"file": "sk/districts.json", "type": "plates", "nameField": "abbrev", "noteField": "name", "difficultyMap": {"1": 4, "2": 4, "3": 5, "4": 5, "5": 5}}
+      ],
       "base": ["sk/base_relief.png", "sk/base_land.json", "sk/base_surroundings.json", "sk/base_borders.json"]
     },
     {
       "code": "eu",
       "bbox": [-25.0, 34.0, 45.0, 71.5],
-      "objects": ["eu/countries.json", "eu/cities.json", "eu/rivers.json", "eu/lakes.json", "eu/seas.json", "eu/mountains.json", "eu/islands.json", "eu/peninsulas.json"],
+      "objects": [
+        "eu/countries.json",
+        "eu/cities.json",
+        "eu/rivers.json",
+        "eu/lakes.json",
+        "eu/seas.json",
+        "eu/mountains.json",
+        "eu/islands.json",
+        "eu/peninsulas.json"
+      ],
       "base": ["eu/base_land.json", "eu/base_surroundings.json"]
     }
   ]
