@@ -2,7 +2,7 @@
 
 Testovanie slepej mapy pre celú triedu. Žiaci naskenujú QR kód, na mobile ťukajú do mapy, kde leží zadané miesto, a aplikácia hodnotí odchýlku v kilometroch percentami. Keď učiteľ test uzavrie, každý žiak uvidí na svojej obrazovke mapu so svojimi tipmi a správnymi polohami.
 
-- **Aplikácia** (táto stránka a mapy) beží na GitHub Pages: `https://samocief.github.io/slepamapa/`
+- **Aplikácia** (táto stránka a mapy) beží na GitHub Pages: `https://samocief.github.io/blindmap/`
 - **Údaje triedy** (žiaci, testy, výsledky) má každý učiteľ vo svojej Google tabuľke. Malý skript v tabuľke je most medzi aplikáciou a tabuľkou. Aplikácia ani autor k týmto údajom nemajú prístup.
 
 ## Súbory
@@ -25,11 +25,11 @@ Ukážkové dáta v `data/` sú z Natural Earth (verejná doména) a slúžia na
 
 ## 1. Zverejnenie aplikácie (raz, autor)
 
-1. V **GitHub Desktop**: File → New repository, názov `slepamapa`, umiestnenie napr. `Dokumenty/GitHub`.
+1. V **GitHub Desktop**: File → New repository, názov `blindmap`, umiestnenie napr. `Dokumenty/GitHub`.
 2. Do vzniknutého priečinka skopíruj obsah tohto balíka (súbory `index.html`, `ucitel.html` a priečinky `js`, `css`, `lang`, `data`, `source`, `apps-script`).
 3. V GitHub Desktop napíš krátky popis zmeny, klikni **Commit to main** a potom **Publish repository**. Zruš zaškrtnutie „Keep this code private“ (GitHub Pages zadarmo funguje len pre verejný repozitár; údaje žiakov v ňom nie sú).
 4. Na github.com otvor repozitár → **Settings → Pages** → Source: *Deploy from a branch*, Branch: *main*, priečinok */ (root)* → **Save**.
-5. O minútu až dve je aplikácia na `https://samocief.github.io/slepamapa/`. Kontrola: `…/slepamapa/data/index.json` musí ukázať text.
+5. O minútu až dve je aplikácia na `https://samocief.github.io/blindmap/`. Kontrola: `…/blindmap/data/index.json` musí ukázať text.
 
 Každá ďalšia zmena (nové dáta z FME, oprava textu) = **Commit** a **Push origin** v GitHub Desktop. Na stránke sa prejaví do pár minút.
 
@@ -44,7 +44,7 @@ Každá ďalšia zmena (nové dáta z FME, oprava textu) = **Commit** a **Push o
    - Kto má prístup: **Ktokoľvek** (žiaci sa neprihlasujú účtom Google)
    - **Nasadiť** a povoľ prístup. Google ukáže varovanie o neoverenej aplikácii: Rozšírené → Prejsť na… (nebezpečné). Skript pristupuje len k tejto tabuľke a k Disku (ukladanie obrázkov).
 4. Obnov tabuľku. V ponuke **Slepá mapa → Otvoriť aplikáciu učiteľa**. Pri prvom otvorení sa skript môže opýtať na adresu webovej aplikácie: nájdeš ju v editore skriptu cez Nasadiť → Spravovať nasadenia (končí na `/exec`).
-5. Otvorí sa okno s odkazom a QR kódom. Na počítači klikni na odkaz, na telefóne naskenuj kód. Aplikácia si tabuľku zapamätá, nabudúce stačí otvoriť `https://samocief.github.io/slepamapa/ucitel.html`.
+5. Otvorí sa okno s odkazom a QR kódom. Na počítači klikni na odkaz, na telefóne naskenuj kód. Aplikácia si tabuľku zapamätá, nabudúce stačí otvoriť `https://samocief.github.io/blindmap/ucitel.html`.
 
 Odkaz aj QR kód z tohto okna sú kľúčom k tabuľke. Žiakom ich neukazuj.
 
@@ -101,7 +101,7 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 ## 4. Precvičovanie
 
-`https://samocief.github.io/slepamapa/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
+`https://samocief.github.io/blindmap/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
 Typy objektov aj vrstvy sú zoskupené do tém (vodstvo, povrch, ochrana prírody, obyvateľstvo, štáty, administratívne členenie); ťuknutím na názov témy sa zapne alebo vypne celá skupina. Pri Slovensku sa dajú precvičovať aj EČV okresov: zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
 

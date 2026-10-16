@@ -184,6 +184,6 @@ Vyberá sa sama podľa výrezu: malé územie valcová so stredovou rovnobežkou
 
 ## Kontrola po nahratí
 
-1. Otvor `https://samocief.github.io/slepamapa/data/index.json`, musí sa zobraziť text.
+1. Otvor `https://samocief.github.io/blindmap/data/index.json`, musí sa zobraziť text.
 2. V aplikácii učiteľa vyber oblasť: pri typoch objektov sa ukážu počty.
 3. Ak sa niektorá vrstva nenačíta, aplikácia napíše jej názov nad formulárom.

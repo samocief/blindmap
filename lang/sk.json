@@ -202,7 +202,7 @@
   "connect_1": "Otvor svoju tabuľku Slepej mapy v Google Tabuľkách na počítači.",
   "connect_2": "V ponuke zvoľ <b>Slepá mapa → Otvoriť aplikáciu učiteľa</b>.",
   "connect_3": "Klikni na odkaz, alebo na telefóne naskenuj QR kód. Aplikácia si tabuľku zapamätá.",
-  "connect_help": "Ešte tabuľku nemáš? Návod na prvé nastavenie je v <a href=\"https://github.com/samocief/slepamapa#readme\" target=\"_blank\" rel=\"noopener\">popise aplikácie</a>.",
+  "connect_help": "Ešte tabuľku nemáš? Návod na prvé nastavenie je v <a href=\"https://github.com/samocief/blindmap#readme\" target=\"_blank\" rel=\"noopener\">popise aplikácie</a>.",
   "connect_auth": "Tabuľka nepozná tento kľúč. Otvor aplikáciu znova z ponuky v tabuľke.",
   "no_index": "Nepodarilo sa načítať zoznam máp (data/index.json).",
   "old_script": "Skript v tvojej tabuľke je verzia {v}. Vlož do tabuľky nový Code.gs a nasaď novú verziu.",

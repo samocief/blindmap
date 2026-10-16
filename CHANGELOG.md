@@ -4,7 +4,7 @@ Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `
 
 ## 2.2 (2026-10-17)
 
-Skript tabuľky sa nemení.
+**Nová adresa aplikácie:** repozitár sa premenoval na `blindmap`, aplikácia je na `https://samocief.github.io/blindmap/`. Stará adresa `…/slepamapa/` už nefunguje (ani staré odkazy a QR kódy). V skripte tabuľky sa zmenila len adresa (`APP_URL`): v tabuľke ju prepíš alebo vlož nový `Code.gs` a nasaď novú verziu (Deploy → Manage deployments → Edit → New version), inak menu tabuľky otvára starú adresu.
 
 **Dáta Slovenska**
 - Nové dáta z FME: rieky, vodné plochy, pohoria, nížiny a kotliny, vrchy, **sedlá a priesmyky** (nový typ), **jaskyne**, chránené územia, mestá, kraje a okresy. Nový reliéf, obrys SR a hranice krajov; susedné štáty sú prispôsobené novému obrysu.

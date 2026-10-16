@@ -8,7 +8,7 @@
  * Po úprave kódu: Nasadiť > Spravovať nasadenia > ceruzka > Verzia: Nová verzia > Nasadiť (adresa ostane rovnaká).
  */
 const VERSION = '2.1';
-const APP_URL = 'https://samocief.github.io/slepamapa/';
+const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
 const PUPIL_HEAD = ['Trieda', 'Meno', 'Aktívny'];
