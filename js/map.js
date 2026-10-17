@@ -1,7 +1,7 @@
 /* Slepá mapa: zobrazenie mapy (projekcia, podkladové vrstvy, rastre, posun a priblíženie, obrázok s tipmi). */
 
 /* ---------- farby ---------- */
-var PAL_LIGHT = { sea: '#dbe4e5', land: '#f5f7ea', landO: '#e6ebe2', border: '#3f5148', coast: '#8a9a93', water: '#4f8fb5', adm: '#8f9c95', city: '#5a5148', custom: '#8b5a2b', kraj: '#d01f2b', okres: '#141414', celky: '#6b3f1d', park: '#1d7a35', tip: '#b3206b', ok: '#0d7a5f', ink: '#18262a', halo: '#ffffff', muted: '#56666a' };
+var PAL_LIGHT = { sea: '#dbe4e5', land: '#f5f7ea', landO: '#e6ebe2', border: '#3f5148', coast: '#8a9a93', water: '#4f8fb5', adm: '#8f9c95', city: '#c4161c', custom: '#8b5a2b', kraj: '#d01f2b', okres: '#141414', celky: '#6b3f1d', park: '#1d7a35', tip: '#b3206b', ok: '#0d7a5f', ink: '#18262a', halo: '#ffffff', muted: '#56666a' };
 function cssPal() {
   var cs = getComputedStyle(document.documentElement), L = PAL_LIGHT;
   var g = function (n, d) { var v = cs.getPropertyValue(n).trim(); return v || d; };
@@ -172,7 +172,8 @@ function drawScene(scene, pal, u, noRaster) {
       default:
         s += path(P, 'fill="' + pal.custom + '" fill-opacity="0.08" stroke="' + pal.custom + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.custom + '" ' + SW(1.2, u));
     }
-    if (D) s += path(D, 'fill="none" stroke="' + (L.style === 'water' ? pal.water : L.style === 'dots' ? pal.city : pal.custom) + '" ' + SW(5, u));
+    // body (mestá): farebná bodka s bielym lemom, aby bola vidieť aj na reliéfe
+    if (D) s += path(D, 'fill="none" stroke="' + (hasR ? '#ffffff' : pal.halo) + '" ' + SW(8, u)) + path(D, 'fill="none" stroke="' + (L.style === 'water' ? pal.water : L.style === 'dots' ? pal.city : pal.custom) + '" ' + SW(5.5, u));
   });
   return s;
 }

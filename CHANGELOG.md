@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.6.1 (2026-10-17)
+
+- Mestá na mape sú červené bodky s bielym lemom, aby boli vidieť aj na reliéfe.
+
 ## 2.6 (2026-10-17)
 
 - Skupiny typov majú ikonu (vlnky pre vodstvo, kopec pre povrch, list pre chránené územia, budovy pre mestá, mapa pre administratívne členenie). Vrstvy majú vzorku čiary vo farbe, akou sa kreslia na mape, takže ponuka slúži aj ako legenda.

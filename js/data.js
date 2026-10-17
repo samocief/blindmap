@@ -39,7 +39,7 @@ var LAYER_SWATCH = {
   landforms: '<path d="M2 14 8 3l5 6 3-3 8 8z" style="stroke:var(--celky);stroke-width:2"/>',
   parks: '<rect x="2" y="2.5" width="22" height="11" rx="3" style="fill:var(--park);fill-opacity:.22;stroke:var(--park);stroke-width:2"/>',
   water: '<path d="M1 10c3-5 6 4 9 0s6 4 9 0c2-2.5 4-1.5 6-1" style="stroke:var(--water);stroke-width:2.4"/>',
-  cities: '<circle cx="5" cy="10" r="2.6" style="fill:var(--city)"/><circle cx="13" cy="5" r="2.6" style="fill:var(--city)"/><circle cx="21" cy="11" r="2.6" style="fill:var(--city)"/>',
+  cities: '<circle cx="5" cy="10" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/><circle cx="13" cy="5" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/><circle cx="21" cy="11" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/>',
   countries: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--border);stroke-width:1.8"/>',
   regions: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--kraj);stroke-width:2.6"/>',
   districts: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--okres);stroke-width:1.5"/>'

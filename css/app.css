@@ -1,7 +1,7 @@
 /* Slepá mapa: vzhľad stránky žiaka aj učiteľa. Najprv mobil na výšku, väčšie obrazovky dostanú viac miesta. */
 :root{
   --bg:#eef2ee; --panel:#ffffff; --ink:#18262a; --muted:#56666a; --line:#c9d3cd;
-  --map-bg:#dbe4e5; --land:#f5f7ea; --land-o:#e6ebe2; --border:#3f5148; --nb:#8a9a93; --adm:#8f9c95; --water:#4f8fb5; --city:#5a5148; --custom:#8b5a2b;
+  --map-bg:#dbe4e5; --land:#f5f7ea; --land-o:#e6ebe2; --border:#3f5148; --nb:#8a9a93; --adm:#8f9c95; --water:#4f8fb5; --city:#c4161c; --custom:#8b5a2b;
   --kraj:#d01f2b; --okres:#141414; --celky:#6b3f1d; --park:#1d7a35;
   --tip:#b3206b; --ok:#0d7a5f; --accent:#1c4f8a; --on-accent:#ffffff; --warn:#a2420b; --warn-bg:#fbe9dc; --ok-bg:#e1f2ec;
   --font:"Atkinson Hyperlegible Next",system-ui,"Segoe UI",Roboto,sans-serif;
@@ -9,7 +9,7 @@
 }
 @media (prefers-color-scheme: dark){ :root{
   --bg:#121a1c; --panel:#1a2528; --ink:#e6eeec; --muted:#9db0ae; --line:#2f3f42;
-  --map-bg:#0e1618; --land:#27362f; --land-o:#1b2725; --border:#a9c0b3; --nb:#5f7376; --adm:#6d8285; --water:#5aa3cf; --city:#cfc6b8; --custom:#d39a5c;
+  --map-bg:#0e1618; --land:#27362f; --land-o:#1b2725; --border:#a9c0b3; --nb:#5f7376; --adm:#6d8285; --water:#5aa3cf; --city:#ff6b6b; --custom:#d39a5c;
   --kraj:#ff5c63; --okres:#e6eeec; --celky:#c99263; --park:#4cc46a;
   --tip:#ff74b4; --ok:#45d3a9; --accent:#74aef2; --on-accent:#0c1a2a; --warn:#f0a36b; --warn-bg:#3a2516; --ok-bg:#12302a; color-scheme:dark } }
 *{box-sizing:border-box}
