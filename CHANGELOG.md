@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.10.1 (2026-10-17)
+
+- Precvičovanie: bez veľkého rámika okolo celého formulára. Hore je Oblasť a pod ňou tri skupiny v rámikoch (Typy objektov, Nastavenie kola, Viditeľné vrstvy).
+- Stránka sa na telefóne už nedá posúvať do strany: dlhý čip (napr. Administratívne členenie pri väčšom písme) sa radšej zalomí do dvoch riadkov.
+
 ## 2.10 (2026-10-17)
 
 - **Skupiny vo formulári:** Typy objektov, Viditeľné vrstvy a nová skupina Nastavenie kola (v aplikácii učiteľa Nastavenie testu: obtiažnosť, počet objektov, čas na tip) majú jemný rámik a väčší nadpis v jeho hornej čiare. Rovnako v precvičovaní aj v aplikácii učiteľa.
