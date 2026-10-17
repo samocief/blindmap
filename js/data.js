@@ -219,7 +219,7 @@ var Data = {
 
   index: function () {
     if (!Data._idx) {
-      Data._idx = Data.fetchJson('index.json').then(function (j) {
+      Data._idx = Data.fetchJson('index.json?v=' + APP.version).then(function (j) {
         Data.statsUrl = /^https:\/\/script\.google\.com\//.test(j.stats || '') ? j.stats : '';   // anonymná štatistika precvičovania
         var list = Array.isArray(j.regions) ? j.regions : Object.keys(j.regions || {}).map(function (k) { return Object.assign({ code: k }, j.regions[k]); });
         return list.map(function (r) {

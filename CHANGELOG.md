@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.8.2 (2026-10-17)
+
+- Štatistika precvičovania je zapnutá: adresa skriptu tabuľky „Slepá mapa – štatistika precvičovania“ je v `data/index.json`. Zoznam `index.json` sa načíta s číslom verzie, aby zmena hneď platila aj v telefónoch.
+
 ## 2.8.1 (2026-10-17)
 
 - Predvolená obtiažnosť je 1–2 (precvičovanie aj nový test). Keď si ju človek pri precvičovaní posunie, zapamätá sa. Odkaz s obtiažnosťou (`&d=`) má vždy prednosť.
