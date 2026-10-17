@@ -22,6 +22,30 @@ var TYPE_ORDER = ['rivers', 'lakes', 'seas', 'oceans', 'mountains', 'lowlands', 
 var TYPE_THEME = { rivers: 'water', lakes: 'water', seas: 'water', oceans: 'water', mountains: 'relief', lowlands: 'relief', peaks: 'relief', saddles: 'relief', caves: 'relief',
   islands: 'relief', peninsulas: 'relief', deserts: 'relief', parks: 'nature', cities: 'people', countries: 'states', regions: 'admin', districts: 'admin', plates: 'admin' };
 function themeOfType(type) { return TYPE_THEME[type] || 'other'; }
+// Ikony skupín typov (čiara v farbe textu) a vzorky vrstiev v ich farbe na mape (slúžia aj ako legenda).
+var SVG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+var THEME_ICONS = {
+  water: '<path d="M2 9c2.5-2.5 4.5-2.5 7 0s4.5 2.5 7 0 4.5-2.5 6 0"/><path d="M2 15c2.5-2.5 4.5-2.5 7 0s4.5 2.5 7 0 4.5-2.5 6 0"/>',
+  relief: '<path d="M2 20 9 6l4 7 2.5-3.5L22 20z"/>',
+  nature: '<path d="M5 20c-1-9 5-15 15-15 0 10-5 15-14 15"/><path d="M5 20 14 11"/>',
+  people: '<path d="M3 21V10l5-3v14"/><path d="M8 21V4h8v17"/><path d="M16 21v-9h5v9"/><path d="M2 21h20"/><path d="M11 8h2M11 12h2M11 16h2"/>',
+  states: '<path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/>',
+  admin: '<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/>',
+  other: '<circle cx="12" cy="12" r="4"/>'
+};
+var SVG_SW = '<svg viewBox="0 0 26 16" fill="none" stroke-linecap="round" stroke-linejoin="round">';
+var LAYER_SWATCH = {
+  relief: '<path d="M1 15 9 3l5 7 3-3 8 8z" style="fill:#7a7a7a"/><path d="M9 3l5 7 3-3 8 8H13z" style="fill:#c2c2c2"/>',
+  landforms: '<path d="M2 14 8 3l5 6 3-3 8 8z" style="stroke:var(--celky);stroke-width:2"/>',
+  parks: '<rect x="2" y="2.5" width="22" height="11" rx="3" style="fill:var(--park);fill-opacity:.22;stroke:var(--park);stroke-width:2"/>',
+  water: '<path d="M1 10c3-5 6 4 9 0s6 4 9 0c2-2.5 4-1.5 6-1" style="stroke:var(--water);stroke-width:2.4"/>',
+  cities: '<circle cx="5" cy="10" r="2.6" style="fill:var(--city)"/><circle cx="13" cy="5" r="2.6" style="fill:var(--city)"/><circle cx="21" cy="11" r="2.6" style="fill:var(--city)"/>',
+  countries: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--border);stroke-width:1.8"/>',
+  regions: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--kraj);stroke-width:2.6"/>',
+  districts: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--okres);stroke-width:1.5"/>'
+};
+function themeIcon(th) { return SVG_ICO + (THEME_ICONS[th] || THEME_ICONS.other) + '</svg>'; }
+function layerSwatch(key) { return LAYER_SWATCH[key] ? SVG_SW + LAYER_SWATCH[key] + '</svg>' : ''; }
 function themeLabel(th) { return has('theme.' + th) ? t('theme.' + th) : th; }
 function sortTypes(types) {
   return types.slice().sort(function (a, b) {
@@ -36,7 +60,7 @@ function themeItems(counts) {
     var mine = types.filter(function (x) { return themeOfType(x) === th; });
     if (!mine.length) return null;
     var n = mine.reduce(function (s, x) { return s + counts[x]; }, 0);
-    return { value: th, label: (th === 'other' ? mine.map(typeLabel).join(', ') : themeLabel(th)) + ' (' + n + ')', type: mine.join(' ') };
+    return { value: th, label: (th === 'other' ? mine.map(typeLabel).join(', ') : themeLabel(th)) + ' (' + n + ')', type: mine.join(' '), icon: themeIcon(th) };
   }).filter(Boolean);
 }
 // Zoznam tém alebo typov (z odkazu, z pamäte) -> typy. Téma znamená všetky jej typy.
@@ -266,13 +290,13 @@ function layerItems(regions, codes) {
     r.base.forEach(function (b) {
       var st = layerStyle(b.name, b.raster);
       if (st === 'land' || st === 'surroundings') return;
-      items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: st === 'raster' });
+      items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: st === 'raster', swatch: layerSwatch(st === 'raster' ? 'relief' : st === 'borders' ? 'regions' : st) });
     });
     LAYER_GROUPS.forEach(function (g) {
       var files = uniq(r.objects.filter(function (o) { return g.types.indexOf(o.type) >= 0; }).map(function (o) { return o.file; }));
       if (!files.length) return;
       var types = uniq(r.objects.filter(function (o) { return files.indexOf(o.file) >= 0; }).map(function (o) { return o.type; }));
-      items.push({ value: files.join('|'), label: pre + t('layergroup.' + g.key), def: false, type: types.join(' ') });
+      items.push({ value: files.join('|'), label: pre + t('layergroup.' + g.key), def: false, type: types.join(' '), swatch: layerSwatch(g.key) });
     });
   });
   return items;
@@ -285,7 +309,8 @@ function renderChips(box, items, checked, onchange) {
   items.forEach(function (it, i) {
     var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
     inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
-    box.appendChild(el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]));
+    var pic = it.icon ? el('span', { class: 'ico', 'aria-hidden': 'true', html: it.icon }) : it.swatch ? el('span', { class: 'sw', 'aria-hidden': 'true', html: it.swatch }) : null;
+    box.appendChild(el('label', { class: 'chip', for: id }, [inp, pic, el('span', { text: it.label })]));
   });
 }
 // Test: typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne (precvičovanie to nepoužíva).
