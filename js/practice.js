@@ -25,9 +25,9 @@ async function practiceStart() {
   if (param('s') !== '') S.time = +param('s');
   if (param('l')) C.linkBase = list(param('l'));
   cSave(S);
-  ['c-dmin', 'c-dmax'].forEach(function (id) { var s = $(id); for (var i = 1; i <= 5; i++) s.appendChild(el('option', { value: String(i), text: String(i) })); });
   [0, 10, 15, 20, 30, 60].forEach(function (x) { $('c-time').appendChild(el('option', { value: String(x), text: x ? t('c.time_s', { n: x }) : t('c.time_none') })); });
   $('c-dmin').value = String(S.dmin || 1); $('c-dmax').value = String(S.dmax || 5);
+  diffSlider($('c-diff'), $('c-dmin'), $('c-dmax'));
   $('c-n').value = S.n || 10; $('c-time').value = String([0, 10, 15, 20, 30, 60].indexOf(S.time) >= 0 ? S.time : 20);
   regionSelect($('c-region'), C.regions, (S.regions || [])[0], cRegions);
   $('c-dmin').onchange = $('c-dmax').onchange = $('c-n').oninput = $('c-time').onchange = function () { cSave(cForm()); cPoolInfo(); };

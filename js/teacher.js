@@ -93,8 +93,8 @@ function tForm() {
   sel.onchange = function () { sel.classList.remove('invalid'); tStatus('start-msg', ''); };
   $('f-title').oninput = function () { $('f-title').classList.remove('invalid'); tStatus('start-msg', ''); };
   tListToggle(false);
-  ['f-dmin', 'f-dmax'].forEach(function (id) { var s = $(id); s.innerHTML = ''; for (var d = 1; d <= 5; d++) s.appendChild(el('option', { value: String(d), text: String(d) })); });
   $('f-dmin').value = String(F.dmin || 1); $('f-dmax').value = String(F.dmax || 5);
+  diffSlider($('f-diff'), $('f-dmin'), $('f-dmax'));
   $('f-n').value = F.n || 10; $('f-time').value = F.time || 20; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
   regionSelect($('f-region'), T.regions, (F.regions || [])[0], tRegionsChanged);
   $('f-dmin').onchange = $('f-dmax').onchange = function () { saveForm({ dmin: +$('f-dmin').value, dmax: +$('f-dmax').value }); tFilter(); };

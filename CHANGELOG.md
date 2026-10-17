@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.7 (2026-10-17)
+
+- Obtiažnosť sa nastavuje jedným posuvníkom s dvoma bežcami (od–do) namiesto dvoch rozbaľovacích zoznamov, v precvičovaní aj pri tvorbe testu. Bežec sa dá ťahať, ťuknutím na číslo sa presunie bližší bežec a funguje aj klávesnica (šípky, Home, End).
+
 ## 2.6.1 (2026-10-17)
 
 - Mestá na mape sú červené bodky s bielym lemom, aby boli vidieť aj na reliéfe.

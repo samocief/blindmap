@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.6.1', dataUrl: 'data/' };
+var APP = { version: '2.7', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }
@@ -80,6 +80,77 @@ function taskText(o) { return t('common.task', { type: typeOne(o.type), name: o.
 function regionLabel(code, names) {
   if (names && typeof names === 'object') { if (names[I18N.lang]) return names[I18N.lang]; if (names.sk) return names.sk; }
   return has('region.' + code) ? t('region.' + code) : String(code).toUpperCase();
+}
+
+/* ---------- posuvník obtiažnosti ---------- */
+// Jeden posuvník 1–5 s dvoma bežcami (od, do). Hodnoty drží v skrytých poliach lo a hi a pri každej zmene na nich vyvolá „change“,
+// takže zvyšok stránky ich číta ako predtým. Opakované volanie len prevezme hodnoty z polí.
+function diffSlider(box, lo, hi) {
+  var MIN = 1, MAX = 5;
+  function num(x, d) { x = parseInt(x, 10); return isNaN(x) ? d : Math.max(MIN, Math.min(MAX, x)); }
+  if (box._ds) { box._ds.sync(); return box._ds; }
+  var v = [MIN, MAX], inputs = [lo, hi], keys = ['t.diff_from', 't.diff_to'];
+  var val = el('b', { class: 'ds-val' }), fill = el('div', { class: 'ds-fill' });
+  var thumbs = [0, 1].map(function (i) {
+    return el('span', { class: 'ds-thumb', role: 'slider', tabindex: '0', 'aria-label': t(keys[i]), 'aria-valuemin': String(MIN), 'aria-valuemax': String(MAX) });
+  });
+  var ticks = [];
+  for (var k = MIN; k <= MAX; k++) ticks.push(el('span', { text: String(k), style: 'left:' + pos(k) + '%' }));
+  var body = el('div', { class: 'ds-body' }, [el('div', { class: 'ds-track' }, [fill])].concat(thumbs, [el('div', { class: 'ds-ticks', 'aria-hidden': 'true' }, ticks)]));
+  box.insertBefore(el('div', { class: 'ds-head' }, [el('span', { text: t('t.diff') }), val]), box.firstChild);
+  box.insertBefore(body, val.parentNode.nextSibling);
+
+  function pos(x) { return (x - MIN) / (MAX - MIN) * 100; }
+  function render() {
+    val.textContent = v[0] === v[1] ? String(v[0]) : v[0] + '–' + v[1];
+    fill.style.left = pos(v[0]) + '%'; fill.style.width = (pos(v[1]) - pos(v[0])) + '%';
+    ticks.forEach(function (s, j) { s.classList.toggle('on', j + MIN >= v[0] && j + MIN <= v[1]); });
+    thumbs.forEach(function (th, i) {
+      th.style.left = pos(v[i]) + '%'; th.setAttribute('aria-valuenow', String(v[i]));
+      th.setAttribute('aria-valuetext', t(keys[i]) + ' ' + v[i]);
+    });
+    // pri zhode sú bežce na sebe: navrchu ten, ktorý sa ešte môže pohnúť
+    thumbs[0].style.zIndex = v[0] === v[1] && v[0] === MAX ? 3 : 2;
+  }
+  function set(i, x) {
+    x = Math.max(i ? v[0] : MIN, Math.min(i ? MAX : v[1], x));
+    if (x === v[i]) return;
+    v[i] = x; inputs[i].value = String(x); render();
+    inputs[i].dispatchEvent(new Event('change'));
+  }
+  function sync() {
+    var a = num(lo.value, MIN), b = num(hi.value, MAX);
+    v = [Math.min(a, b), Math.max(a, b)]; lo.value = String(v[0]); hi.value = String(v[1]); render();
+  }
+  thumbs.forEach(function (th, i) {
+    th.onkeydown = function (e) {
+      var d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -1, PageUp: 1 }[e.key];
+      if (e.key === 'Home') set(i, MIN); else if (e.key === 'End') set(i, MAX); else if (d) set(i, v[i] + d); else return;
+      e.preventDefault();
+    };
+  });
+  // Ťahanie a ťuknutie (aj na číslo pod čiarou): pohne bližším bežcom. Ak sú na sebe, rozhodne smer prvého pohybu.
+  var drag = null;
+  function at(e) { var r = body.getBoundingClientRect(); return MIN + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (MAX - MIN); }
+  body.onpointerdown = function (e) {
+    if (e.button > 0) return;
+    var p = at(e), x = Math.round(p), i;
+    if (v[0] === v[1]) i = x < v[0] ? 0 : x > v[1] ? 1 : -1;
+    else i = Math.abs(p - v[0]) < Math.abs(p - v[1]) ? 0 : Math.abs(p - v[0]) > Math.abs(p - v[1]) ? 1 : (p < v[0] ? 0 : 1);
+    drag = { i: i, id: e.pointerId };
+    try { body.setPointerCapture(e.pointerId); } catch (err) { /* staršie prehliadače */ }
+    if (i >= 0) { set(i, x); thumbs[i].classList.add('act'); }
+  };
+  body.onpointermove = function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var x = Math.round(at(e));
+    if (drag.i < 0) { if (x < v[0]) drag.i = 0; else if (x > v[1]) drag.i = 1; else return; thumbs[drag.i].classList.add('act'); }
+    set(drag.i, x);
+  };
+  body.onpointerup = body.onpointercancel = function () { drag = null; thumbs.forEach(function (th) { th.classList.remove('act'); }); };
+  box._ds = { sync: sync };
+  sync();
+  return box._ds;
 }
 
 /* ---------- spojenie so skriptom tabuľky ---------- */

@@ -45,6 +45,20 @@ legend{font-weight:600;font-size:.9rem;padding:0;margin-bottom:6px}
 .chip .sw{display:inline-flex;width:26px;height:16px;flex:0 0 auto}
 .chip .ico svg,.chip .sw svg{width:100%;height:100%;display:block}
 .row > label:only-child{flex:0 1 340px}
+/* posuvník obtiažnosti od–do */
+.dslider{display:flex;flex-direction:column;gap:2px;max-width:420px}
+.ds-head{display:flex;align-items:baseline;gap:8px;font-weight:600;font-size:.9rem}
+.ds-val{font-size:1.05rem;color:var(--accent);font-variant-numeric:tabular-nums}
+.ds-body{position:relative;height:58px;margin:0 16px;cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.ds-track{position:absolute;left:0;right:0;top:19px;height:6px;border-radius:3px;background:var(--line)}
+.ds-fill{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--accent)}
+.ds-thumb{position:absolute;top:22px;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--panel);border:3px solid var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.25);z-index:2;transition:transform .12s}
+.ds-thumb::before{content:"";position:absolute;inset:-9px;border-radius:50%}
+.ds-thumb:focus{outline:none}
+.ds-thumb:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.ds-thumb.act{transform:scale(1.15);z-index:4}
+.ds-ticks span{position:absolute;top:36px;transform:translateX(-50%);min-width:24px;text-align:center;font-size:.95rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ds-ticks span.on{color:var(--ink);font-weight:700}
 .invalid{border-color:var(--warn)!important;box-shadow:0 0 0 2px var(--warn)}
 button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;cursor:pointer;min-height:44px;touch-action:manipulation}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
