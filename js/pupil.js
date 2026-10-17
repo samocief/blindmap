@@ -1,4 +1,4 @@
-/* Slepá mapa: stránka žiaka. Odkaz z QR kódu má tvar index.html?s=<skript učiteľa>&t=<test>. */
+/* Slepá mapa: stránka žiaka. Odkaz z QR kódu má tvar test.html?s=<skript učiteľa>&t=<test> (alebo ?s=…&t=… na úvodnej adrese, tá presmeruje). */
 var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, keys: null, S: null, view: null, pin: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, wait: null, rview: null, R: null, rsel: -1 };
 var AWAY_HIDDEN_MS = 1000, AWAY_BLUR_MS = 4000, POLL_MS = 8000;
 

@@ -38,10 +38,7 @@ legend{font-weight:600;font-size:.9rem;padding:0;margin-bottom:6px}
 .chip{flex:0 0 auto;flex-direction:row;align-items:center;gap:6px;font-weight:400;font-size:.95rem;border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--bg);cursor:pointer;min-height:40px}
 .chip:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
 .chip:has(input:disabled){opacity:.45;cursor:not-allowed;border-style:dashed}
-.chips.grouped{flex-direction:column;flex-wrap:nowrap;gap:12px}
-.chipgroup{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.grouphead{flex:0 0 100%;align-self:flex-start;border:0;background:none;padding:0;min-height:0;border-radius:4px;text-align:left;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-.grouphead:hover{color:var(--accent)}
+.row > label:only-child{flex:0 1 340px}
 .invalid{border-color:var(--warn)!important;box-shadow:0 0 0 2px var(--warn)}
 button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 16px;cursor:pointer;min-height:44px;touch-action:manipulation}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

@@ -77,6 +77,7 @@ function tTab(name) {
 
 /* ---------- formulár nového testu ---------- */
 function chips(box, items, checked, onchange) { renderChips(box, items, checked, onchange); }
+function tCodes() { return $('f-region').value ? [$('f-region').value] : []; }
 function chipVals(box) { return Array.prototype.slice.call(box.querySelectorAll('input:checked')).map(function (i) { return i.value; }); }
 function regionByCode(code) { return T.regions.filter(function (r) { return r.code === code; })[0]; }
 function tForm() {
@@ -95,8 +96,7 @@ function tForm() {
   ['f-dmin', 'f-dmax'].forEach(function (id) { var s = $(id); s.innerHTML = ''; for (var d = 1; d <= 5; d++) s.appendChild(el('option', { value: String(d), text: String(d) })); });
   $('f-dmin').value = String(F.dmin || 1); $('f-dmax').value = String(F.dmax || 5);
   $('f-n').value = F.n || 10; $('f-time').value = F.time || 20; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
-  var codes = T.regions.map(function (r) { return r.code; }), lastR = (F.regions || []).filter(function (c) { return codes.indexOf(c) >= 0; });
-  chips($('f-regions'), T.regions.map(function (r) { return { value: r.code, label: regionLabel(r.code, r.names) }; }), lastR.length ? lastR : codes.slice(0, 1), tRegionsChanged);
+  regionSelect($('f-region'), T.regions, (F.regions || [])[0], tRegionsChanged);
   $('f-dmin').onchange = $('f-dmax').onchange = function () { saveForm({ dmin: +$('f-dmin').value, dmax: +$('f-dmax').value }); tFilter(); };
   // Počet objektov: políčka sa prispôsobia už počas písania; prekresľujú sa len pri skutočnej zmene počtu.
   var nTimer = null;
@@ -111,7 +111,7 @@ function tForm() {
 
 // Zmena oblastí: načítajú sa objekty a ponuka vrstiev mapy.
 async function tRegionsChanged() {
-  var seq = ++T.loadSeq, codes = chipVals($('f-regions'));
+  var seq = ++T.loadSeq, codes = tCodes();
   saveForm({ regions: codes });
   tBaseChips(codes);
   $('pool-info').textContent = codes.length ? t('common.loading') : t('t.pick_region');
@@ -130,11 +130,9 @@ async function tRegionsChanged() {
   T.poolAll = all;
   // typy objektov
   var counts = {}; all.forEach(function (o) { counts[o.type] = (counts[o.type] || 0) + 1; });
-  var types = sortTypes(Object.keys(counts));
-  var F = form(), prev = F.types && F.types.some(function (x) { return counts[x]; }) ? F.types : types;
-  chips($('f-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')', theme: themeOfType(x) }; }), prev, function () { saveForm({ types: chipVals($('f-types')) }); tLockLayers(); tFilter(); tScene(); });
-  tLockLayers();
-  $('f-types-msg').textContent = types.length ? '' : t('t.no_objects'); $('f-types-msg').hidden = !!types.length;
+  var items = themeItems(counts), F = form(), prev = themesOf(items, F.types || []);
+  chips($('f-types'), items, prev.length ? prev : items.map(function (x) { return x.value; }), function () { saveForm({ types: checkedTypes($('f-types')) }); tFilter(); });
+  $('f-types-msg').textContent = items.length ? '' : t('t.no_objects'); $('f-types-msg').hidden = !!items.length;
   // výber z minulého razu ostane, ak sa ešte dá
   T.slots = T.slots.map(function (o) { return o && byId[o.id] ? byId[o.id] : null; });
   tFilter();
@@ -173,12 +171,13 @@ function tBBox(codes, noObjects) {
   return b && !noObjects && !codes.every(function (c) { var r = regionByCode(c); return r && r.bbox; }) ? bboxPad(b, 0.05) : b;
 }
 function tFilter() {
-  var types = chipVals($('f-types')), dmin = +$('f-dmin').value, dmax = +$('f-dmax').value;
+  var types = checkedTypes($('f-types')), dmin = +$('f-dmin').value, dmax = +$('f-dmax').value;
   if (dmin > dmax) { var x = dmin; dmin = dmax; dmax = x; }
   T.pool = T.poolAll.filter(function (o) { return types.indexOf(o.type) >= 0 && o.diff >= dmin && o.diff <= dmax; })
     .sort(function (a, b) { return a.name.localeCompare(b.name, I18N.lang); });
   var ok = {}; T.pool.forEach(function (o) { ok[o.id] = 1; });
   T.slots = T.slots.map(function (o) { return o && ok[o.id] ? o : null; });
+  tLockLayers(); tScene();
   tResize();
 }
 function tResize() {
@@ -225,7 +224,7 @@ function tSlots() {
   T.slots.forEach(function (o, i) { box.appendChild(slotRow(i)); });
   if (keep >= 0 && box.querySelectorAll('input')[keep]) box.querySelectorAll('input')[keep].focus();
   var filled = T.slots.filter(Boolean).length;
-  $('pool-info').textContent = !chipVals($('f-regions')).length ? t('t.pick_region')
+  $('pool-info').textContent = !tCodes().length ? t('t.pick_region')
     : t('t.pool_info', { n: T.pool.length, filled: filled, total: T.slots.length }) + (T.pool.length < T.slots.length ? ' ' + t('t.pool_short') : '');
   if (T.pview) T.pview.redraw();
 }
@@ -278,10 +277,11 @@ function tBaseChips(codes) {
   saveForm({ seen: uniq(seen.concat(vals)), base: uniq(on.filter(function (f) { return vals.indexOf(f) < 0; }).concat(checked)) });
   tLockLayers();
 }
-function tLockLayers() { lockLayers($('f-base'), chipVals($('f-types')), form().base); }
-function tBaseRefs() { return sceneRefs(T.regions, chipVals($('f-regions')), chipVals($('f-base'))); }
+// Vrstva typu, ktorý sa môže hádať (je v ponuke podľa skupiny a obtiažnosti), sa zošedí.
+function tLockLayers() { lockLayers($('f-base'), uniq(T.pool.map(function (o) { return o.type; })), form().base); }
+function tBaseRefs() { return sceneRefs(T.regions, tCodes(), chipVals($('f-base'))); }
 function tScene() {
-  var codes = chipVals($('f-regions')), bbox = tBBox(codes), refs = tBaseRefs();
+  var codes = tCodes(), bbox = tBBox(codes), refs = tBaseRefs();
   if (!bbox) { $('prev-msg').textContent = t('t.pick_region'); $('prev-map').innerHTML = ''; T.scene = null; T.pview = null; tScoringInfo(); return; }
   bbox = bbox.map(function (x) { return Math.round(x * 1000) / 1000; });
   var key = JSON.stringify([bbox, refs]); if (key === T.sceneKey) return;
@@ -326,7 +326,7 @@ async function tStart(state) {
   if (!(pz > pf && pf >= 0)) { tStatus('start-msg', t('t.scoring_bad'), 'bad'); return; }
   var tol = bboxSpan(sc.bbox) / 6000, dec = decFor(tol), objects = {};
   chosen.forEach(function (o) { objects[o.id] = { name: o.name, type: o.type, g: simpGeom(o.g, tol, dec) }; });
-  var codes = chipVals($('f-regions')), types = uniq(chosen.map(function (o) { return o.type; }));
+  var codes = tCodes(), types = uniq(chosen.map(function (o) { return o.type; }));
   var dmin = Math.min(+$('f-dmin').value, +$('f-dmax').value), dmax = Math.max(+$('f-dmin').value, +$('f-dmax').value);
   var cfg = {
     cls: open ? '' : clsSel, open: open, state: state, title: title,
@@ -398,10 +398,10 @@ function tPrint(x) {
 // Odkaz na precvičovanie s rovnakými filtrami ako formulár (oblasť, typy, obtiažnosť, počet, čas, vrstvy mapy). Bez tabuľky a bez mien.
 function tPractice() {
   var a = +$('f-dmin').value, b = +$('f-dmax').value, time = parseInt($('f-time').value, 10) || 0;
-  var q = 'r=' + chipVals($('f-regions')).join(',') + '&t=' + chipVals($('f-types')).join(',') + '&d=' + Math.min(a, b) + '-' + Math.max(a, b) +
+  var q = 'r=' + tCodes().join(',') + '&t=' + chipVals($('f-types')).join(',') + '&d=' + Math.min(a, b) + '-' + Math.max(a, b) +
     '&n=' + (parseInt($('f-n').value, 10) || 10) + '&s=' + ([10, 15, 20, 30, 60].indexOf(time) >= 0 ? time : 0) +
     '&l=' + chipVals($('f-base')).map(encodeURIComponent).join(',');
-  tQrShow(t('t.practice_title'), appBase() + 'cvicenie.html?' + q);
+  tQrShow(t('t.practice_title'), appBase() + '?' + q);
 }
 
 /* ---------- zoznam testov ---------- */

@@ -93,9 +93,9 @@ Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotn
 | `oceans` | oceány | `caves` | jaskyne |
 | `mountains` | pohoria | `other` | iné |
 
-Každý súbor objektov si učiteľ môže dať aj na mapu (napr. „všetky rieky“). Vodstvo sa kreslí modrou, mestá a vrchy ako bodky, štáty a kraje ako hranice, ostatné jemnou hnedou čiarou.
+V aplikácii sa typy vyberajú po skupinách: vodstvo (rieky, jazerá, moria, oceány), povrch (pohoria, nížiny, vrchy, sedlá, jaskyne, ostrovy, polostrovy, púšte), ochrana prírody, obyvateľstvo (mestá), štáty a administratívne členenie (kraje, okresy, EČV).
 
-V aplikácii sú typy zoskupené do tém: vodstvo (rieky, jazerá, moria, oceány), povrch (pohoria, nížiny, vrchy, sedlá, jaskyne, ostrovy, polostrovy, púšte), ochrana prírody, obyvateľstvo (mestá), štáty a administratívne členenie (kraje, okresy, EČV). Rovnako sú zoskupené aj vrstvy na mapu.
+**Viditeľné vrstvy** (čo môže byť na mape): reliéf (raster), povrchové celky (pohoria + nížiny), chránené územia, vodstvo (rieky + jazerá + moria), mestá, štáty, kraje, okresy. Ponúkne sa len to, čo oblasť má. Podkladové vrstvy `land` a `surroundings` sa kreslia vždy a v ponuke nie sú. Vrchy, sedlá a jaskyne sa ako vrstva neponúkajú. Vodstvo sa kreslí modrou, mestá ako bodky, kraje a okresy ako hranice, ostatné jemnou hnedou čiarou.
 
 ## Tabuľka obtiažností
 

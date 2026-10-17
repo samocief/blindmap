@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Slepá mapa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c4f8a'/%3E%3Cpath d='M7 22l6-12 5 8 3-4 4 8z' fill='%23f5f7ea'/%3E%3Ccircle cx='21' cy='9' r='3' fill='%23ff74b4'/%3E%3C/svg%3E">
+</head>
+<body>
+<main>
+  <div class="wrap" id="p-wrap">
+    <section id="p-load" data-screen="p"><p class="muted"><span class="spin"></span><span id="p-load-msg" data-i18n="common.loading">Načítavam…</span></p></section>
+
+    <section id="p-fail" data-screen="p" hidden>
+      <h1 data-i18n="app.title">Slepá mapa</h1>
+      <p id="p-fail-msg" class="alert"></p>
+      <p id="p-fail-practice" hidden><a class="button primary big" href="./" data-i18n="p.practice"></a></p>
+    </section>
+
+    <section id="p-wait" data-screen="p" hidden>
+      <h1 data-i18n="p.wait_title"></h1>
+      <p class="muted" id="p-wait-sub"></p>
+      <p class="note"><span class="spin"></span><span data-i18n="p.wait_text"></span></p>
+    </section>
+
+    <section id="p-pick" data-screen="p" hidden>
+      <h1 id="p-pick-title" data-i18n="p.who">Kto si?</h1>
+      <p class="muted" id="p-pick-cls"></p>
+      <p id="p-pick-err" class="alert" hidden></p>
+      <div id="p-names" class="names"></div>
+      <form id="p-ext" class="panel" hidden>
+        <label for="p-ext-name"><span data-i18n="p.name_label"></span><input id="p-ext-name" maxlength="40" autocomplete="name" autocapitalize="words" data-i18n-attr="placeholder:p.name_ph"></label>
+        <div><button class="primary big" type="submit" data-i18n="p.name_go"></button></div>
+      </form>
+    </section>
+
+    <section id="p-confirm" data-screen="p" hidden>
+      <h1 id="p-confirm-name"></h1>
+      <div class="panel">
+        <p data-i18n="p.confirm_text"></p>
+        <div class="row">
+          <button class="primary big" id="p-confirm-go" type="button" data-i18n="p.confirm_yes"></button>
+          <button id="p-confirm-back" type="button" data-i18n="p.confirm_back"></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-intro" data-screen="p" hidden>
+      <h1 id="p-intro-hello"></h1>
+      <div class="panel">
+        <p id="p-intro-n"></p>
+        <ul class="rules">
+          <li id="p-intro-time"></li>
+          <li data-i18n="p.rule_pin"></li>
+          <li data-i18n="p.rule_zoom"></li>
+          <li data-i18n="p.rule_score"></li>
+          <li id="p-intro-landscape" data-i18n="p.rule_landscape" hidden></li>
+        </ul>
+        <p class="alert" data-i18n="p.rule_leave"></p>
+        <div><button class="primary big" id="p-intro-go" type="button" disabled></button></div>
+      </div>
+    </section>
+
+    <section id="p-left" data-screen="p" hidden>
+      <h1 data-i18n="p.left_title"></h1>
+      <div class="panel">
+        <p class="alert" id="p-left-msg"></p>
+        <div><button class="primary big" id="p-left-go" type="button" data-i18n="p.left_go"></button></div>
+      </div>
+    </section>
+
+    <section id="p-end" data-screen="p" hidden>
+      <h1 id="p-end-title"></h1>
+      <p id="p-end-ended" class="alert" hidden data-i18n="p.ended"></p>
+      <div class="panel">
+        <div><span class="small muted" data-i18n="p.your_result"></span><div class="bigpct" id="p-end-pct"></div></div>
+        <p id="p-end-status" class="muted"></p>
+        <div><button id="p-end-retry" type="button" hidden data-i18n="p.retry"></button></div>
+      </div>
+      <p class="note" id="p-end-wait" hidden><span class="spin"></span><span data-i18n="p.wait_results"></span></p>
+    </section>
+
+    <section id="p-results" data-screen="p" class="results" hidden>
+      <div class="task">
+        <div><div class="kind" id="r-sub"></div><h1 id="r-title"></h1></div>
+        <div class="bigpct" id="r-pct"></div>
+      </div>
+      <div class="mapbox" id="r-mapbox"><svg id="r-map" class="map pan" role="img"></svg></div>
+      <div class="legend small muted">
+        <span><span class="dot" style="background:var(--tip)"></span><span data-i18n="map.legend_tip"></span></span>
+        <span><span class="dot" style="background:var(--ok)"></span><span data-i18n="map.legend_ok"></span></span>
+        <span data-i18n="p.tap_item"></span>
+      </div>
+      <ol class="reslist" id="r-list"></ol>
+      <div class="row"><button id="r-img" type="button" data-i18n="p.download_img"></button><p id="r-img-status" class="small muted" hidden></p></div>
+    </section>
+  </div>
+
+  <section id="p-game" data-screen="p" class="game" hidden>
+    <div class="hud">
+      <div class="task">
+        <div class="name" id="g-name"></div>
+        <div class="count"><b id="g-i"></b> / <span id="g-n"></span><br><span id="g-sec"></span></div>
+      </div>
+      <div class="bar" id="g-bar"><i></i></div>
+    </div>
+    <div class="mapbox" id="g-mapbox"><svg id="g-map" class="map" role="img"></svg></div>
+    <div class="foot">
+      <div class="verdict" id="g-msg"></div>
+      <button class="primary big" id="g-btn" type="button" disabled></button>
+    </div>
+  </section>
+</main>
+<div id="p-blur" class="cover" hidden><p class="alert" data-i18n="p.blur"></p></div>
+
+<script src="js/geo.js"></script>
+<script src="js/core.js"></script>
+<script src="js/data.js"></script>
+<script src="js/map.js"></script>
+<script src="js/pupil.js"></script>
+</body>
+</html>

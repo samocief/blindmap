@@ -9,8 +9,8 @@ Testovanie slepej mapy pre celú triedu. Žiaci naskenujú QR kód, na mobile ť
 
 | Súbor | Čo to je |
 |---|---|
-| `index.html` | stránka žiaka (otvára sa z QR kódu) |
-| `cvicenie.html` | precvičovanie pre kohokoľvek, bez tabuľky a bez mien |
+| `index.html` | precvičovanie pre kohokoľvek, bez tabuľky a bez mien (úvodná adresa aplikácie) |
+| `test.html` | stránka žiaka pri teste (otvára sa z QR kódu; odkaz `?s=…&t=…` na úvodnej adrese sem presmeruje) |
 | `ucitel.html` | stránka učiteľa |
 | `js/`, `css/` | kód a vzhľad |
 | `lang/sk.json` | všetky texty aplikácie; preklad = kópia súboru s iným kódom jazyka |
@@ -26,7 +26,7 @@ Ukážkové dáta v `data/` sú z Natural Earth (verejná doména) a slúžia na
 ## 1. Zverejnenie aplikácie (raz, autor)
 
 1. V **GitHub Desktop**: File → New repository, názov `blindmap`, umiestnenie napr. `Dokumenty/GitHub`.
-2. Do vzniknutého priečinka skopíruj obsah tohto balíka (súbory `index.html`, `ucitel.html` a priečinky `js`, `css`, `lang`, `data`, `source`, `apps-script`).
+2. Do vzniknutého priečinka skopíruj obsah tohto balíka (súbory `index.html`, `test.html`, `ucitel.html` a priečinky `js`, `css`, `lang`, `data`, `source`, `apps-script`).
 3. V GitHub Desktop napíš krátky popis zmeny, klikni **Commit to main** a potom **Publish repository**. Zruš zaškrtnutie „Keep this code private“ (GitHub Pages zadarmo funguje len pre verejný repozitár; údaje žiakov v ňom nie sú).
 4. Na github.com otvor repozitár → **Settings → Pages** → Source: *Deploy from a branch*, Branch: *main*, priečinok */ (root)* → **Save**.
 5. O minútu až dve je aplikácia na `https://samocief.github.io/blindmap/`. Kontrola: `…/blindmap/data/index.json` musí ukázať text.
@@ -79,7 +79,7 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 2. **Výber objektov:** zoznam je predvolene skrytý, aby ho žiaci nevideli na projektore. Otvoríš ho tlačidlom **Zobraziť zoznam**.
    - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Kockou pri objekte ho vymeníš za iný, písaním do políčka si ho vyberieš sám.
    - **Manuál** začne s prázdnymi políčkami. Píš názov (diakritika ani veľké písmená nevadia) a vyber z ponuky, ktorá obsahuje len objekty vyhovujúce filtrom.
-3. **Mapa a hodnotenie:** čo bude na mape (obrys, okolie, hranice, reliéf, prípadne všetky rieky…) a hranice percent v % uhlopriečky mapy. Typ, ktorý sa práve hádá, sa na mapu dať nedá (je zošedený). Náhľad ukazuje vybrané objekty len po zaškrtnutí.
+3. **Mapa a hodnotenie:** viditeľné vrstvy (reliéf, povrchové celky, chránené územia, vodstvo, mestá, kraje, okresy; obrys a okolité štáty sú na mape vždy) a hranice percent v % uhlopriečky mapy. Vrstva typu, ktorý sa v teste môže hádať, sa na mapu dať nedá (je zošedená). Náhľad ukazuje vybrané objekty len po zaškrtnutí.
 4. **Spustiť test** → QR kód. Alebo **Pripraviť na neskôr**: žiaci po naskenovaní čakajú, kým test spustíš ty alebo dozor (pozri nižšie).
 5. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie. Na konci zoznamu je **Učiteľ**, ak chceš hrať s triedou. Do priemeru sa nepočíta.
 6. Počas testu žiak po každom tipe vidí len odchýlku v km a percentá, nie správnu polohu. Odchod z aplikácie: prvýkrát 0 % za dané miesto, druhýkrát koniec testu.
@@ -101,11 +101,11 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 ## 4. Precvičovanie
 
-`https://samocief.github.io/blindmap/cvicenie.html` môže otvoriť ktokoľvek. Vyberie si oblasť, typy objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
+`https://samocief.github.io/blindmap` môže otvoriť ktokoľvek. Vyberie si oblasť (vždy jednu), skupiny objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
-Typy objektov aj vrstvy sú zoskupené do tém (vodstvo, povrch, ochrana prírody, obyvateľstvo, štáty, administratívne členenie); ťuknutím na názov témy sa zapne alebo vypne celá skupina. Pri Slovensku sa dajú precvičovať aj EČV okresov: zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
+Objekty sa vyberajú po skupinách (vodstvo, povrch, ochrana prírody, obyvateľstvo, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
 
-Rovnako ako učiteľ si vyberie, čo bude na mape (reliéf, hranice, všetky rieky…). Na rozdiel od testu si môže zapnúť aj typ, ktorý práve hádá, napríklad všetky rieky pri precvičovaní riek. Je to ľahší režim: nehľadá, kde rieka tečie, ale ktorá z nakreslených je tá správna. Predvolene je táto vrstva vypnutá.
+Rovnako ako učiteľ si vyberie viditeľné vrstvy (reliéf, vodstvo, kraje…). Na rozdiel od testu si môže zapnúť aj vrstvu, ktorú práve hádá, napríklad vodstvo pri precvičovaní riek. Je to ľahší režim: nehľadá, kde rieka tečie, ale ktorá z nakreslených je tá správna. Predvolene je táto vrstva vypnutá.
 
-V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára vrátane vrstiev mapy, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20&l=sk/base_land.json,sk/base_relief.png` (oblasť, typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu, súbory vrstiev mapy).
+V aplikácii učiteľa tlačidlo **Odkaz na precvičovanie** vytvorí odkaz a QR kód s nastavením z formulára vrátane vrstiev mapy, napríklad ako prípravu na test. Filtre sa dajú zadať aj priamo v adrese: `https://samocief.github.io/blindmap/?r=sk&t=water,relief&d=1-3&n=10&s=20&l=sk/base_relief.png` (oblasť, skupiny `water`, `relief`, `nature`, `people`, `states`, `admin` alebo typy, obtiažnosť od-do, počet, sekundy na tip, 0 = bez limitu, súbory vrstiev mapy).
 

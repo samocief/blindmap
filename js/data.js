@@ -16,26 +16,53 @@ var TYPE_ALIAS = {
   saddle: 'saddles', saddles: 'saddles', pass: 'saddles', passes: 'saddles', sedlo: 'saddles', sedla: 'saddles',
   plate: 'plates', plates: 'plates', ecv: 'plates'
 };
-// Témy, podľa ktorých sú zoskupené typy aj vrstvy na mape (poradie tém aj typov v nich).
+// Typy objektov sa v ponuke vyberajú po témach (skupinách); konkrétny typ sa zúži obtiažnosťou.
 var THEMES = ['water', 'relief', 'nature', 'people', 'states', 'admin', 'other'];
 var TYPE_ORDER = ['rivers', 'lakes', 'seas', 'oceans', 'mountains', 'lowlands', 'peaks', 'saddles', 'caves', 'islands', 'peninsulas', 'deserts', 'parks', 'cities', 'countries', 'regions', 'districts', 'plates'];
 var TYPE_THEME = { rivers: 'water', lakes: 'water', seas: 'water', oceans: 'water', mountains: 'relief', lowlands: 'relief', peaks: 'relief', saddles: 'relief', caves: 'relief',
   islands: 'relief', peninsulas: 'relief', deserts: 'relief', parks: 'nature', cities: 'people', countries: 'states', regions: 'admin', districts: 'admin', plates: 'admin' };
 function themeOfType(type) { return TYPE_THEME[type] || 'other'; }
-// Podkladová vrstva podľa názvu (časť za base_): reliéf k povrchu, obrys a okolie k štátom, hranice k členeniu.
-function themeOfLayer(name, raster) {
-  var n = normName(name);
-  if (raster || /relief|hillshade|bathy|hlbk|vysk/.test(n)) return 'relief';
-  if (/^(land|outline|obrys|uzemie)$|surround|okolie|neighbo|susedia|countr|staty/.test(n)) return 'states';
-  if (/border|hranic/.test(n)) return 'admin';
-  if (/water|vod/.test(n)) return 'water';
-  return 'other';
-}
+function themeLabel(th) { return has('theme.' + th) ? t('theme.' + th) : th; }
 function sortTypes(types) {
   return types.slice().sort(function (a, b) {
     var i = TYPE_ORDER.indexOf(a), j = TYPE_ORDER.indexOf(b);
     return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || typeLabel(a).localeCompare(typeLabel(b), I18N.lang);
   });
+}
+// Ponuka typov: jedna položka na tému, value = téma, type = jej typy oddelené medzerou. counts = {typ: počet objektov}.
+function themeItems(counts) {
+  var types = sortTypes(Object.keys(counts));
+  return THEMES.map(function (th) {
+    var mine = types.filter(function (x) { return themeOfType(x) === th; });
+    if (!mine.length) return null;
+    var n = mine.reduce(function (s, x) { return s + counts[x]; }, 0);
+    return { value: th, label: (th === 'other' ? mine.map(typeLabel).join(', ') : themeLabel(th)) + ' (' + n + ')', type: mine.join(' ') };
+  }).filter(Boolean);
+}
+// Zoznam tém alebo typov (z odkazu, z pamäte) -> typy. Téma znamená všetky jej typy.
+function expandTypes(list) {
+  var out = [];
+  (list || []).forEach(function (x) {
+    if (THEMES.indexOf(x) >= 0) Object.keys(TYPE_THEME).forEach(function (ty) { if (TYPE_THEME[ty] === x) out.push(ty); });
+    else out.push(x);
+  });
+  return uniq(out);
+}
+// Témy, ktoré sa majú zaškrtnúť podľa zapamätaných typov.
+function themesOf(items, types) { return items.filter(function (it) { return it.type.split(' ').some(function (x) { return types.indexOf(x) >= 0; }); }).map(function (it) { return it.value; }); }
+// Typy zo zaškrtnutých položiek (téma -> jej typy).
+function checkedTypes(box) {
+  var out = [];
+  box.querySelectorAll('input:checked').forEach(function (i) { out = out.concat((i.getAttribute('data-type') || i.value).split(' ')); });
+  return uniq(out);
+}
+// Výber oblasti: vždy práve jedna.
+function regionSelect(sel, regions, current, onchange) {
+  sel.innerHTML = '';
+  regions.forEach(function (r) { sel.appendChild(el('option', { value: r.code, text: regionLabel(r.code, r.names) })); });
+  var codes = regions.map(function (r) { return r.code; });
+  sel.value = codes.indexOf(current) >= 0 ? current : codes[0] || '';
+  sel.onchange = onchange || null;
 }
 // Tabuľka obtiažností (CSV): oddeľovač ; , alebo tabulátor, prvý riadok hlavička. Riadok, ktorý opakuje hlavičku, začína nový blok.
 function parseCsv(txt) {
@@ -202,64 +229,60 @@ function layerStyle(name, raster) {
   var n = normName(name);
   if (/^(land|outline|obrys|uzemie|countries|staty)$/.test(n)) return n === 'countries' || n === 'staty' ? 'countries' : 'land';
   if (/surround|okolie|neighbo|susedia/.test(n)) return 'surroundings';
-  if (/border|hranic|regions|kraje|okresy|district/.test(n)) return 'borders';
+  if (/okresy|district/.test(n)) return 'districts';
+  if (/border|hranic|regions|kraje/.test(n)) return 'borders';
   if (/water|voda|vody|river|rieky|lake|jazer|sea|more|ocean|reservoir|nadrz/.test(n)) return 'water';
   if (/cities|mesta|obce|peaks|vrchy|saddles|sedla|caves|jaskyne|points|body/.test(n)) return 'dots';
   return 'auto';
 }
-// Vrstvy na kreslenie: z každého súboru najviac raz (odvodené typy, napr. EČV, zdieľajú súbor okresov).
+// Vrstvy na kreslenie. files = hodnoty z ponuky „Viditeľné vrstvy“ (súbor, alebo viac súborov oddelených |).
+// Obrys územia a okolie sa kreslia vždy. Každý súbor najviac raz.
 function sceneRefs(regions, codes, files) {
-  var refs = [], seen = {};
+  var refs = [], seen = {}, want = {};
+  (files || []).forEach(function (v) { String(v).split('|').forEach(function (f) { if (f) want[f] = 1; }); });
+  var add = function (file, style) { if (!seen[file]) { seen[file] = 1; refs.push({ file: file, style: style }); } };
   codes.forEach(function (c) {
     var r = regions.filter(function (x) { return x.code === c; })[0]; if (!r) return;
-    r.base.forEach(function (b) { if (files.indexOf(b.file) >= 0 && !seen[b.file]) { seen[b.file] = 1; refs.push({ file: b.file, style: layerStyle(b.name, b.raster) }); } });
-    r.objects.forEach(function (o) { if (files.indexOf(o.file) >= 0 && !seen[o.file]) { seen[o.file] = 1; refs.push({ file: o.file, style: layerStyle(o.type, false) }); } });
+    r.base.forEach(function (b) { var st = layerStyle(b.name, b.raster); if (st === 'land' || st === 'surroundings' || want[b.file]) add(b.file, st); });
+    r.objects.forEach(function (o) { if (want[o.file]) add(o.file, layerStyle(o.type, false)); });
   });
   return refs;
 }
-
 /* ---------- ponuka vrstiev na mapu (aplikácia učiteľa aj precvičovanie) ---------- */
-// Podkladové vrstvy vybraných oblastí (predvolene zapnuté) a celé súbory objektov, napr. „Všetky rieky“ (predvolene vypnuté).
-// type = typy objektov zo súboru oddelené medzerou (okresy aj EČV), theme = skupina v ponuke.
+// Skupiny vrstiev v ponuke „Viditeľné vrstvy“ (v tomto poradí). Bodové vrstvy (vrchy, sedlá, jaskyne) sa neponúkajú.
+var LAYER_GROUPS = [
+  { key: 'landforms', types: ['mountains', 'lowlands'] }, { key: 'parks', types: ['parks'] }, { key: 'water', types: ['rivers', 'lakes', 'seas', 'oceans'] },
+  { key: 'cities', types: ['cities'] }, { key: 'countries', types: ['countries'] }, { key: 'regions', types: ['regions'] }, { key: 'districts', types: ['districts'] }];
+// Ponuka vrstiev: reliéf (predvolene zapnutý), ďalšie podkladové vrstvy okrem obrysu a okolia, potom skupiny súborov objektov.
+// value = súbory oddelené |, type = typy objektov z týchto súborov (aj odvodené, napr. EČV pri okresoch).
 function layerItems(regions, codes) {
   var items = [];
   codes.forEach(function (c) {
     var r = regions.filter(function (x) { return x.code === c; })[0]; if (!r) return;
-    var pre = codes.length > 1 ? regionLabel(c, r.names) + ': ' : '', byFile = {};
-    r.base.forEach(function (b) { items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: true, theme: themeOfLayer(b.name, b.raster), rank: 0 }); });
-    r.objects.forEach(function (o) {
-      if (byFile[o.file]) { byFile[o.file].type += ' ' + o.type; return; }
-      var it = { value: o.file, label: pre + t('t.layer_all', { type: low(typeLabel(o.type)) }), def: false, type: o.type, theme: themeOfType(o.type), rank: 1 + Math.max(0, TYPE_ORDER.indexOf(o.type)) };
-      byFile[o.file] = it; items.push(it);
+    var pre = codes.length > 1 ? regionLabel(c, r.names) + ': ' : '';
+    r.base.forEach(function (b) {
+      var st = layerStyle(b.name, b.raster);
+      if (st === 'land' || st === 'surroundings') return;
+      items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: st === 'raster' });
+    });
+    LAYER_GROUPS.forEach(function (g) {
+      var files = uniq(r.objects.filter(function (o) { return g.types.indexOf(o.type) >= 0; }).map(function (o) { return o.file; }));
+      if (!files.length) return;
+      var types = uniq(r.objects.filter(function (o) { return files.indexOf(o.file) >= 0; }).map(function (o) { return o.type; }));
+      items.push({ value: files.join('|'), label: pre + t('layergroup.' + g.key), def: false, type: types.join(' ') });
     });
   });
   return items;
 }
-// Zaškrtávacie „čipy“; ak majú položky tému, zoskupia sa pod nadpisy tém. Ťuknutie na nadpis zapne alebo vypne celú tému.
+// Je položka ponuky vrstiev zapnutá podľa zoznamu z odkazu? (hodnota celá, alebo niektorý jej súbor)
+function layerInList(value, list) { var fs = String(value).split('|'); return list.some(function (f) { return f === value || fs.indexOf(f) >= 0; }); }
+// Zaškrtávacie „čipy“.
 function renderChips(box, items, checked, onchange) {
   box.innerHTML = '';
-  var grouped = items.some(function (it) { return it.theme; });
-  box.classList.toggle('grouped', grouped);
-  var chip = function (it, i) {
+  items.forEach(function (it, i) {
     var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
     inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
-    return el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]);
-  };
-  if (!grouped) { items.forEach(function (it, i) { box.appendChild(chip(it, i)); }); return; }
-  var idx = items.map(function (it, i) { return { it: it, i: i }; });
-  THEMES.forEach(function (th) {
-    var mine = idx.filter(function (x) { return (x.it.theme || 'other') === th; });
-    if (!mine.length) return;
-    mine.sort(function (a, b) { return (a.it.rank || 0) - (b.it.rank || 0) || a.i - b.i; });
-    var grp = el('div', { class: 'chipgroup', 'data-theme': th });
-    var head = el('button', { type: 'button', class: 'grouphead', text: has('theme.' + th) ? t('theme.' + th) : th, title: t('t.theme_toggle'), onclick: function () {
-      var ins = Array.prototype.slice.call(grp.querySelectorAll('input:not(:disabled)')), on = !ins.every(function (x) { return x.checked; });
-      ins.forEach(function (x) { x.checked = on; });
-      if (onchange) onchange.call(ins[0]);
-    } });
-    grp.appendChild(head);
-    mine.forEach(function (x) { grp.appendChild(chip(x.it, x.i)); });
-    box.appendChild(grp);
+    box.appendChild(el('label', { class: 'chip', for: id }, [inp, ' ' + it.label]));
   });
 }
 // Test: typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne (precvičovanie to nepoužíva).

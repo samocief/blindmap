@@ -94,6 +94,15 @@
   "admin": "Administratívne členenie",
   "other": "Ostatné"
  },
+ "layergroup": {
+  "landforms": "Povrchové celky",
+  "parks": "Chránené územia",
+  "water": "Vodstvo",
+  "cities": "Mestá",
+  "countries": "Štáty",
+  "regions": "Kraje",
+  "districts": "Okresy"
+ },
  "region": {
   "sk": "Slovensko",
   "eu": "Európa",
@@ -251,8 +260,7 @@
   "no_match": "Nič sa nenašlo.",
   "diff_short": "obtiažnosť {n}",
   "custom": "vlastný",
-  "on_map": "Čo bude na mape",
-  "layer_all": "Všetky {type}",
+  "on_map": "Viditeľné vrstvy",
   "show_chosen": "Ukázať vybrané objekty",
   "loading_map": "Načítavam mapu…",
   "layer_errors": "Niektoré vrstvy sa nepodarilo načítať: {files}",
@@ -389,8 +397,7 @@
   "pr_pupils": "Pre žiakov",
   "pr_dozor": "Pre dozor (žiakom neukazovať)",
   "need_script": "Táto funkcia potrebuje v tabuľke skript verzie 2.1.",
-  "layer_locked": "Tento typ sa práve hádá, preto nemôže byť na mape celý.",
-  "theme_toggle": "Zapnúť alebo vypnúť celú skupinu"
+  "layer_locked": "Tento typ sa práve hádá, preto nemôže byť na mape celý."
  },
  "c": {
   "title": "Precvičovanie slepej mapy",

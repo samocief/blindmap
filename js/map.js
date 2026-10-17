@@ -78,7 +78,7 @@ function SW(px, u) { return u ? 'stroke-width="' + (px * u).toFixed(3) + '"' : '
 
 /* ---------- scéna: podkladové vrstvy pripravené pre jednu mapu ---------- */
 // refs = [{file, style}]; style je land | surroundings | borders | countries | water | dots | auto | raster.
-var STYLE_RANK = { raster: 0, surroundings: 1, land: 2, auto: 3, countries: 4, borders: 5, water: 6, dots: 7 };
+var STYLE_RANK = { raster: 0, surroundings: 1, land: 2, auto: 3, countries: 4, districts: 5, borders: 5, water: 6, dots: 7 };
 function buildScene(bbox, refs) {
   var proj = makeProj(bbox), view = bboxPad(bbox, 0.35), tol = bboxSpan(bbox) / 2500, dec = decFor(tol);
   return Promise.all((refs || []).map(function (ref) {
@@ -156,8 +156,10 @@ function drawScene(scene, pal, u, noRaster) {
         s += path(P, 'fill="' + (hasR ? 'none' : pal.land) + '" stroke="' + pal.border + '" ' + SW(1.6, u)) + path(Ln, 'fill="none" stroke="' + pal.border + '" ' + SW(1.6, u)); break;
       case 'surroundings':
         s += path(P, 'fill="' + pal.landO + '"' + (hasR ? ' fill-opacity="0.55"' : '') + ' stroke="' + pal.coast + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.coast + '" ' + SW(1, u)); break;
-      case 'borders':
-        s += path(P, 'fill="none" stroke="' + pal.adm + '" ' + SW(0.9, u)) + path(Ln, 'fill="none" stroke="' + pal.adm + '" ' + SW(0.9, u)); break;
+      case 'borders':   // kraje: na reliéfe tmavšie, aby boli vidieť
+        s += path(P + Ln, 'fill="none" stroke="' + pal.border + '" stroke-opacity="' + (hasR ? 0.85 : 0.6) + '" ' + SW(1.4, u)); break;
+      case 'districts': // okresy: tenšie ako kraje
+        s += path(P + Ln, 'fill="none" stroke="' + (hasR ? pal.border : pal.adm) + '" stroke-opacity="' + (hasR ? 0.5 : 0.9) + '" ' + SW(0.8, u)); break;
       case 'countries':
         s += path(P, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)); break;
       case 'water':

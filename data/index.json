@@ -18,7 +18,7 @@
         "sk/districts.json",
         {"file": "sk/districts.json", "type": "plates", "nameField": "abbrev", "noteField": "name", "difficultyMap": {"1": 4, "2": 4, "3": 5, "4": 5, "5": 5}}
       ],
-      "base": ["sk/base_relief.png", "sk/base_land.json", "sk/base_surroundings.json", "sk/base_borders.json"]
+      "base": ["sk/base_relief.png", "sk/base_land.json", "sk/base_surroundings.json"]
     },
     {
       "code": "eu",

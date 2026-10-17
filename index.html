@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex">
-<title>Slepá mapa</title>
+<script>
+// Odkaz na test žiaka (?s=<skript učiteľa>&t=<test>) patrí stránke test.html. Precvičovanie má v s len počet sekúnd.
+(function () { var q = new URLSearchParams(location.search), s = q.get('s') || ''; if (q.get('t') && s && !/^\d+$/.test(s)) location.replace('test.html' + location.search + location.hash); })();
+</script>
+<title>Slepá mapa · precvičovanie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
 <link rel="stylesheet" href="css/app.css">
@@ -12,82 +15,43 @@
 </head>
 <body>
 <main>
-  <div class="wrap" id="p-wrap">
-    <section id="p-load" data-screen="p"><p class="muted"><span class="spin"></span><span id="p-load-msg" data-i18n="common.loading">Načítavam…</span></p></section>
+  <div class="wrap" id="c-wrap">
+    <section id="c-load" data-screen="c"><p class="muted"><span class="spin"></span><span id="c-load-msg" data-i18n="common.loading">Načítavam…</span></p></section>
 
-    <section id="p-fail" data-screen="p" hidden>
-      <h1 data-i18n="app.title">Slepá mapa</h1>
-      <p id="p-fail-msg" class="alert"></p>
-      <p id="p-fail-practice" hidden><a class="button primary big" href="cvicenie.html" data-i18n="p.practice"></a></p>
+    <section id="c-fail" data-screen="c" hidden>
+      <h1 data-i18n="c.title"></h1>
+      <p id="c-fail-msg" class="alert"></p>
     </section>
 
-    <section id="p-wait" data-screen="p" hidden>
-      <h1 data-i18n="p.wait_title"></h1>
-      <p class="muted" id="p-wait-sub"></p>
-      <p class="note"><span class="spin"></span><span data-i18n="p.wait_text"></span></p>
-    </section>
-
-    <section id="p-pick" data-screen="p" hidden>
-      <h1 id="p-pick-title" data-i18n="p.who">Kto si?</h1>
-      <p class="muted" id="p-pick-cls"></p>
-      <p id="p-pick-err" class="alert" hidden></p>
-      <div id="p-names" class="names"></div>
-      <form id="p-ext" class="panel" hidden>
-        <label for="p-ext-name"><span data-i18n="p.name_label"></span><input id="p-ext-name" maxlength="40" autocomplete="name" autocapitalize="words" data-i18n-attr="placeholder:p.name_ph"></label>
-        <div><button class="primary big" type="submit" data-i18n="p.name_go"></button></div>
-      </form>
-    </section>
-
-    <section id="p-confirm" data-screen="p" hidden>
-      <h1 id="p-confirm-name"></h1>
+    <section id="c-setup" data-screen="c" hidden>
+      <div>
+        <h1 data-i18n="c.title"></h1>
+        <p class="muted" data-i18n="c.intro"></p>
+      </div>
       <div class="panel">
-        <p data-i18n="p.confirm_text"></p>
+        <div class="row"><label for="c-region"><span data-i18n="t.regions"></span><select id="c-region"></select></label></div>
+        <fieldset><legend data-i18n="t.types"></legend><div id="c-types" class="chips"></div></fieldset>
+        <fieldset><legend data-i18n="t.on_map"></legend><div id="c-base" class="chips"></div></fieldset>
         <div class="row">
-          <button class="primary big" id="p-confirm-go" type="button" data-i18n="p.confirm_yes"></button>
-          <button id="p-confirm-back" type="button" data-i18n="p.confirm_back"></button>
+          <label for="c-dmin"><span data-i18n="t.diff_from"></span><select id="c-dmin"></select></label>
+          <label for="c-dmax"><span data-i18n="t.diff_to"></span><select id="c-dmax"></select></label>
+          <label for="c-n"><span data-i18n="t.count"></span><input id="c-n" type="number" min="1" max="50" inputmode="numeric"></label>
+          <label for="c-time"><span data-i18n="c.time"></span><select id="c-time"></select></label>
         </div>
+        <p id="c-pool" class="small muted"></p>
+        <div><button class="primary big" id="c-go" type="button" data-i18n="p.start" disabled></button></div>
       </div>
     </section>
 
-    <section id="p-intro" data-screen="p" hidden>
-      <h1 id="p-intro-hello"></h1>
-      <div class="panel">
-        <p id="p-intro-n"></p>
-        <ul class="rules">
-          <li id="p-intro-time"></li>
-          <li data-i18n="p.rule_pin"></li>
-          <li data-i18n="p.rule_zoom"></li>
-          <li data-i18n="p.rule_score"></li>
-          <li id="p-intro-landscape" data-i18n="p.rule_landscape" hidden></li>
-        </ul>
-        <p class="alert" data-i18n="p.rule_leave"></p>
-        <div><button class="primary big" id="p-intro-go" type="button" disabled></button></div>
-      </div>
-    </section>
-
-    <section id="p-left" data-screen="p" hidden>
-      <h1 data-i18n="p.left_title"></h1>
-      <div class="panel">
-        <p class="alert" id="p-left-msg"></p>
-        <div><button class="primary big" id="p-left-go" type="button" data-i18n="p.left_go"></button></div>
-      </div>
-    </section>
-
-    <section id="p-end" data-screen="p" hidden>
-      <h1 id="p-end-title"></h1>
-      <p id="p-end-ended" class="alert" hidden data-i18n="p.ended"></p>
-      <div class="panel">
-        <div><span class="small muted" data-i18n="p.your_result"></span><div class="bigpct" id="p-end-pct"></div></div>
-        <p id="p-end-status" class="muted"></p>
-        <div><button id="p-end-retry" type="button" hidden data-i18n="p.retry"></button></div>
-      </div>
-      <p class="note" id="p-end-wait" hidden><span class="spin"></span><span data-i18n="p.wait_results"></span></p>
-    </section>
-
-    <section id="p-results" data-screen="p" class="results" hidden>
+    <section id="c-end" data-screen="c" class="results" hidden>
       <div class="task">
-        <div><div class="kind" id="r-sub"></div><h1 id="r-title"></h1></div>
-        <div class="bigpct" id="r-pct"></div>
+        <div><div class="kind" id="c-end-sub"></div><h1 data-i18n="c.end_title"></h1></div>
+        <div class="bigpct" id="c-end-pct"></div>
+      </div>
+      <div class="row">
+        <button class="primary" id="c-again" type="button" data-i18n="c.again"></button>
+        <button id="c-wrong" type="button"></button>
+        <button id="c-settings" type="button" data-i18n="c.settings"></button>
       </div>
       <div class="mapbox" id="r-mapbox"><svg id="r-map" class="map pan" role="img"></svg></div>
       <div class="legend small muted">
@@ -96,11 +60,10 @@
         <span data-i18n="p.tap_item"></span>
       </div>
       <ol class="reslist" id="r-list"></ol>
-      <div class="row"><button id="r-img" type="button" data-i18n="p.download_img"></button><p id="r-img-status" class="small muted" hidden></p></div>
     </section>
   </div>
 
-  <section id="p-game" data-screen="p" class="game" hidden>
+  <section id="c-game" data-screen="c" class="game" hidden>
     <div class="hud">
       <div class="task">
         <div class="name" id="g-name"></div>
@@ -115,12 +78,11 @@
     </div>
   </section>
 </main>
-<div id="p-blur" class="cover" hidden><p class="alert" data-i18n="p.blur"></p></div>
 
 <script src="js/geo.js"></script>
 <script src="js/core.js"></script>
 <script src="js/data.js"></script>
 <script src="js/map.js"></script>
-<script src="js/pupil.js"></script>
+<script src="js/practice.js"></script>
 </body>
 </html>

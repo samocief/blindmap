@@ -1,6 +1,7 @@
 /* Slepá mapa: precvičovanie pre kohokoľvek. Bez tabuľky a bez prihlásenia, nič sa neukladá mimo prehliadača.
- * Odkaz môže mať prednastavené filtre: cvicenie.html?r=sk&t=rivers,mountains&d=1-3&n=10&s=20&l=sk/base_land.json,sk/rivers.json
- * (l = vrstvy na mape, súbory z data/index.json)
+ * Je na úvodnej adrese aplikácie. Odkaz môže mať prednastavené filtre: ?r=sk&t=water,relief&d=1-3&n=10&s=20&l=sk/base_relief.png,sk/rivers.json
+ * (r = oblasť, t = témy alebo typy objektov, d = obtiažnosť od-do, n = počet, s = sekundy na tip, l = viditeľné vrstvy, súbory z data/index.json)
+ * Odkaz na test žiaka (?s=<skript>&t=<test>) presmeruje index.html hneď na test.html.
  */
 var C = { regions: [], pool: [], all: [], items: [], idx: 0, scene: null, sceneKey: '', view: null, rview: null, pin: null, phase: 'idle', tick: null, deadline: 0, time: 0, scoring: null, rsel: -1, seq: 0, linkBase: null };
 var C_KEY = 'sm-practice2', C_PFULL = 1, C_PZERO = 30, C_WRONG = 0.7;
@@ -17,7 +18,7 @@ async function practiceStart() {
   // nastavenia z odkazu majú prednosť pred zapamätanými
   var S = cSet(), d = /^(\d)\s*-\s*(\d)$/.exec(param('d') || '');
   if (param('r')) S.regions = list(param('r'));
-  if (param('t')) S.types = list(param('t'));
+  if (param('t')) S.types = expandTypes(list(param('t')));
   if (d) { S.dmin = +d[1]; S.dmax = +d[2]; }
   if (param('n')) S.n = +param('n');
   if (param('s') !== '') S.time = +param('s');
@@ -27,8 +28,7 @@ async function practiceStart() {
   [0, 10, 15, 20, 30, 60].forEach(function (x) { $('c-time').appendChild(el('option', { value: String(x), text: x ? t('c.time_s', { n: x }) : t('c.time_none') })); });
   $('c-dmin').value = String(S.dmin || 1); $('c-dmax').value = String(S.dmax || 5);
   $('c-n').value = S.n || 10; $('c-time').value = String([0, 10, 15, 20, 30, 60].indexOf(S.time) >= 0 ? S.time : 20);
-  var codes = C.regions.map(function (r) { return r.code; }), sel = (S.regions || []).filter(function (c) { return codes.indexOf(c) >= 0; });
-  chipsC($('c-regions'), C.regions.map(function (r) { return { value: r.code, label: regionLabel(r.code, r.names) }; }), sel.length ? sel : codes.slice(0, 1), cRegions);
+  regionSelect($('c-region'), C.regions, (S.regions || [])[0], cRegions);
   $('c-dmin').onchange = $('c-dmax').onchange = $('c-n').oninput = $('c-time').onchange = function () { cSave(cForm()); cPoolInfo(); };
   $('c-go').onclick = function () { cBegin(null); };
   $('c-again').onclick = function () { cBegin(null); };
@@ -38,9 +38,10 @@ async function practiceStart() {
 }
 function chipsC(box, items, checked, onchange) { renderChips(box, items, checked, onchange); }
 function vals(box) { return Array.prototype.slice.call(box.querySelectorAll('input:checked')).map(function (i) { return i.value; }); }
+function cCodes() { return $('c-region').value ? [$('c-region').value] : []; }
 function cForm() {
   var a = +$('c-dmin').value, b = +$('c-dmax').value;
-  return { regions: vals($('c-regions')), types: vals($('c-types')), dmin: Math.min(a, b), dmax: Math.max(a, b),
+  return { regions: cCodes(), types: checkedTypes($('c-types')), dmin: Math.min(a, b), dmax: Math.max(a, b),
     n: Math.max(1, Math.min(50, parseInt($('c-n').value, 10) || 10)), time: +$('c-time').value || 0 };
 }
 // Popis na mape po tipe: pri EČV aj názov okresu („BJ · Bardejov“).
@@ -48,7 +49,7 @@ function objLabel(o) { return o.note ? o.name + ' · ' + o.note : o.name; }
 function regionOf(code) { return C.regions.filter(function (r) { return r.code === code; })[0]; }
 
 async function cRegions() {
-  var seq = ++C.seq, codes = vals($('c-regions'));
+  var seq = ++C.seq, codes = cCodes();
   cSave({ regions: codes });
   $('c-go').disabled = true; $('c-pool').textContent = codes.length ? t('common.loading') : t('t.pick_region');
   var files = [];
@@ -60,17 +61,16 @@ async function cRegions() {
   lists.forEach(function (l) { l.forEach(function (o) { if (!byId[o.id]) { byId[o.id] = o; all.push(o); } }); });
   C.all = all;
   var counts = {}; all.forEach(function (o) { counts[o.type] = (counts[o.type] || 0) + 1; });
-  var types = sortTypes(Object.keys(counts));
-  var S = cSet(), prev = (S.types || []).filter(function (x) { return counts[x]; });
-  chipsC($('c-types'), types.map(function (x) { return { value: x, label: typeLabel(x) + ' (' + counts[x] + ')', theme: themeOfType(x) }; }), prev.length ? prev : types, function () { cSave({ types: vals($('c-types')) }); cPoolInfo(); });
+  var items = themeItems(counts), S = cSet(), prev = themesOf(items, S.types || []);
+  chipsC($('c-types'), items, prev.length ? prev : items.map(function (x) { return x.value; }), function () { cSave({ types: checkedTypes($('c-types')) }); cPoolInfo(); });
   cBaseChips(codes);
   cPoolInfo();
 }
-// Čo bude na mape: podkladové vrstvy a celé typy objektov („Všetky rieky“).
-// Na rozdiel od testu sa dá zapnúť aj typ, ktorý sa hádá (ľahší režim: žiak vyberá z nakreslených riek). Predvolene je vypnutý.
+// Viditeľné vrstvy: reliéf a skupiny objektov (vodstvo, kraje …); obrys a okolie sú na mape vždy.
+// Na rozdiel od testu sa dá zapnúť aj vrstva typu, ktorý sa hádá (ľahší režim: žiak vyberá z nakreslených riek). Predvolene je vypnutá.
 function cBaseChips(codes) {
   var S = cSet(), on = S.base || [], seen = S.seen || [], items = layerItems(C.regions, codes), all = items.map(function (x) { return x.value; });
-  var checked = items.filter(function (x) { return C.linkBase ? C.linkBase.indexOf(x.value) >= 0 : seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
+  var checked = items.filter(function (x) { return C.linkBase ? layerInList(x.value, C.linkBase) : seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
   C.linkBase = null;
   chipsC($('c-base'), items, checked, function () { cSave({ base: layersAfterChange($('c-base'), cSet().base) }); });
   cSave({ seen: uniq(seen.concat(all)), base: uniq(on.filter(function (f) { return all.indexOf(f) < 0; }).concat(checked)) });
