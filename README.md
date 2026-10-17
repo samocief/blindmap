@@ -103,7 +103,7 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 `https://samocief.github.io/blindmap` môže otvoriť ktokoľvek. Vyberie si oblasť (vždy jednu), skupiny objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Tabuľka učiteľa sa nepoužíva a mená sa nezisťujú.
 
-**Štatistika precvičovania:** ak je v `data/index.json` vyplnené `"stats"`, každé dokončené kolo sa anonymne zapíše do tabuľky „Slepá mapa – štatistika precvičovania“ (skript `apps-script/Stats.gs`, postup nasadenia je na jeho začiatku). V hárku Prehľad je počet kôl a ľudí (podľa náhodného čísla prehliadača), priemerná úspešnosť, vývoj po dňoch a podľa skupín, v hárku Objekty objekty od najťažšieho, čo pomáha pri nastavovaní obtiažností. Žiak to vidí v krátkej poznámke pod úvodom.
+**Štatistika precvičovania:** ak je v `data/index.json` vyplnené `"stats"`, každé dokončené kolo sa anonymne zapíše do tabuľky „Slepá mapa – štatistika precvičovania“ (skript `apps-script/Stats.gs`, postup nasadenia je na jeho začiatku). V hárku Prehľad je počet kôl a ľudí (podľa náhodného čísla prehliadača), priemerná úspešnosť, vývoj po dňoch a podľa skupín, v hárku Objekty objekty od najťažšieho, čo pomáha pri nastavovaní obtiažností.
 
 Objekty sa vyberajú po skupinách (vodstvo, povrch, chránené územia, mestá, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
 

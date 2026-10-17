@@ -57,12 +57,14 @@ function measure(g, c) {
   }
   return { d: d, near: near };
 }
-// Percentá za jeden objekt: 100 % do vzdialenosti full, 0 % od vzdialenosti zero, medzi nimi lineárne. d=null znamená bez tipu.
+// Percentá za jeden objekt: 100 % do vzdialenosti full, 0 % od vzdialenosti zero, medzi nimi kvadratická krivka
+// (hneď za full klesá strmšie než lineárne). PCT_POW = 1 by bolo lineárne. d=null znamená bez tipu.
+var PCT_POW = 2;
 function pctFor(d, full, zero) {
   if (d === null || d === undefined || d === '' || isNaN(d)) return 0;
   if (d <= full) return 1;
   if (d >= zero) return 0;
-  return (zero - d) / (zero - full);
+  return Math.pow((zero - d) / (zero - full), PCT_POW);
 }
 function round1(x) { return Math.round(x * 10) / 10; }
 // Porovnávanie názvov bez diakritiky, veľkosti písmen a interpunkcie.

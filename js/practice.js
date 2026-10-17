@@ -15,7 +15,6 @@ async function practiceStart() {
   try { await loadLang(param('lang') || 'sk'); } catch (e) { document.body.textContent = e.message; return; }
   applyI18n();
   try { C.regions = await Data.index(); } catch (e) { $('c-fail-msg').textContent = t('t.no_index'); cShow('c-fail'); return; }
-  $('c-privacy').hidden = !Data.statsUrl;
   // nastavenia z odkazu majú prednosť pred zapamätanými
   var S = cSet(), d = /^(\d)\s*-\s*(\d)$/.exec(param('d') || '');
   if (param('r')) S.regions = list(param('r'));

@@ -287,7 +287,7 @@
   "layer_errors": "Niektoré vrstvy sa nepodarilo načítať: {files}",
   "full_pct": "100 % do odchýlky (% uhlopriečky mapy)",
   "zero_pct": "0 % od odchýlky (% uhlopriečky mapy)",
-  "scoring_km": "Uhlopriečka mapy je {diag}. Za tip do {full} je 100 %, od {zero} je 0 %, medzi tým lineárne.",
+  "scoring_km": "Uhlopriečka mapy je {diag}. Za tip do {full} je 100 %, od {zero} je 0 %, medzi tým body klesajú najprv rýchlo, potom pomalšie (kvadraticky).",
   "scoring_bad": "Hranica pre 0 % musí byť väčšia než hranica pre 100 %.",
   "start": "Spustiť test",
   "err_class": "Vyber triedu.",
@@ -423,7 +423,6 @@
  "c": {
   "title": "Precvičovanie slepej mapy",
   "intro": "Vyber si, čo chceš precvičovať. Po každom tipe hneď uvidíš správnu polohu.",
-  "privacy": "Bez mena a bez prihlásenia. Výsledok každého kola sa anonymne započíta do štatistiky, aby učitelia videli, ako sa precvičovanie darí.",
   "time": "Čas na tip",
   "time_s": "{n} s",
   "time_none": "Bez limitu",

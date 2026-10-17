@@ -7,7 +7,7 @@
  * Nasadenie: Nasadiť > Nové nasadenie > Webová aplikácia, spustiť ako „Ja", prístup „Ktokoľvek".
  * Po úprave kódu: Nasadiť > Spravovať nasadenia > ceruzka > Verzia: Nová verzia > Nasadiť (adresa ostane rovnaká).
  */
-const VERSION = '2.1';
+const VERSION = '2.2';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
@@ -79,11 +79,13 @@ function measure(g, c) {
   }
   return { d: d, near: near };
 }
+// Rovnaká krivka ako v js/geo.js: kvadratická, PCT_POW = 1 by bolo lineárne.
+var PCT_POW = 2;
 function pctFor(d, full, zero) {
   if (d === null || d === undefined || d === '' || isNaN(d)) return 0;
   if (d <= full) return 1;
   if (d >= zero) return 0;
-  return (zero - d) / (zero - full);
+  return Math.pow((zero - d) / (zero - full), PCT_POW);
 }
 function round1(x) { return Math.round(x * 10) / 10; }
 function normName(s) {

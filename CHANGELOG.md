@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.9 (2026-10-17) – skript tabuľky 2.2 (výmena zatiaľ nie je povinná)
+
+- **Prísnejšie percentá za tip:** medzi hranicou 100 % a 0 % body neklesajú lineárne, ale kvadraticky, teda hneď za hranicou 100 % strmšie. Pri hraniciach 1 % a 30 % uhlopriečky dá chyba 5 % 74 % (predtým 86 %), 10 % 48 % (69 %), 15 % 27 % (52 %), 20 % 12 % (34 %). Tip „do stredu“ už nevynáša toľko bodov. Krivka sa mení konštantou `PCT_POW` v `js/geo.js` a `apps-script/Code.gs` (1 = lineárne).
+- Aplikácia učiteľa prepočíta percentá podľa novej krivky aj pri starších testoch. Celkové percentá na konci testu a v hárku výsledkov ostanú lineárne, kým sa v tabuľke nevymení skript na 2.2.
+- Na úvode precvičovania už nie je poznámka o anonymnej štatistike.
+
 ## 2.8.2 (2026-10-17)
 
 - Štatistika precvičovania je zapnutá: adresa skriptu tabuľky „Slepá mapa – štatistika precvičovania“ je v `data/index.json`. Zoznam `index.json` sa načíta s číslom verzie, aby zmena hneď platila aj v telefónoch.
