@@ -103,7 +103,7 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 `https://samocief.github.io/blindmap` môže otvoriť ktokoľvek. Vyberie si oblasť (vždy jednu), skupiny objektov, obtiažnosť, počet a čas na tip (predvolene 20 s, dá sa aj bez limitu). Po každom tipe hneď vidí správnu polohu, na konci mapu so všetkými tipmi a môže si zopakovať objekty, ktoré mu nešli (pod 70 %). Nič sa neukladá a tabuľka učiteľa sa nepoužíva.
 
-Objekty sa vyberajú po skupinách (vodstvo, povrch, ochrana prírody, obyvateľstvo, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
+Objekty sa vyberajú po skupinách (vodstvo, povrch, ochrana prírody, mestá, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
 
 Rovnako ako učiteľ si vyberie viditeľné vrstvy (reliéf, vodstvo, kraje…). Na rozdiel od testu si môže zapnúť aj vrstvu, ktorú práve hádá, napríklad vodstvo pri precvičovaní riek. Je to ľahší režim: nehľadá, kde rieka tečie, ale ktorá z nakreslených je tá správna. Predvolene je táto vrstva vypnutá.
 

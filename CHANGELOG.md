@@ -8,7 +8,7 @@ Skript tabuľky sa nemení (okrem novej adresy z 2.2).
 
 - **Krátka adresa:** precvičovanie je na úvodnej adrese `https://samocief.github.io/blindmap`. Stránka žiaka pri teste je `test.html`; odkazy a QR kódy testov (`…/blindmap/?s=…&t=…`) fungujú ďalej, úvodná stránka ich presmeruje. Stará `cvicenie.html` presmeruje na úvod.
 - **Oblasť** sa vyberá z rozbaľovacieho zoznamu, vždy len jedna (v precvičovaní aj pri tvorbe testu).
-- **Typy objektov** sa vyberajú len po skupinách: Vodstvo, Povrch, Ochrana prírody, Obyvateľstvo, Štáty, Administratívne členenie. Konkrétny typ sa zúži obtiažnosťou (napr. Administratívne členenie s obtiažnosťou 4–5 sú len EČV).
+- **Typy objektov** sa vyberajú len po skupinách: Vodstvo, Povrch, Ochrana prírody, Mestá, Štáty, Administratívne členenie. Konkrétny typ sa zúži obtiažnosťou (napr. Administratívne členenie s obtiažnosťou 4–5 sú len EČV).
 - **Viditeľné vrstvy** (predtým „Čo bude na mape“): Reliéf, Povrchové celky, Chránené územia, Vodstvo, Mestá, Kraje, Okresy (pri Európe aj Štáty). Obrys územia a okolité štáty sú na mape vždy. Predvolene je zapnutý len reliéf. Kraje a okresy sú na reliéfe lepšie vidieť, okresy tenšou čiarou.
 - V teste sa zošedí vrstva typu, ktorý sa podľa skupín a obtiažnosti môže hádať.
 
