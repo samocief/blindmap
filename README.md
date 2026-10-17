@@ -105,7 +105,7 @@ Výsledky sa zapíšu do tvojej tabuľky ako pri každom inom teste.
 
 **Štatistika precvičovania:** ak je v `data/index.json` vyplnené `"stats"`, každé dokončené kolo sa anonymne zapíše do tabuľky „Slepá mapa – štatistika precvičovania“ (skript `apps-script/Stats.gs`, postup nasadenia je na jeho začiatku). V hárku Prehľad je počet kôl a ľudí (podľa náhodného čísla prehliadača), priemerná úspešnosť, vývoj po dňoch a podľa skupín, v hárku Objekty objekty od najťažšieho, čo pomáha pri nastavovaní obtiažností. Žiak to vidí v krátkej poznámke pod úvodom.
 
-Objekty sa vyberajú po skupinách (vodstvo, povrch, ochrana prírody, mestá, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
+Objekty sa vyberajú po skupinách (vodstvo, povrch, chránené územia, mestá, štáty, administratívne členenie), konkrétny typ sa zúži obtiažnosťou. Pri Slovensku sa dajú precvičovať aj EČV okresov (administratívne členenie, obtiažnosť 4–5): zadanie je napríklad „EČV okresu: BJ“ a žiak ťukne do okresu.
 
 Rovnako ako učiteľ si vyberie viditeľné vrstvy (reliéf, vodstvo, kraje…). Na rozdiel od testu si môže zapnúť aj vrstvu, ktorú práve hádá, napríklad vodstvo pri precvičovaní riek. Je to ľahší režim: nehľadá, kde rieka tečie, ale ktorá z nakreslených je tá správna. Predvolene je táto vrstva vypnutá.
 

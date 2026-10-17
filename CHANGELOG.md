@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.5.1 (2026-10-17)
+
+- Skupina typov Ochrana prírody sa volá Chránené územia, rovnako ako vrstva.
+
 ## 2.5 (2026-10-17)
 
 Skript tabuľky učiteľa sa nemení.
