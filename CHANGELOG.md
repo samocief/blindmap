@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.5 (2026-10-17)
+
+Skript tabuľky učiteľa sa nemení.
+
+- **Anonymná štatistika precvičovania:** po každom dokončenom kole pošle úvodná stránka záznam do tabuľky „Slepá mapa – štatistika precvičovania“: čas, náhodné číslo prehliadača (na odhad počtu ľudí), oblasť, skupiny, obtiažnosť, výsledok a tipy pri objektoch. Bez mien. Tabuľka má prehľad (kolá, ľudia, priemerná úspešnosť, po dňoch, podľa skupín) a hárok Objekty zoradený od najťažšieho. Skript je v `apps-script/Stats.gs`, adresa jeho webovej aplikácie patrí do `data/index.json` ako `"stats"`. Kým tam nie je, nič sa neposiela a nezobrazí sa ani upozornenie o štatistike.
+
 ## 2.4 (2026-10-17)
 
 - Farby vrstiev: kraje červenou čiarou, okresy tenšou čiernou, povrchové celky hnedou, chránené územia zelenou so slabou zelenou výplňou. Predtým boli kraje a okresy na reliéfe (a v tmavom režime telefónu) takmer neviditeľné.

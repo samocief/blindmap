@@ -15,6 +15,7 @@ async function practiceStart() {
   try { await loadLang(param('lang') || 'sk'); } catch (e) { document.body.textContent = e.message; return; }
   applyI18n();
   try { C.regions = await Data.index(); } catch (e) { $('c-fail-msg').textContent = t('t.no_index'); cShow('c-fail'); return; }
+  $('c-privacy').hidden = !Data.statsUrl;
   // nastavenia z odkazu majú prednosť pred zapamätanými
   var S = cSet(), d = /^(\d)\s*-\s*(\d)$/.exec(param('d') || '');
   if (param('r')) S.regions = list(param('r'));
@@ -101,6 +102,7 @@ function cPick(pool, n) {
 async function cBegin(objects) {
   var F = cForm(); cSave(F);
   var objs = objects || cPick(cPoolOf(F), F.n);
+  C.repeat = !!objects;
   if (!objs.length) { cShow('c-setup'); return; }
   $('c-load-msg').textContent = t('p.loading_map'); cShow('c-load');
   var bbox = null, refs = sceneRefs(C.regions, F.regions, vals($('c-base')));
@@ -170,6 +172,7 @@ function cConfirm() {
 function cEnd() {
   C.phase = 'idle';
   var sum = 0; C.items.forEach(function (it) { it.pct = pctFor(it.d, C.scoring.full, C.scoring.zero); sum += it.pct; });
+  cLog(C.items.length ? sum / C.items.length : 0);
   var F = cSet(), wrong = C.items.filter(function (it) { return it.pct < C_WRONG; });
   $('c-end-pct').textContent = fmtPct(C.items.length ? sum / C.items.length : 0);
   $('c-end-sub').textContent = F.regions.map(function (c) { var r = regionOf(c); return regionLabel(c, r && r.names); }).join(', ');
@@ -185,6 +188,19 @@ function cEnd() {
   cShow('c-end');
   C.rview = new MapView(freshSvg('r-map'), C.scene, { overlay: cEndOverlay });
   mapControls($('r-mapbox'), function () { return C.rview; });
+}
+// Anonymná štatistika (apps-script/Stats.gs): po dokončenom kole jeden záznam bez mena.
+// Prehliadač sa rozlišuje len náhodným číslom, aby sa dalo odhadnúť, koľko ľudí precvičovalo.
+function cLog(avg) {
+  if (!Data.statsUrl || !C.items.length) return;
+  var rnd = function () { return Math.random().toString(36).slice(2, 10); };
+  var dev = store('sm-anon'); if (!dev) { dev = rnd() + rnd().slice(0, 4); store('sm-anon', dev); }
+  var F = cSet(), r = regionOf((F.regions || [])[0]);
+  var groups = Array.prototype.slice.call($('c-types').querySelectorAll('input:checked')).map(function (i) { return themeLabel(i.value); }).join(', ');
+  var body = JSON.stringify({ a: 'practice', v: APP.version, game: rnd(), dev: dev, region: r ? regionLabel(r.code, r.names) : '', groups: groups,
+    diff: F.dmin === F.dmax ? String(F.dmin) : F.dmin + '–' + F.dmax, time: C.time, pct: Math.round(avg * 1000) / 1000, repeat: !!C.repeat,
+    items: C.items.map(function (it) { return { id: it.o.id, name: objLabel(it.o), type: typeOne(it.o.type), diff: it.o.diff, km: it.d, pct: Math.round(it.pct * 1000) / 1000 }; }) });
+  try { fetch(Data.statsUrl, { method: 'POST', mode: 'no-cors', credentials: 'omit', keepalive: true, body: body }).catch(function () {}); } catch (e) { /* štatistika nesmie pokaziť hru */ }
 }
 function cEndOverlay(v) {
   var s = '', u = v.uPx(), sel = C.rsel;

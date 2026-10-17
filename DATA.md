@@ -45,6 +45,7 @@ Píše sa ručne (alebo ho zapíše FME) a mení sa, len keď pribudne alebo zmi
 }
 ```
 
+- `stats` (nepovinné, na začiatku súboru): adresa webovej aplikácie zo skriptu `apps-script/Stats.gs` (`https://script.google.com/macros/s/…/exec`). Precvičovanie tam po každom dokončenom kole pošle anonymný záznam. Prázdne = nič sa neposiela.
 - `regions`: poradie je poradie tlačidiel v aplikácii.
 - `bbox`: výrez mapy `[západ, juh, východ, sever]` v stupňoch. Nepovinný, bez neho sa výrez určí z objektov. Odporúčam ho vyplniť, mapa je potom vždy rovnaká.
 - `objects`: súbory s objektmi na hádanie. Položka môže byť aj objekt, ktorý zo súboru vyrobí ďalší typ, napríklad EČV z okresov:

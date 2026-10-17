@@ -401,7 +401,8 @@
  },
  "c": {
   "title": "Precvičovanie slepej mapy",
-  "intro": "Vyber si, čo chceš precvičovať. Po každom tipe hneď uvidíš správnu polohu. Nič sa nikam neukladá.",
+  "intro": "Vyber si, čo chceš precvičovať. Po každom tipe hneď uvidíš správnu polohu.",
+  "privacy": "Bez mena a bez prihlásenia. Výsledok každého kola sa anonymne započíta do štatistiky, aby učitelia videli, ako sa precvičovanie darí.",
   "time": "Čas na tip",
   "time_s": "{n} s",
   "time_none": "Bez limitu",
