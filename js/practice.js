@@ -26,11 +26,14 @@ async function practiceStart() {
   if (param('l')) C.linkBase = list(param('l'));
   cSave(S);
   [0, 10, 15, 20, 30, 60].forEach(function (x) { $('c-time').appendChild(el('option', { value: String(x), text: x ? t('c.time_s', { n: x }) : t('c.time_none') })); });
-  $('c-dmin').value = String(S.dmin || 1); $('c-dmax').value = String(S.dmax || 5);
+  // Obtiažnosť: predvolene 1–2. Keď si ju človek posunie, zapamätá sa (dset); odkaz s &d= má prednosť.
+  var dDef = !d && !S.dset;
+  $('c-dmin').value = String(dDef ? 1 : S.dmin || 1); $('c-dmax').value = String(dDef ? 2 : S.dmax || 2);
   diffSlider($('c-diff'), $('c-dmin'), $('c-dmax'));
   $('c-n').value = S.n || 10; $('c-time').value = String([0, 10, 15, 20, 30, 60].indexOf(S.time) >= 0 ? S.time : 20);
   regionSelect($('c-region'), C.regions, (S.regions || [])[0], cRegions);
-  $('c-dmin').onchange = $('c-dmax').onchange = $('c-n').oninput = $('c-time').onchange = function () { cSave(cForm()); cPoolInfo(); };
+  $('c-dmin').onchange = $('c-dmax').onchange = function () { cSave(Object.assign(cForm(), { dset: true })); cPoolInfo(); };
+  $('c-n').oninput = $('c-time').onchange = function () { cSave(cForm()); cPoolInfo(); };
   $('c-go').onclick = function () { cBegin(null); };
   $('c-again').onclick = function () { cBegin(null); };
   $('c-settings').onclick = function () { cShow('c-setup'); };

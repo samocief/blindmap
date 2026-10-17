@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.8.1 (2026-10-17)
+
+- Predvolená obtiažnosť je 1–2 (precvičovanie aj nový test). Keď si ju človek pri precvičovaní posunie, zapamätá sa. Odkaz s obtiažnosťou (`&d=`) má vždy prednosť.
+
 ## 2.8 (2026-10-17)
 
 - **Symboly typov:** každý typ objektu má vlastný symbol vo farbe svojej vrstvy na mape (vrch ▲, sedlo )(, jaskyňa, jazero, mesto ◉, EČV …). Zadanie pri precvičovaní aj v teste je teraz symbol, nad názvom malé slovo typu a pod ním veľký názov, napr. „jazero, vodná nádrž / Ružín“ namiesto „Jazero, vodná nádrž: Ružín“. Symboly sú aj vo výsledkoch a v aplikácii učiteľa.
