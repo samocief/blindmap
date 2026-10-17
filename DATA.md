@@ -94,6 +94,10 @@ Typ je názov súboru. Aplikácia má pre tieto typy slovenské názvy v jednotn
 | `oceans` | oceány | `caves` | jaskyne |
 | `mountains` | pohoria | `other` | iné |
 
+Pre kontinenty sú pripravené aj typy `straits` (prielivy), `waterfalls` (vodopády), `archipelagos` (súostrovia), `volcanoes` (sopky), `plateaus` (plošiny), `glaciers` (ľadovce), `capitals` (hlavné mestá), `airports` (letiská), `ports` (prístavy) a `histregions` (historické regióny).
+
+Každý typ má v aplikácii symbol vo farbe svojej skupiny (zoznam `TYPE_ICONS` v `js/data.js`). Kde sa dá, sú to atlasové značky: vrch ▲, sedlo )(, jaskyňa, mesto ◉, hlavné mesto ★. Nový typ dostane symbol jedným riadkom v `TYPE_ICONS` a názvy v `lang/sk.json` (`type`, `type1`).
+
 V aplikácii sa typy vyberajú po skupinách: vodstvo (rieky, jazerá, moria, oceány), povrch (pohoria, nížiny, vrchy, sedlá, jaskyne, ostrovy, polostrovy, púšte), chránené územia, mestá, štáty a administratívne členenie (kraje, okresy, EČV).
 
 **Viditeľné vrstvy** (čo môže byť na mape): reliéf (raster), povrchové celky (pohoria + nížiny), chránené územia, vodstvo (rieky + jazerá + moria), mestá, štáty, kraje, okresy. Ponúkne sa len to, čo oblasť má. Podkladové vrstvy `land` a `surroundings` sa kreslia vždy a v ponuke nie sú. Vrchy, sedlá a jaskyne sa ako vrstva neponúkajú. Vodstvo sa kreslí modrou, mestá ako bodky, kraje a okresy ako hranice, ostatné jemnou hnedou čiarou.

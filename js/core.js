@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.7.1', dataUrl: 'data/' };
+var APP = { version: '2.8', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }
@@ -38,8 +38,8 @@ function cmpVer(a, b) {
   for (var i = 0; i < Math.max(x.length, y.length); i++) { var d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
   return 0;
 }
-// Texty v jazykovom súbore začínajú veľkým písmenom; uprostred vety sa prvé písmeno zmenší.
-function low(s) { s = String(s || ''); return s.charAt(0).toLocaleLowerCase(I18N.lang) + s.slice(1); }
+// Texty v jazykovom súbore začínajú veľkým písmenom; uprostred vety sa prvé písmeno zmenší (skratky ako EČV ostanú).
+function low(s) { s = String(s || ''); var c = s.charAt(1); if (c && c !== c.toLocaleLowerCase(I18N.lang)) return s; return s.charAt(0).toLocaleLowerCase(I18N.lang) + s.slice(1); }
 
 /* ---------- texty v jazykoch ---------- */
 // Texty sú v lang/<jazyk>.json. Hodnota môže mať zástupné znaky {meno} alebo tvary pre počet {"one":…, "few":…, "other":…}.

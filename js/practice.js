@@ -127,7 +127,7 @@ function cOverlay(v) {
 function cQuestion() {
   cShow('c-game');
   var it = C.items[C.idx];
-  $('g-name').textContent = taskText(it.o);
+  taskHead($('g-name'), it.o);
   $('g-i').textContent = C.idx + 1; $('g-n').textContent = C.items.length;
   C.pin = null; C.phase = 'guess';
   if (!C.view) {
@@ -189,7 +189,7 @@ function cEnd() {
   C.items.forEach(function (it, i) {
     ul.appendChild(el('li', {}, [el('button', { type: 'button', onclick: function () { cSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.o.type) + ': ' }), el('b', { text: it.o.name }), it.o.note ? el('span', { class: 'muted', text: ' · ' + it.o.note }) : null]),
+      nameWithIcon(it.o.type, it.o.name, it.o.note),
       el('span', { class: 'r' }, [fmtKm(it.d), el('span', { text: fmtPct(it.pct) })])])]));
   });
   cShow('c-end');

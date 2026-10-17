@@ -231,7 +231,7 @@ function tSlots() {
 function slotRow(i) {
   var o = T.slots[i], act = -1, items = [];
   var inp = el('input', { type: 'text', value: o ? o.name : '', placeholder: t('t.slot_ph'), autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': t('t.slot_aria', { n: i + 1 }), class: o ? 'filled' : '' });
-  var hint = el('span', { class: 'hint', text: o ? typeOne(o.type) + (o.note ? ' ' + o.note : '') + ' · ' + o.diff : '' });
+  var hint = el('span', { class: 'hint' }, o ? [typeIcon(o.type), typeOne(o.type) + (o.note ? ' ' + o.note : '') + ' · ' + o.diff] : []);
   var list = el('ul', { class: 'sugg', hidden: true, role: 'listbox' });
   function render() {
     var q = normName(inp.value), used = usedIds(i);
@@ -241,7 +241,7 @@ function slotRow(i) {
     list.innerHTML = '';
     items.forEach(function (x, j) {
       list.appendChild(el('li', { class: j === act ? 'act' : '', role: 'option', onmousedown: function (e) { e.preventDefault(); }, onclick: function () { pick(x); } },
-        [el('b', { text: x.name }), el('span', { text: typeOne(x.type) + (x.note ? ' ' + x.note : '') + ' · ' + t('t.diff_short', { n: x.diff }) + (x.custom ? ' · ' + t('t.custom') : '') })]));
+        [el('b', {}, [typeIcon(x.type), x.name]), el('span', { text: typeOne(x.type) + (x.note ? ' ' + x.note : '') + ' · ' + t('t.diff_short', { n: x.diff }) + (x.custom ? ' · ' + t('t.custom') : '') })]));
     });
     if (!items.length) list.appendChild(el('li', { class: 'empty', text: T.pool.length ? t('t.no_match') : t('t.pool_empty') }));
     list.hidden = false;
@@ -582,7 +582,7 @@ function tClass() {
   var sel = $('class-obj'); sel.innerHTML = '';
   keys.forEach(function (k, i) { sel.appendChild(el('option', { value: k, text: (i + 1) + '. ' + pack.objects[k].name })); }); sel.value = T.objKey;
   var o = pack.objects[T.objKey];
-  $('class-kind').textContent = typeOne(o.type);
+  var ck = $('class-kind'); ck.innerHTML = ''; ck.appendChild(typeIcon(o.type)); ck.appendChild(document.createTextNode(typeOne(o.type)));
   tClassStats();
   if (!T.cview) { T.cview = new MapView(freshSvg('class-map'), T.cur.scene, { overlay: tClassOverlay }); mapControls($('class-box'), function () { return T.cview; }); }
   T.cview.zoomTo(bboxUnion(geomBBox(o.g), tTipsBBox(T.objKey) || geomBBox(o.g)));

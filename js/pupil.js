@@ -134,7 +134,7 @@ function pupilOverlay(v) { return P.pin ? drawDot(P.pin, v.proj, v.pal.tip, v.pa
 function pupilQuestion() {
   pShow('p-game');
   var S = P.S, k = S.order[S.idx], o = P.objs[k];
-  $('g-name').textContent = taskText(o);
+  taskHead($('g-name'), o);
   $('g-i').textContent = S.idx + 1; $('g-n').textContent = S.order.length;
   P.pin = null;
   if (!P.view) {
@@ -303,7 +303,7 @@ async function pupilResults() {
     var pc = pctFor(it.why ? null : it.d, R.scoring.full, R.scoring.zero);
     var b = el('button', { type: 'button', onclick: function () { pupilSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      el('span', {}, [el('span', { class: 'muted', text: typeOne(it.type) + ': ' }), el('b', { text: it.name })]),
+      nameWithIcon(it.type, it.name),
       el('span', { class: 'r' }, [it.why ? t('why.' + it.why) : fmtKm(it.d), el('span', { text: fmtPct(pc) })])]);
     list.appendChild(el('li', {}, [b]));
   });

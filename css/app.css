@@ -104,8 +104,27 @@ ul.rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 .count{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;white-space:nowrap;font-size:.95rem}
 .count b{color:var(--ink);font-size:1.25rem}
 .task #g-name{flex:1 1 auto}
+/* symboly typov: farba podľa témy, rovnaká ako vrstva na mape */
+.tico{display:inline-flex;flex:0 0 auto;width:1.15em;height:1.15em;color:var(--muted)}
+.tico svg{width:100%;height:100%;display:block}
+.tico[data-th=water]{color:var(--water)} .tico[data-th=relief]{color:var(--celky)} .tico[data-th=nature]{color:var(--park)}
+.tico[data-th=people]{color:var(--city)} .tico[data-th=states]{color:var(--ink)} .tico[data-th=admin]{color:var(--kraj)}
+.tico[data-ty=districts],.tico[data-ty=plates]{color:var(--okres)}
+.task .name.tk{display:flex;align-items:center;gap:10px}
+.tk .tico{width:2.3rem;height:2.3rem}
+.tk small{display:block;font-size:.9rem;font-weight:600;color:var(--muted);line-height:1.2;margin-bottom:1px}
+.tk .nm{display:block}
+.iname .tico,.sugg li b .tico,.hint .tico,#class-kind .tico{vertical-align:-.2em;margin-right:6px}
 .quit{display:inline-flex;align-items:center;gap:4px;align-self:center;flex:0 0 auto;color:var(--muted);background:transparent}
 .quit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+/* úzky telefón: názov potrebuje miesto, Ukončiť ostane len ako krížik (popis v title a pre čítačku) */
+@media (max-width:480px){
+  .quit{width:40px;justify-content:center;padding:0}
+  .quit span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .quit svg{width:20px;height:20px}
+  .task .name{font-size:1.45rem}
+  .tk .tico{width:2rem;height:2rem}
+}
 .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
 .bar > i{display:block;height:100%;width:100%;background:var(--accent);transition:width .2s linear}
 .bar.low > i{background:var(--warn)}
@@ -180,6 +199,8 @@ footer.foot2{margin-top:28px;color:var(--muted);font-size:.85rem;display:flex;ga
   .hud{padding:6px 14px 4px;gap:4px}
   .task .name{font-size:1.25rem}
   .task .kind{font-size:.8rem}
+  .tk .tico{width:1.8rem;height:1.8rem}
+  .tk small{font-size:.78rem}
   .foot{padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
   .foot button.big{min-height:44px;padding:8px 18px;font-size:1rem}
   .verdict b{font-size:1.1rem}

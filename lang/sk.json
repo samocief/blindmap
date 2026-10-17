@@ -53,6 +53,16 @@
   "deserts": "Púšte",
   "parks": "Chránené územia",
   "caves": "Jaskyne",
+  "straits": "Prielivy",
+  "waterfalls": "Vodopády",
+  "archipelagos": "Súostrovia",
+  "volcanoes": "Sopky",
+  "plateaus": "Plošiny",
+  "glaciers": "Ľadovce",
+  "capitals": "Hlavné mestá",
+  "airports": "Letiská",
+  "ports": "Prístavy",
+  "histregions": "Historické regióny",
   "other": "Iné"
  },
  "type1": {
@@ -74,6 +84,16 @@
   "deserts": "Púšť",
   "parks": "Chránené územie",
   "caves": "Jaskyňa",
+  "straits": "Prieliv",
+  "waterfalls": "Vodopád",
+  "archipelagos": "Súostrovie",
+  "volcanoes": "Sopka",
+  "plateaus": "Plošina",
+  "glaciers": "Ľadovec",
+  "capitals": "Hlavné mesto",
+  "airports": "Letisko",
+  "ports": "Prístav",
+  "histregions": "Historický región",
   "other": "Iné"
  },
  "layer": {

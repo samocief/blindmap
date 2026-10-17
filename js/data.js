@@ -14,13 +14,21 @@ var TYPE_ALIAS = {
   desert: 'deserts', deserts: 'deserts', park: 'parks', parks: 'parks', protarea: 'parks', protectedarea: 'parks', protectedareas: 'parks', protected: 'parks',
   cave: 'caves', caves: 'caves', jaskyne: 'caves', water: 'lakes', waterbody: 'lakes', waterbodies: 'lakes',
   saddle: 'saddles', saddles: 'saddles', pass: 'saddles', passes: 'saddles', sedlo: 'saddles', sedla: 'saddles',
-  plate: 'plates', plates: 'plates', ecv: 'plates'
+  plate: 'plates', plates: 'plates', ecv: 'plates',
+  strait: 'straits', straits: 'straits', prieliv: 'straits', prielivy: 'straits', waterfall: 'waterfalls', waterfalls: 'waterfalls', vodopad: 'waterfalls', vodopady: 'waterfalls',
+  archipelago: 'archipelagos', archipelagos: 'archipelagos', suostrovie: 'archipelagos', suostrovia: 'archipelagos',
+  volcano: 'volcanoes', volcanoes: 'volcanoes', sopka: 'volcanoes', sopky: 'volcanoes', plateau: 'plateaus', plateaus: 'plateaus', plosina: 'plateaus', plosiny: 'plateaus',
+  glacier: 'glaciers', glaciers: 'glaciers', ladovec: 'glaciers', ladovce: 'glaciers',
+  capital: 'capitals', capitals: 'capitals', airport: 'airports', airports: 'airports', letisko: 'airports', letiska: 'airports', port: 'ports', ports: 'ports', pristav: 'ports', pristavy: 'ports',
+  histregion: 'histregions', histregions: 'histregions', historicalregion: 'histregions', historicalregions: 'histregions'
 };
 // Typy objektov sa v ponuke vyberajú po témach (skupinách); konkrétny typ sa zúži obtiažnosťou.
 var THEMES = ['water', 'relief', 'nature', 'people', 'states', 'admin', 'other'];
-var TYPE_ORDER = ['rivers', 'lakes', 'seas', 'oceans', 'mountains', 'lowlands', 'peaks', 'saddles', 'caves', 'islands', 'peninsulas', 'deserts', 'parks', 'cities', 'countries', 'regions', 'districts', 'plates'];
+var TYPE_ORDER = ['rivers', 'lakes', 'seas', 'oceans', 'straits', 'waterfalls', 'mountains', 'lowlands', 'plateaus', 'peaks', 'volcanoes', 'saddles', 'caves', 'glaciers', 'islands', 'archipelagos', 'peninsulas', 'deserts',
+  'parks', 'capitals', 'cities', 'airports', 'ports', 'countries', 'regions', 'histregions', 'districts', 'plates'];
 var TYPE_THEME = { rivers: 'water', lakes: 'water', seas: 'water', oceans: 'water', mountains: 'relief', lowlands: 'relief', peaks: 'relief', saddles: 'relief', caves: 'relief',
-  islands: 'relief', peninsulas: 'relief', deserts: 'relief', parks: 'nature', cities: 'people', countries: 'states', regions: 'admin', districts: 'admin', plates: 'admin' };
+  islands: 'relief', peninsulas: 'relief', deserts: 'relief', parks: 'nature', cities: 'people', countries: 'states', regions: 'admin', districts: 'admin', plates: 'admin',
+  straits: 'water', waterfalls: 'water', archipelagos: 'relief', volcanoes: 'relief', plateaus: 'relief', glaciers: 'relief', capitals: 'people', histregions: 'admin' };
 function themeOfType(type) { return TYPE_THEME[type] || 'other'; }
 // Ikony skupín typov (čiara v farbe textu) a vzorky vrstiev v ich farbe na mape (slúžia aj ako legenda).
 var SVG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
@@ -44,6 +52,51 @@ var LAYER_SWATCH = {
   regions: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--kraj);stroke-width:2.6"/>',
   districts: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--okres);stroke-width:1.5"/>'
 };
+// Symbol každého typu (pri zadaní, vo výsledkoch, v zozname učiteľa). Kde sa dá, atlasové značky: vrch ▲, sedlo )(, jaskyňa, mesto ◉, hlavné mesto ★.
+// Farbu dostane podľa témy (rovnaká ako vrstva na mape). Nový typ = nový riadok tu a názvy v lang/*.json.
+var TYPE_ICONS = {
+  rivers: '<path d="M7 3c6 3-4 6 2 9s-4 6 2 9"/><path d="M18 5c-1 3-4 5-7.5 6.5"/>',
+  lakes: '<path d="M3.6 13.6c-.8-2.6.9-5 3.8-5.3 1.6-.2 2.6-1.6 4.6-1.9 2.6-.4 4.4.6 5.4 2 .8 1.1 2.6 1.1 3.2 2.7.7 1.9-.4 3.6-2.2 4.4-1.5.7-2.3 2-4.4 2.2-1.9.2-2.9-.8-4.7-.7-2.2.1-4.8-.6-5.7-3.4z" fill="currentColor" fill-opacity=".22" stroke-width="1.7"/>',
+  seas: '<path d="M3 5h4c1 3 3 5 5 5s4-2 5-5h4"/><path d="M4 15c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0"/><path d="M4 20c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0"/>',
+  oceans: '<circle cx="12" cy="12" r="9"/><path d="M4 10c2.5-1.5 5-1.5 8 0s5.5 1.5 8 0"/><path d="M4 15c2.5-1.5 5-1.5 8 0s5.5 1.5 8 0"/>',
+  straits: '<path d="M3 3h6c-1.5 3-1.5 6 0 9-1.5 3-1.5 6 0 9H3"/><path d="M21 3h-6c1.5 3 1.5 6 0 9 1.5 3 1.5 6 0 9h6"/>',
+  waterfalls: '<path d="M3 6h8c2 0 3 1 3 3v12"/><path d="M17 9v8M20 12v6"/><path d="M10 21h11"/>',
+  mountains: '<path d="M2 20 7.5 8 12 15l3.5-6L22 20z"/>',
+  peaks: '<path d="M12 5 20 19H4z" fill="currentColor"/>',
+  saddles: '<path d="M7 4c3.5 4 3.5 12 0 16"/><path d="M17 4c-3.5 4-3.5 12 0 16"/>',
+  caves: '<path d="M6.3 19h2.5v-7.3a3.2 3.2 0 0 1 6.4 0V19h2.5"/>',
+  lowlands: '<path d="M2 6c2 0 3 6 6 6h8c3 0 4-6 6-6"/><path d="M6 17h12"/>',
+  islands: '<path d="M5 14c1-4 4-6 7-6s6 2 7 6z"/><path d="M2 18c2-1.3 3.5-1.3 5 0s3.5 1.3 5 0 3.5-1.3 5 0 3.5 1.3 5 0"/>',
+  archipelagos: '<path d="M3 11c0-2 1.5-3.5 3.5-3.5S10 9 10 11z"/><path d="M13 8c0-2 1.5-3 3-3s3 1 3 3z"/><path d="M11 15c0-2 1.5-3 3.5-3s3.5 1 3.5 3z"/><path d="M2 20c2-1.3 3.5-1.3 5 0s3.5 1.3 5 0 3.5-1.3 5 0 3.5 1.3 5 0"/>',
+  peninsulas: '<path d="M3 4v16"/><path d="M3 8h8c4 0 7 2 7 4s-3 4-7 4H3"/><path d="M16 20c1.3-1 2.7-1 4 0"/>',
+  deserts: '<circle cx="17" cy="6" r="2.5"/><path d="M2 18c3-4 6-4 9 0"/><path d="M8 18c3-5 7-5 12 0"/><path d="M2 21h20"/>',
+  volcanoes: '<path d="M3 20 9 9h6l6 11z"/><path d="M12 6c-1-1.5 0-3 1.5-3.5"/>',
+  plateaus: '<path d="M2 20 6 9h12l4 11"/><path d="M2 20h20"/>',
+  glaciers: '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>',
+  parks: '<path d="M12 3 6 11h3l-4 6h14l-4-6h3z"/><path d="M12 17v4"/>',
+  cities: '<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>',
+  capitals: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6l-5.4 2.9 1.2-6-4.5-4.2 6.1-.7z"/>',
+  airports: '<path d="M10.5 4c0-1.3 3-1.3 3 0v5l7 4v2l-7-2v5l2 1.5V21L12 20l-3.5 1v-1.5l2-1.5v-5l-7 2v-2l7-4z"/>',
+  ports: '<circle cx="12" cy="5" r="2"/><path d="M12 7v14"/><path d="M5 13a7 7 0 0 0 14 0"/><path d="M9 10h6"/>',
+  countries: '<path d="M5 21V4"/><path d="M5 4h13l-2.5 4.5L18 13H5"/>',
+  regions: '<path d="M4 6l6-3 5 3 5-1-1 7 2 5-6 4-6-2-5 1 1-7z"/>',
+  districts: '<path d="M4 6l6-3 5 3 5-1-1 7 2 5-6 4-6-2-5 1 1-7z"/><path d="M10 3.5 11 11l-7 2M11 11l8 .5M11 11l1 8" stroke-width="1.3"/>',
+  plates: '<rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 7v10"/><text x="14.2" y="14.6" text-anchor="middle" font-size="6.5" font-weight="700" fill="currentColor" stroke="none">ZV</text>',
+  histregions: '<path d="M4 21V9h3v2h3V9h4v2h3V9h3v12z"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/>'
+};
+function typeIcon(type) {
+  return el('span', { class: 'tico', 'data-th': themeOfType(type), 'data-ty': type, 'aria-hidden': 'true', html: SVG_ICO + (TYPE_ICONS[type] || THEME_ICONS[themeOfType(type)] || THEME_ICONS.other) + '</svg>' });
+}
+// Zadanie: symbol typu, nad názvom malé slovo typu („vrch“), pod ním veľký názov.
+function taskHead(box, o) {
+  box.innerHTML = ''; box.classList.add('tk');
+  box.appendChild(typeIcon(o.type));
+  box.appendChild(el('span', {}, [el('small', { text: low(typeOne(o.type)) }), el('span', { class: 'nm', text: o.name })]));
+}
+// Názov v zozname: symbol (typ v bublinke pri podržaní), názov, prípadne poznámka.
+function nameWithIcon(type, name, note) {
+  return el('span', { class: 'iname', title: typeOne(type) }, [typeIcon(type), el('b', { text: name }), note ? el('span', { class: 'muted', text: ' · ' + note }) : null]);
+}
 function themeIcon(th) { return SVG_ICO + (THEME_ICONS[th] || THEME_ICONS.other) + '</svg>'; }
 function layerSwatch(key) { return LAYER_SWATCH[key] ? SVG_SW + LAYER_SWATCH[key] + '</svg>' : ''; }
 function themeLabel(th) { return has('theme.' + th) ? t('theme.' + th) : th; }
