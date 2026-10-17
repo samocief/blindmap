@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.11 (2026-10-17)
+
+- **Výber oblasti s miniatúrou:** namiesto bežného rozbaľovacieho zoznamu je vlastný zoznam, v ktorom má každá oblasť malý obrys (Slovensko, Európa). Funguje ťuknutím aj klávesnicou (šípky, Enter, Esc), ťuknutie mimo ho zavrie. V precvičovaní aj v aplikácii učiteľa.
+- Obrysy sú v `data/index.json` (položka `thumb`), vyrába ich skript `source/thumbs.py` z `base_land.json`. Pri novom kontinente ho stačí spustiť znova.
+
 ## 2.10.2 (2026-10-17)
 
 - Nadpisy skupín (Typy objektov, Nastavenie kola/testu, Viditeľné vrstvy) sú nad rámikom, nie v jeho čiare. Pri precvičovaní má rovnako veľký nadpis aj Oblasť.

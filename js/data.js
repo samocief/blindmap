@@ -133,13 +133,65 @@ function checkedTypes(box) {
   box.querySelectorAll('input:checked').forEach(function (i) { out = out.concat((i.getAttribute('data-type') || i.value).split(' ')); });
   return uniq(out);
 }
-// Výber oblasti: vždy práve jedna.
+// Výber oblasti: vždy práve jedna. Vlastný rozbaľovací zoznam s miniatúrou obrysu (natívny zoznam v telefóne vie len text).
+// Hodnotu drží skrytý select, takže zvyšok aplikácie číta sel.value a dostane „change“ ako predtým.
+function regionThumb(r) {
+  return '<svg class="rthumb" viewBox="0 0 64 48" aria-hidden="true">' + (r && r.thumb ? '<path d="' + r.thumb + '"/>'
+    : '<svg x="20" y="12" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">' + THEME_ICONS.admin + '</svg>') + '</svg>';
+}
+var CHEV = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function regionSelect(sel, regions, current, onchange) {
   sel.innerHTML = '';
   regions.forEach(function (r) { sel.appendChild(el('option', { value: r.code, text: regionLabel(r.code, r.names) })); });
   var codes = regions.map(function (r) { return r.code; });
   sel.value = codes.indexOf(current) >= 0 ? current : codes[0] || '';
   sel.onchange = onchange || null;
+  sel.hidden = true;
+  var old = sel.parentNode.querySelector('.rsel'); if (old) old.remove();
+  var lab = sel.parentNode.querySelector('span[data-i18n]'); if (lab) lab.id = sel.id + '-lbl';
+  var btn = el('button', { type: 'button', class: 'rsel-btn', id: sel.id + '-btn', 'aria-haspopup': 'listbox', 'aria-expanded': 'false', 'aria-labelledby': (lab ? lab.id + ' ' : '') + sel.id + '-btn' });
+  var list = el('ul', { class: 'rsel-list', role: 'listbox', hidden: true, 'aria-labelledby': lab ? lab.id : null });
+  var ui = el('div', { class: 'rsel' }, [btn, list]);
+  sel.parentNode.insertBefore(ui, sel);
+  function paint() {
+    var r = regions[codes.indexOf(sel.value)];
+    btn.innerHTML = regionThumb(r) + '<span class="nm"></span>' + CHEV;
+    btn.querySelector('.nm').textContent = r ? regionLabel(r.code, r.names) : '';
+    list.querySelectorAll('li').forEach(function (li) { li.setAttribute('aria-selected', String(li.getAttribute('data-v') === sel.value)); });
+  }
+  function open(on) {
+    list.hidden = !on; btn.setAttribute('aria-expanded', String(on));
+    if (on) { var li = list.querySelector('[aria-selected="true"]') || list.firstChild; if (li) { li.focus(); li.scrollIntoView({ block: 'nearest' }); } }
+  }
+  function pick(v) {
+    open(false); btn.focus();
+    if (v === sel.value) return;
+    sel.value = v; paint(); sel.dispatchEvent(new Event('change'));
+  }
+  regions.forEach(function (r) {
+    var li = el('li', { role: 'option', tabindex: '-1', 'data-v': r.code, html: regionThumb(r) + '<span class="nm"></span>' + '<svg class="ok" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' });
+    li.querySelector('.nm').textContent = regionLabel(r.code, r.names);
+    li.onclick = function () { pick(r.code); };
+    list.appendChild(li);
+  });
+  btn.onclick = function () { open(list.hidden); };
+  btn.onkeydown = function (e) { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(true); } };
+  list.onkeydown = function (e) {
+    var items = Array.prototype.slice.call(list.children), i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); var n = items[Math.max(0, Math.min(items.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]; if (n) n.focus(); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); items[e.key === 'Home' ? 0 : items.length - 1].focus(); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (i >= 0) pick(items[i].getAttribute('data-v')); }
+    else if (e.key === 'Escape') { e.preventDefault(); open(false); btn.focus(); }
+    else if (e.key === 'Tab') open(false);
+  };
+  ui._close = function () { open(false); };
+  paint();
+  if (!regionSelect.bound) {   // ťuknutie mimo zoznamu ho zavrie
+    regionSelect.bound = true;
+    document.addEventListener('pointerdown', function (e) {
+      document.querySelectorAll('.rsel').forEach(function (u) { if (!u.contains(e.target) && u._close && !u.querySelector('.rsel-list').hidden) u._close(); });
+    });
+  }
 }
 // Tabuľka obtiažností (CSV): oddeľovač ; , alebo tabulátor, prvý riadok hlavička. Riadok, ktorý opakuje hlavičku, začína nový blok.
 function parseCsv(txt) {
@@ -226,7 +278,7 @@ var Data = {
           var code = String(r.code);
           // Položka objects je názov súboru, alebo {file, type, nameField, noteField, difficultyMap} pre odvodený typ (napr. EČV z okresov).
           var reg = {
-            code: code, names: r.name, bbox: Array.isArray(r.bbox) && r.bbox.length === 4 ? r.bbox.map(Number) : null,
+            code: code, names: r.name, thumb: /^[MLHVZmlhvz0-9 .,-]+$/.test(r.thumb || '') ? r.thumb : '', bbox: Array.isArray(r.bbox) && r.bbox.length === 4 ? r.bbox.map(Number) : null,
             objects: (r.objects || []).map(function (f) {
               if (f && typeof f === 'object') return { file: f.file, type: Data.typeOf(f.type || Data.stem(f.file, code)), nameField: f.nameField, noteField: f.noteField, difficultyMap: f.difficultyMap };
               return { file: f, type: Data.typeOf(Data.stem(f, code)) };

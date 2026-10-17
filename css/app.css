@@ -30,15 +30,15 @@ p{margin:0}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
 .row > *{min-width:0}
-label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem;flex:1 1 140px}
+label,.field{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem;flex:1 1 140px}
 label.inline{flex-direction:row;align-items:center;gap:8px;flex:0 1 auto}
 input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-height:44px}
 input[type=checkbox],input[type=radio]{width:auto;min-height:0;padding:0;margin:0;accent-color:var(--accent)}
 /* skupina formulára: väčší nadpis nad jemným rámikom (.box) */
 fieldset{border:0;padding:0;margin:0;min-width:0}
-legend,label.head > span:first-child{font-weight:800;font-size:1.1rem;line-height:1.3}
+legend,.head > span:first-child{font-weight:800;font-size:1.1rem;line-height:1.3}
 legend{padding:0;margin:0 0 8px}
-label.head{gap:8px}
+.head{gap:8px}
 .box{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{flex:0 1 auto;max-width:100%;flex-direction:row;align-items:center;gap:6px;font-weight:400;font-size:.95rem;border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--bg);cursor:pointer;min-height:40px}
@@ -50,7 +50,24 @@ label.head{gap:8px}
 .chip .ico svg,.chip .sw svg{width:100%;height:100%;display:block}
 .chip .cnt{color:var(--muted);font-variant-numeric:tabular-nums;margin-left:-2px}
 .chip.zero{color:var(--muted)}
-.row > label:only-child{flex:0 1 340px}
+.row > label:only-child,.row > .field:only-child{flex:0 1 340px}
+/* výber oblasti: vlastný rozbaľovací zoznam s miniatúrou obrysu */
+.rsel{position:relative;font-size:1rem}
+.rsel-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 12px 5px 8px;min-height:52px;font-weight:600}
+.rsel-btn .nm,.rsel-list .nm{flex:1;min-width:0}
+.rsel-btn .chev{width:20px;height:20px;flex:0 0 auto;color:var(--muted);transition:transform .15s}
+.rsel-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.rthumb{width:48px;height:36px;flex:0 0 auto;color:var(--accent)}
+.rthumb path{fill:currentColor;fill-opacity:.2;stroke:currentColor;stroke-width:1.1px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.rsel-list{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-height:min(60vh,430px);overflow:auto}
+.rsel-list li{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;border-radius:8px;cursor:pointer;min-height:50px;font-weight:400}
+.rsel-list li .rthumb{color:var(--muted)}
+.rsel-list li:hover,.rsel-list li:focus{background:color-mix(in srgb,var(--accent) 9%,var(--panel));outline:none}
+.rsel-list li:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.rsel-list li[aria-selected="true"]{color:var(--accent);font-weight:600}
+.rsel-list li[aria-selected="true"] .rthumb{color:var(--accent)}
+.rsel-list .ok{width:20px;height:20px;flex:0 0 auto;visibility:hidden}
+.rsel-list li[aria-selected="true"] .ok{visibility:visible}
 /* posuvník obtiažnosti od–do */
 .dslider{display:flex;flex-direction:column;gap:2px;max-width:420px}
 .ds-head{display:flex;align-items:baseline;gap:8px;font-weight:600;font-size:.9rem}

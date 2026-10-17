@@ -54,6 +54,7 @@ Píše sa ručne (alebo ho zapíše FME) a mení sa, len keď pribudne alebo zmi
 - `difficulty`: nepovinná tabuľka obtiažností (súbor v `data/` alebo celá adresa zverejneného Google Sheetu vo formáte CSV), alebo zoznam takých tabuliek. Pozri nižšie.
 - `base`: podkladové vrstvy. Učiteľ si pri teste vyberá, ktoré budú na mape (predvolene všetky).
 - Nepovinne `"name": {"sk": "Slovensko", "en": "Slovakia"}`, ak chceš oblasť pomenovať inak, než je v jazykovom súbore.
+- `thumb`: miniatúra obrysu oblasti vo výbere oblasti (cesta SVG v rámci 64 × 48). Nepíše sa ručne: po pridaní oblasti alebo zmene jej `base_land.json` spusti `python3 source/thumbs.py` (potrebuje shapely), ktorý ju doplní do `index.json`. Bez nej sa ukáže všeobecná ikona mapy.
 
 ## Objekty na hádanie
 
