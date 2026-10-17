@@ -217,6 +217,7 @@ td.absent{color:var(--muted)}
 td.act{text-align:right;white-space:nowrap}
 body.dozor #t-nav,body.dozor #sub-tabs,body.dozor #test-dozor-btn{display:none!important}
 footer.foot2{margin-top:28px;color:var(--muted);font-size:.85rem;display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
+footer.copy{justify-content:center}
 /* telefón na šírku: menej miesta nad a pod mapou */
 @media (max-height:520px) and (orientation:landscape){
   .hud{padding:6px 14px 4px;gap:4px}

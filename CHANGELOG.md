@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.11.1 (2026-10-17)
+
+- Precvičovanie má nadpis „Slepá mapa – precvičovanie“ (aj v názve karty prehliadača) a dole malý podpis © samocief.
+
 ## 2.11 (2026-10-17)
 
 - **Výber oblasti s miniatúrou:** namiesto bežného rozbaľovacieho zoznamu je vlastný zoznam, v ktorom má každá oblasť malý obrys (Slovensko, Európa). Funguje ťuknutím aj klávesnicou (šípky, Enter, Esc), ťuknutie mimo ho zavrie. V precvičovaní aj v aplikácii učiteľa.
