@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.7.1 (2026-10-17)
+
+- Pri precvičovaní je hore tlačidlo **Ukončiť**: kolo sa dá kedykoľvek skončiť a vrátiť sa na úvod. Ak už padol aspoň jeden tip, najprv sa opýta. Nedokončené kolo sa nezapočíta do štatistiky.
+
 ## 2.7 (2026-10-17)
 
 - Obtiažnosť sa nastavuje jedným posuvníkom s dvoma bežcami (od–do) namiesto dvoch rozbaľovacích zoznamov, v precvičovaní aj pri tvorbe testu. Bežec sa dá ťahať, ťuknutím na číslo sa presunie bližší bežec a funguje aj klávesnica (šípky, Home, End).

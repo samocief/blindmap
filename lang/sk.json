@@ -420,6 +420,8 @@
    "few": "Zopakovať {n} chyby",
    "other": "Zopakovať {n} chýb"
   },
-  "settings": "Zmeniť nastavenia"
+  "settings": "Zmeniť nastavenia",
+  "quit": "Ukončiť",
+  "quit_confirm": "Ukončiť toto kolo a vrátiť sa na úvod? Doterajšie tipy sa nezapočítajú."
  }
 }

@@ -34,6 +34,7 @@ async function practiceStart() {
   $('c-go').onclick = function () { cBegin(null); };
   $('c-again').onclick = function () { cBegin(null); };
   $('c-settings').onclick = function () { cShow('c-setup'); };
+  $('g-quit').onclick = cQuit;
   cShow('c-setup');
   cRegions();
 }
@@ -148,6 +149,12 @@ function cTimer() {
   $('g-bar').firstElementChild.style.width = Math.max(0, left / C.time * 100) + '%';
   $('g-bar').classList.toggle('low', left <= Math.min(10, C.time / 3));
   if (left <= 0) cConfirm();
+}
+// Ukončenie kola kedykoľvek: späť na úvodnú stránku s nastaveniami. Po prvom tipe sa najprv opýta, kolo sa nezapočíta do štatistiky.
+function cQuit() {
+  if ((C.idx > 0 || C.phase === 'reveal' || C.pin) && !confirm(t('c.quit_confirm'))) return;
+  clearInterval(C.tick); C.phase = 'idle'; C.pin = null;
+  cShow('c-setup');
 }
 // Po tipe sa hneď ukáže správna poloha a mapa sa priblíži, aby bolo vidieť tip aj objekt.
 function cConfirm() {
