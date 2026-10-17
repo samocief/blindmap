@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.4 (2026-10-17)
+
+- Farby vrstiev: kraje červenou čiarou, okresy tenšou čiernou, povrchové celky hnedou, chránené územia zelenou so slabou zelenou výplňou. Predtým boli kraje a okresy na reliéfe (a v tmavom režime telefónu) takmer neviditeľné.
+- Skupina Obyvateľstvo sa volá Mestá.
+- Súbory aplikácie majú v odkaze číslo verzie, takže prehliadač po aktualizácii hneď načíta novú verziu (nie starú z vyrovnávacej pamäte).
+
 ## 2.3 (2026-10-17)
 
 Skript tabuľky sa nemení (okrem novej adresy z 2.2).

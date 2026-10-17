@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.3', dataUrl: 'data/' };
+var APP = { version: '2.4', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }
@@ -47,7 +47,7 @@ var I18N = { lang: 'sk', dict: {}, plural: null };
 function loadLang(code) {
   code = String(code || 'sk').toLowerCase().replace(/[^a-z-]/g, '') || 'sk';
   if (I18N.loaded === code) return Promise.resolve();
-  return fetch('lang/' + code + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+  return fetch('lang/' + code + '.json?v=' + APP.version).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) { I18N.lang = code; I18N.dict = d; I18N.loaded = code; I18N.plural = new Intl.PluralRules(code); document.documentElement.lang = code; })
     .catch(function () { return code === 'sk' ? Promise.reject(new Error('Chýba súbor lang/sk.json')) : loadLang('sk'); });
 }

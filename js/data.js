@@ -233,6 +233,8 @@ function layerStyle(name, raster) {
   if (/border|hranic|regions|kraje/.test(n)) return 'borders';
   if (/water|voda|vody|river|rieky|lake|jazer|sea|more|ocean|reservoir|nadrz/.test(n)) return 'water';
   if (/cities|mesta|obce|peaks|vrchy|saddles|sedla|caves|jaskyne|points|body/.test(n)) return 'dots';
+  if (/mountain|pohori|lowland|nizin|kotlin|landform|celky/.test(n)) return 'landforms';
+  if (/park|chranen|protect/.test(n)) return 'parks';
   return 'auto';
 }
 // Vrstvy na kreslenie. files = hodnoty z ponuky „Viditeľné vrstvy“ (súbor, alebo viac súborov oddelených |).

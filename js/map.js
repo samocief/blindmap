@@ -1,12 +1,13 @@
 /* Slepá mapa: zobrazenie mapy (projekcia, podkladové vrstvy, rastre, posun a priblíženie, obrázok s tipmi). */
 
 /* ---------- farby ---------- */
-var PAL_LIGHT = { sea: '#dbe4e5', land: '#f5f7ea', landO: '#e6ebe2', border: '#3f5148', coast: '#8a9a93', water: '#4f8fb5', adm: '#8f9c95', city: '#5a5148', custom: '#8b5a2b', tip: '#b3206b', ok: '#0d7a5f', ink: '#18262a', halo: '#ffffff', muted: '#56666a' };
+var PAL_LIGHT = { sea: '#dbe4e5', land: '#f5f7ea', landO: '#e6ebe2', border: '#3f5148', coast: '#8a9a93', water: '#4f8fb5', adm: '#8f9c95', city: '#5a5148', custom: '#8b5a2b', kraj: '#d01f2b', okres: '#141414', celky: '#6b3f1d', park: '#1d7a35', tip: '#b3206b', ok: '#0d7a5f', ink: '#18262a', halo: '#ffffff', muted: '#56666a' };
 function cssPal() {
   var cs = getComputedStyle(document.documentElement), L = PAL_LIGHT;
   var g = function (n, d) { var v = cs.getPropertyValue(n).trim(); return v || d; };
   return { sea: g('--map-bg', L.sea), land: g('--land', L.land), landO: g('--land-o', L.landO), border: g('--border', L.border), coast: g('--nb', L.coast), water: g('--water', L.water),
-    adm: g('--adm', L.adm), city: g('--city', L.city), custom: g('--custom', L.custom), tip: g('--tip', L.tip), ok: g('--ok', L.ok), ink: g('--ink', L.ink), halo: g('--panel', L.halo), muted: g('--muted', L.muted) };
+    adm: g('--adm', L.adm), city: g('--city', L.city), custom: g('--custom', L.custom),
+    kraj: g('--kraj', L.kraj), okres: g('--okres', L.okres), celky: g('--celky', L.celky), park: g('--park', L.park), tip: g('--tip', L.tip), ok: g('--ok', L.ok), ink: g('--ink', L.ink), halo: g('--panel', L.halo), muted: g('--muted', L.muted) };
 }
 
 /* ---------- projekcia ---------- */
@@ -78,7 +79,7 @@ function SW(px, u) { return u ? 'stroke-width="' + (px * u).toFixed(3) + '"' : '
 
 /* ---------- scéna: podkladové vrstvy pripravené pre jednu mapu ---------- */
 // refs = [{file, style}]; style je land | surroundings | borders | countries | water | dots | auto | raster.
-var STYLE_RANK = { raster: 0, surroundings: 1, land: 2, auto: 3, countries: 4, districts: 5, borders: 5, water: 6, dots: 7 };
+var STYLE_RANK = { raster: 0, surroundings: 1, land: 2, landforms: 3, parks: 3, auto: 3, countries: 4, districts: 5, borders: 6, water: 7, dots: 8 };
 function buildScene(bbox, refs) {
   var proj = makeProj(bbox), view = bboxPad(bbox, 0.35), tol = bboxSpan(bbox) / 2500, dec = decFor(tol);
   return Promise.all((refs || []).map(function (ref) {
@@ -156,10 +157,14 @@ function drawScene(scene, pal, u, noRaster) {
         s += path(P, 'fill="' + (hasR ? 'none' : pal.land) + '" stroke="' + pal.border + '" ' + SW(1.6, u)) + path(Ln, 'fill="none" stroke="' + pal.border + '" ' + SW(1.6, u)); break;
       case 'surroundings':
         s += path(P, 'fill="' + pal.landO + '"' + (hasR ? ' fill-opacity="0.55"' : '') + ' stroke="' + pal.coast + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.coast + '" ' + SW(1, u)); break;
-      case 'borders':   // kraje: na reliéfe tmavšie, aby boli vidieť
-        s += path(P + Ln, 'fill="none" stroke="' + pal.border + '" stroke-opacity="' + (hasR ? 0.85 : 0.6) + '" ' + SW(1.4, u)); break;
-      case 'districts': // okresy: tenšie ako kraje
-        s += path(P + Ln, 'fill="none" stroke="' + (hasR ? pal.border : pal.adm) + '" stroke-opacity="' + (hasR ? 0.5 : 0.9) + '" ' + SW(0.8, u)); break;
+      case 'borders':   // kraje: červená čiara
+        s += path(P + Ln, 'fill="none" stroke="' + pal.kraj + '" ' + SW(1.8, u)); break;
+      case 'districts': // okresy: čierna tenšia čiara (na svetlom reliéfe vždy čierna, aj v tmavom režime)
+        s += path(P + Ln, 'fill="none" stroke="' + (hasR ? '#141414' : pal.okres) + '" stroke-opacity="0.85" ' + SW(1, u)); break;
+      case 'landforms': // pohoria a kotliny: hnedé hranice celkov
+        s += path(P, 'fill="none" stroke="' + pal.celky + '" ' + SW(1.5, u)) + path(Ln, 'fill="none" stroke="' + pal.celky + '" ' + SW(1.5, u)); break;
+      case 'parks':     // chránené územia: zelená čiara, slabá zelená výplň
+        s += path(P, 'fill="' + pal.park + '" fill-opacity="0.18" stroke="' + pal.park + '" ' + SW(1.6, u)) + path(Ln, 'fill="none" stroke="' + pal.park + '" ' + SW(1.6, u)); break;
       case 'countries':
         s += path(P, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)); break;
       case 'water':
