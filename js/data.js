@@ -113,7 +113,7 @@ function themeItems(counts) {
     var mine = types.filter(function (x) { return themeOfType(x) === th; });
     if (!mine.length) return null;
     var n = mine.reduce(function (s, x) { return s + counts[x]; }, 0);
-    return { value: th, label: (th === 'other' ? mine.map(typeLabel).join(', ') : themeLabel(th)) + ' (' + n + ')', type: mine.join(' '), icon: themeIcon(th) };
+    return { value: th, label: th === 'other' ? mine.map(typeLabel).join(', ') : themeLabel(th), cnt: n, type: mine.join(' '), icon: themeIcon(th) };
   }).filter(Boolean);
 }
 // Zoznam tém alebo typov (z odkazu, z pamäte) -> typy. Téma znamená všetky jej typy.
@@ -363,7 +363,17 @@ function renderChips(box, items, checked, onchange) {
     var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
     inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
     var pic = it.icon ? el('span', { class: 'ico', 'aria-hidden': 'true', html: it.icon }) : it.swatch ? el('span', { class: 'sw', 'aria-hidden': 'true', html: it.swatch }) : null;
-    box.appendChild(el('label', { class: 'chip', for: id }, [inp, pic, el('span', { text: it.label })]));
+    box.appendChild(el('label', { class: 'chip', for: id }, [inp, pic, el('span', { text: it.label }), it.cnt != null ? el('span', { class: 'cnt', text: '(' + it.cnt + ')' }) : null]));
+  });
+}
+// Počet objektov pri každej skupine pre zvolenú obtiažnosť (ako filtre v e-shope). Skupina bez objektov je bledšia, dá sa však vybrať.
+function chipCounts(box, objs, dmin, dmax) {
+  if (dmin > dmax) { var x = dmin; dmin = dmax; dmax = x; }
+  box.querySelectorAll('input[data-type]').forEach(function (i) {
+    var types = i.getAttribute('data-type').split(' '), n = 0, lab = i.parentNode, c = lab.querySelector('.cnt');
+    objs.forEach(function (o) { if (o.diff >= dmin && o.diff <= dmax && types.indexOf(o.type) >= 0) n++; });
+    if (c) c.textContent = '(' + n + ')';
+    lab.classList.toggle('zero', !n);
   });
 }
 // Test: typ, ktorý sa práve hádá, nemôže byť na mape celý: jeho vrstva sa zošedí a vypne (precvičovanie to nepoužíva).

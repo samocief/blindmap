@@ -55,11 +55,11 @@ function regionOf(code) { return C.regions.filter(function (r) { return r.code =
 async function cRegions() {
   var seq = ++C.seq, codes = cCodes();
   cSave({ regions: codes });
-  $('c-go').disabled = true; $('c-pool').textContent = codes.length ? t('common.loading') : t('t.pick_region');
+  $('c-go').disabled = true; cMsg(codes.length ? t('common.loading') : t('t.pick_region'));
   var files = [];
   codes.forEach(function (c) { var r = regionOf(c); if (r) r.objects.forEach(function (o) { files.push({ entry: o, region: c }); }); });
   var lists = [];
-  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.entry, f.entry.type, f.region); })); } catch (e) { $('c-pool').textContent = errText(e); }
+  try { lists = await Promise.all(files.map(function (f) { return Data.objects(f.entry, f.entry.type, f.region); })); } catch (e) { cMsg(errText(e)); }
   if (seq !== C.seq) return;
   var byId = {}, all = [];
   lists.forEach(function (l) { l.forEach(function (o) { if (!byId[o.id]) { byId[o.id] = o; all.push(o); } }); });
@@ -80,11 +80,14 @@ function cBaseChips(codes) {
   cSave({ seen: uniq(seen.concat(all)), base: uniq(on.filter(function (f) { return all.indexOf(f) < 0; }).concat(checked)) });
 }
 function cPoolOf(F) { return C.all.filter(function (o) { return F.types.indexOf(o.type) >= 0 && o.diff >= F.dmin && o.diff <= F.dmax; }); }
+// Počty sú pri skupinách typov a menia sa s obtiažnosťou; pod formulárom je správa, len keď sa nedá začať.
 function cPoolInfo() {
   var F = cForm(), n = cPoolOf(F).length;
-  $('c-pool').textContent = F.regions.length ? t('c.pool', { n: n }) : t('t.pick_region');
+  chipCounts($('c-types'), C.all, F.dmin, F.dmax);
+  cMsg(!F.regions.length ? t('t.pick_region') : n ? '' : t('t.pool_empty'));
   $('c-go').disabled = !n;
 }
+function cMsg(text) { $('c-pool').textContent = text || ''; $('c-pool').hidden = !text; }
 // Náhodný výber vyvážený podľa obtiažnosti a typu (ako Auto v aplikácii učiteľa).
 function cPick(pool, n) {
   var chosen = [], used = {}, cd = {}, ct = {};

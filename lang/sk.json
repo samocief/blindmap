@@ -250,6 +250,7 @@
   "class_open": "Externí (každý napíše svoje meno)",
   "regions": "Oblasť",
   "types": "Typy objektov",
+  "test_setup": "Nastavenie testu",
   "diff": "Obtiažnosť",
   "diff_from": "Obtiažnosť od",
   "diff_to": "Obtiažnosť do",
@@ -423,14 +424,10 @@
  "c": {
   "title": "Precvičovanie slepej mapy",
   "intro": "Vyber si, čo chceš precvičovať. Po každom tipe hneď uvidíš správnu polohu.",
+  "round": "Nastavenie kola",
   "time": "Čas na tip",
   "time_s": "{n} s",
   "time_none": "Bez limitu",
-  "pool": {
-   "one": "Filtrom vyhovuje {n} objekt.",
-   "few": "Filtrom vyhovujú {n} objekty.",
-   "other": "Filtrom vyhovuje {n} objektov."
-  },
   "show_results": "Výsledky",
   "end_title": "Výsledok",
   "again": "Hrať znova",

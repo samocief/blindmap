@@ -177,6 +177,7 @@ function tFilter() {
     .sort(function (a, b) { return a.name.localeCompare(b.name, I18N.lang); });
   var ok = {}; T.pool.forEach(function (o) { ok[o.id] = 1; });
   T.slots = T.slots.map(function (o) { return o && ok[o.id] ? o : null; });
+  chipCounts($('f-types'), T.poolAll, dmin, dmax);
   tLockLayers(); tScene();
   tResize();
 }

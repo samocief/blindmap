@@ -2,6 +2,13 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.10 (2026-10-17)
+
+- **Skupiny vo formulári:** Typy objektov, Viditeľné vrstvy a nová skupina Nastavenie kola (v aplikácii učiteľa Nastavenie testu: obtiažnosť, počet objektov, čas na tip) majú jemný rámik a väčší nadpis v jeho hornej čiare. Rovnako v precvičovaní aj v aplikácii učiteľa.
+- **Počty pri typoch podľa obtiažnosti:** číslo v zátvorke pri skupine (napr. Vodstvo (41)) je počet objektov pri zvolenej obtiažnosti a mení sa hneď pri posúvaní posuvníka, ako filtre v e-shope. Skupina, ktorá pri danej obtiažnosti nemá nič, je bledšia.
+- Pri precvičovaní zmizla veta „Filtrom vyhovuje … objektov“. Pod formulárom je správa len vtedy, keď sa nedá začať (nič nevyhovuje, chyba načítania). Nastavenie kola je hneď pod typmi, aby bol posuvník pri počtoch; viditeľné vrstvy sú za ním.
+- Súbory stránok sa načítajú s novým číslom verzie, aby sa zmeny (aj krivka z 2.9) hneď prejavili v telefónoch.
+
 ## 2.9 (2026-10-17) – skript tabuľky 2.2 (výmena zatiaľ nie je povinná)
 
 - **Prísnejšie percentá za tip:** medzi hranicou 100 % a 0 % body neklesajú lineárne, ale kvadraticky, teda hneď za hranicou 100 % strmšie. Pri hraniciach 1 % a 30 % uhlopriečky dá chyba 5 % 74 % (predtým 86 %), 10 % 48 % (69 %), 15 % 27 % (52 %), 20 % 12 % (34 %). Tip „do stredu“ už nevynáša toľko bodov. Krivka sa mení konštantou `PCT_POW` v `js/geo.js` a `apps-script/Code.gs` (1 = lineárne).

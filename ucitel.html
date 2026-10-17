@@ -8,7 +8,7 @@
 <title>Slepá mapa · učiteľ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2.8.2">
+<link rel="stylesheet" href="css/app.css?v=2.10">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c4f8a'/%3E%3Cpath d='M7 22l6-12 5 8 3-4 4 8z' fill='%23f5f7ea'/%3E%3Ccircle cx='21' cy='9' r='3' fill='%23ff74b4'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -50,11 +50,13 @@
         </div>
         <div class="row"><label for="f-region"><span data-i18n="t.regions"></span><select id="f-region"></select></label></div>
         <fieldset><legend data-i18n="t.types"></legend><div id="f-types" class="chips"></div><p id="f-types-msg" class="small muted" hidden></p></fieldset>
-        <div class="dslider" id="f-diff"><input type="hidden" id="f-dmin"><input type="hidden" id="f-dmax"></div>
-        <div class="row">
-          <label for="f-n"><span data-i18n="t.count"></span><input id="f-n" type="number" min="1" max="40" inputmode="numeric"></label>
-          <label for="f-time"><span data-i18n="t.time"></span><input id="f-time" type="number" min="5" max="600" inputmode="numeric"></label>
-        </div>
+        <fieldset><legend data-i18n="t.test_setup"></legend>
+          <div class="dslider" id="f-diff"><input type="hidden" id="f-dmin"><input type="hidden" id="f-dmax"></div>
+          <div class="row">
+            <label for="f-n"><span data-i18n="t.count"></span><input id="f-n" type="number" min="1" max="40" inputmode="numeric"></label>
+            <label for="f-time"><span data-i18n="t.time"></span><input id="f-time" type="number" min="5" max="600" inputmode="numeric"></label>
+          </div>
+        </fieldset>
       </div>
 
       <div class="panel">
@@ -208,11 +210,11 @@
 </div>
 <div id="print-sheet"></div>
 
-<script src="js/qrcode.js?v=2.8.2"></script>
-<script src="js/geo.js?v=2.8.2"></script>
-<script src="js/core.js?v=2.8.2"></script>
-<script src="js/data.js?v=2.8.2"></script>
-<script src="js/map.js?v=2.8.2"></script>
-<script src="js/teacher.js?v=2.8.2"></script>
+<script src="js/qrcode.js?v=2.10"></script>
+<script src="js/geo.js?v=2.10"></script>
+<script src="js/core.js?v=2.10"></script>
+<script src="js/data.js?v=2.10"></script>
+<script src="js/map.js?v=2.10"></script>
+<script src="js/teacher.js?v=2.10"></script>
 </body>
 </html>
