@@ -45,7 +45,7 @@ var SVG_SW = '<svg viewBox="0 0 26 16" fill="none" stroke-linecap="round" stroke
 var LAYER_SWATCH = {
   relief: '<path d="M1 15 9 3l5 7 3-3 8 8z" style="fill:#7a7a7a"/><path d="M9 3l5 7 3-3 8 8H13z" style="fill:#c2c2c2"/>',
   landforms: '<path d="M2 14 8 3l5 6 3-3 8 8z" style="stroke:var(--celky);stroke-width:2"/>',
-  parks: '<rect x="2" y="2.5" width="22" height="11" rx="3" style="fill:var(--park);fill-opacity:.22;stroke:var(--park);stroke-width:2"/>',
+  parks: '<rect x="1.5" y="3" width="10.5" height="10" rx="2.5" style="fill:var(--park);fill-opacity:.18;stroke:var(--park);stroke-width:1.6"/><rect x="14" y="3" width="10.5" height="10" rx="2.5" style="fill:var(--park);fill-opacity:.5;stroke:var(--park);stroke-width:2.4"/>',
   water: '<path d="M1 10c3-5 6 4 9 0s6 4 9 0c2-2.5 4-1.5 6-1" style="stroke:var(--water);stroke-width:2.4"/>',
   cities: '<circle cx="5" cy="10" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/><circle cx="13" cy="5" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/><circle cx="21" cy="11" r="2.8" style="fill:var(--city);stroke:#fff;stroke-width:1"/>',
   countries: '<path d="M1 9h6l3-5 4 9 3-4h8" style="stroke:var(--border);stroke-width:1.8"/>',
@@ -324,7 +324,7 @@ var Data = {
   vector: function (file) {
     return Data.fetchJson(file).then(function (fc) {
       var feats = fc.type === 'FeatureCollection' ? fc.features || [] : fc.type === 'Feature' ? [fc] : [{ geometry: fc }];
-      return feats.map(function (f) { var g = geomOf(f.geometry); return g ? { g: g, bbox: geomBBox(g) } : null; }).filter(Boolean);
+      return feats.map(function (f) { var g = geomOf(f.geometry); return g ? { g: g, bbox: geomBBox(g), sub: String((f.properties || {}).subclass || '') } : null; }).filter(Boolean);
     });
   },
 

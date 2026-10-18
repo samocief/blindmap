@@ -21,6 +21,7 @@ data/
   ...
 source/
   sk_upload.py            príprava dát Slovenska z výstupu FME (pozri nižšie)
+  apply_table.py          tabuľka obtiažností a názvov -> data/<oblasť> (pozri nižšie)
   objekty.xlsx            starší spôsob: hlavný zoznam objektov (upravuješ ručne)
 ```
 
@@ -101,7 +102,7 @@ Každý typ má v aplikácii symbol vo farbe svojej skupiny (zoznam `TYPE_ICONS`
 
 V aplikácii sa typy vyberajú po skupinách: vodstvo (rieky, jazerá, moria, oceány), povrch (pohoria, nížiny, vrchy, sedlá, jaskyne, ostrovy, polostrovy, púšte), chránené územia, mestá, štáty a administratívne členenie (kraje, okresy, EČV).
 
-**Viditeľné vrstvy** (čo môže byť na mape): reliéf (raster), povrchové celky (pohoria + nížiny), chránené územia, vodstvo (rieky + jazerá + moria), mestá, štáty, kraje, okresy. Ponúkne sa len to, čo oblasť má. Podkladové vrstvy `land` a `surroundings` sa kreslia vždy a v ponuke nie sú. Vrchy, sedlá a jaskyne sa ako vrstva neponúkajú. Vodstvo sa kreslí modrou, mestá ako bodky, kraje a okresy ako hranice, ostatné jemnou hnedou čiarou.
+**Viditeľné vrstvy** (čo môže byť na mape): reliéf (raster), povrchové celky (pohoria + nížiny), chránené územia, vodstvo (rieky + jazerá + moria), mestá, štáty, kraje, okresy. Ponúkne sa len to, čo oblasť má. Podkladové vrstvy `land` a `surroundings` sa kreslia vždy a v ponuke nie sú. Vrchy, sedlá a jaskyne sa ako vrstva neponúkajú. Vodstvo sa kreslí modrou, mestá ako bodky, kraje a okresy ako hranice, chránené územia zelenou (národné parky, `subclass` = `NP`, sýtejšie ako CHKO), ostatné jemnou hnedou čiarou.
 
 ## Tabuľka obtiažností
 
@@ -113,7 +114,8 @@ river;Q202598;Váh;1;;
 district;D100005;Bardejov;2;BJ;
 ```
 
-- Aplikácia číta len `id` a `difficulty` (pri EČV aj `abbrev`, ak ho nemá GeoJSON). Ostatné stĺpce (`name`, `ele`, `area` …) sú pre teba na triedenie.
+- Aplikácia číta len `id` a `difficulty` (pri EČV aj `abbrev`, ak ho nemá GeoJSON). Ostatné stĺpce (`ele`, `area` …) sú pre teba na triedenie.
+- **Názvy sú hlavne v tabuľke.** Keď chceš zmeniť názov z FME, prepíš ho v `<oblasť>_difficulty_edit.csv` (napr. `sk_difficulty_edit.csv`). Pri nahrávaní ho `source/apply_table.py` podľa `id` zapíše do GeoJSON oblasti; opravy názvov riek a pohorí (Tisza → Tisa, orezané názvy) platia aj na názvy z tabuľky. Prázdny názov v tabuľke = ostane názov z FME. Rovnako sa prenesie `abbrev` pri okresoch (EČV) a `subclass` pri chránených územiach (`NP` / `CHKO`, podľa neho sa kreslia na mape).
 - Voliteľný stĺpec `active` s hodnotou `0` objekt z aplikácie vyradí.
 - Tabuľka môže mať viac blokov za sebou, každý so svojou hlavičkou (riadok so stĺpcami `id` a `difficulty`).
 - Objekt, ktorý v tabuľke chýba, dostane obtiažnosť z GeoJSON, inak 3.
@@ -128,7 +130,9 @@ Keď tabuľku presunieš do Google Sheets: **Súbor → Zdieľať → Zverejniť
 - opraví názvy riek (cudzie a dvojjazyčné tvary na slovenské) a orezané názvy pohorí, Východoslovenskú pahorkatinu a Dolnomoravský úval zaradí do nížin,
 - v GeoJSON nechá len `id` a `name` (pri okresoch aj `abbrev`), MultiPoint zmení na Point,
 - vyrobí `base_land.json` (obrys SR), `base_borders.json` (hranice krajov), reliéf oreže podľa obrysu a susedné štáty v `base_surroundings.json` prispôsobí obrysu,
-- skopíruje tabuľku obtiažností do `difficulty.csv`.
+- názvy, EČV a NP/CHKO prevezme z tabuľky podľa `id` a tabuľku zapíše do `difficulty.csv` (cez `apply_table.py`).
+
+Keď sa zmenila len tabuľka (obtiažnosti, názvy), stačí `python3 source/apply_table.py <cesta>/sk_difficulty_edit.csv data/sk`. Geometriu nemení a vypíše, ktoré názvy zmenil. Pre iné oblasti rovnako, len s ich tabuľkou a priečinkom.
 
 Potrebuje Python 3, na hranice, reliéf a okolie aj knižnice `shapely` a `Pillow`. Vypíše, čo zmenil.
 

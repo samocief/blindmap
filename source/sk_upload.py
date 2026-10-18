@@ -6,7 +6,7 @@ Použitie:  python3 source/sk_upload.py <priečinok s výstupom FME> [data/sk]
 Vstup (názvy súborov z FME):
   city, river, water, peak, saddle, cave, protected, region, district, landform, country .json
   hillshade.png + hillshade.wld
-  sk_difficulty_edit.csv (alebo sk_difficulty.csv)  tabuľka obtiažností: class;id;name;difficulty;abbrev;...
+  sk_difficulty_edit.csv (alebo sk_difficulty.csv)  tabuľka obtiažností a názvov: class;id;name;difficulty;abbrev;subclass
 
 Výstup:
   cities, rivers, lakes, mountains, lowlands, peaks, saddles, caves, parks, regions, districts .json
@@ -14,17 +14,20 @@ Výstup:
   base_relief.png + base_relief.pgw, difficulty.csv
 
 Čo sa pri tom opraví:
+  - názvy sa berú z tabuľky podľa id (kde je v tabuľke vyplnený), inak z FME (pozri apply_table.py)
   - názvy riek: cudzie a dvojjazyčné tvary na slovenské (Danube -> Dunaj, Ipeľ / Ipoly -> Ipeľ ...)
   - orezané názvy pohorí, zaradenie Východoslovenskej pahorkatiny a Dolnomoravského úvalu do nížin
   - geometria: MultiPoint -> Point, GeometryCollection -> Multi..., vypustia sa pomocné atribúty
-  - v GeoJSON ostáva len id, name (a abbrev pri okresoch); obtiažnosť je v difficulty.csv
+  - v GeoJSON ostáva len id, name (abbrev pri okresoch, subclass NP/CHKO pri chránených územiach); obtiažnosť je v difficulty.csv
 Názvy vrchov a sediel (aj dvojjazyčné) a nádrží sa nemenia.
 """
-import csv
 import json
 import os
 import shutil
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from apply_table import apply as apply_table, fix_name, read_table, table_names, write_fc  # noqa: E402
 
 # súbor z FME -> typ v aplikácii
 LAYERS = {
@@ -36,24 +39,9 @@ LANDFORM = {'highland': 'mountains', 'lowland': 'lowlands'}
 # pohoria, ktoré FME zaradilo do highland, hoci sú to nížiny
 TO_LOWLAND = {'Východoslovenská pahorkatina', 'Dolnomoravský úval'}
 
-# opravy názvov podľa typu (presná zhoda)
-NAME_FIX = {
-    'rivers': {'Danube': 'Dunaj', 'Латориця': 'Latorica', 'Tisza': 'Tisa'},
-    'landform': {'Spišsko-šarišské medziho': 'Spišsko-šarišské medzihorie',
-                 'Východoslovenská pahorkati': 'Východoslovenská pahorkatina'},
-}
-# pri týchto typoch sa z dvojjazyčného názvu „Ipeľ / Ipoly“ nechá prvá (slovenská) časť
-FIRST_PART = {'rivers', 'landform'}
-# atribúty, ktoré ostanú v GeoJSON
+# atribúty, ktoré ostanú v GeoJSON (ďalšie doplní z tabuľky apply_table.py)
 KEEP = {'districts': ['id', 'name', 'abbrev']}
-
-
-def fix_name(name, kind):
-    name = ' '.join(str(name or '').split())
-    name = NAME_FIX.get(kind, {}).get(name, name)
-    if kind in FIRST_PART and ' / ' in name:
-        name = name.split(' / ')[0].strip()
-    return name
+TABLES = ('sk_difficulty_edit.csv', 'sk_difficulty.csv', 'difficulty.csv')
 
 
 def flat(g):
@@ -91,11 +79,6 @@ def flat(g):
     if t == 'MultiLineString' and len(g['coordinates']) == 1:
         return {'type': 'LineString', 'coordinates': g['coordinates'][0]}
     return {'type': t, 'coordinates': g['coordinates']}
-
-
-def write_fc(path, feats):
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump({'type': 'FeatureCollection', 'features': feats}, f, ensure_ascii=False, separators=(',', ':'))
 
 
 def feature(p, g, kind):
@@ -172,7 +155,9 @@ def fit_surroundings(out, land, grow=0.05):
 
 def main(src, out):
     os.makedirs(out, exist_ok=True)
-    report, renamed, landkind = [], {}, {}
+    report = []
+    table = next((os.path.join(src, n) for n in TABLES if os.path.exists(os.path.join(src, n))), None)
+    names = table_names(read_table(table)[0]) if table else {}
     for fme, kind in list(LAYERS.items()) + [('landform', None)]:
         path = os.path.join(src, fme + '.json')
         if not os.path.exists(path):
@@ -191,9 +176,8 @@ def main(src, out):
                 continue
             seen.add(p['id'])
             old = p['name']
-            p['name'] = fix_name(old, kind or 'landform')
+            p['name'] = names.get(str(p['id'])) or fix_name(old, kind or 'landform')
             if p['name'] != old:
-                renamed[p['id']] = p['name']
                 report.append('%s: %s -> %s' % (fme, old, p['name']))
             k = kind
             if fme == 'landform':
@@ -201,7 +185,6 @@ def main(src, out):
                 if sub != p.get('subclass'):
                     report.append('landform: %s preradené do nížin' % p['name'])
                 k = LANDFORM.get(sub, 'mountains')
-                landkind[p['id']] = sub
             groups.setdefault(k, []).append(feature(p, g, k))
         for k, feats in groups.items():
             write_fc(os.path.join(out, k + '.json'), feats)
@@ -256,25 +239,9 @@ def main(src, out):
     except Exception as e:
         report.append('reliéf a okolie nezmenené (%s)' % e)
 
-    # tabuľka obtiažností
-    for name in ('sk_difficulty_edit.csv', 'sk_difficulty.csv', 'difficulty.csv'):
-        p = os.path.join(src, name)
-        if os.path.exists(p):
-            raw = open(p, encoding='utf-8-sig').read()
-            delim = ';' if raw.split('\n', 1)[0].count(';') >= raw.split('\n', 1)[0].count(',') else ','
-            rows = list(csv.DictReader(raw.splitlines(), delimiter=delim))
-            cols = list(rows[0].keys()) if rows else ['class', 'id', 'name', 'difficulty']
-            for r in rows:
-                if r.get('id') in renamed:
-                    r['name'] = renamed[r['id']]
-                if r.get('id') in landkind and 'subclass' in r:
-                    r['subclass'] = landkind[r['id']]
-            with open(os.path.join(out, 'difficulty.csv'), 'w', encoding='utf-8', newline='') as f:
-                w = csv.DictWriter(f, fieldnames=cols, delimiter=';', lineterminator='\n')
-                w.writeheader()
-                w.writerows(rows)
-            report.append('difficulty.csv z %s: %d riadkov' % (name, len(rows)))
-            break
+    # tabuľka obtiažností a názvov (názvy, EČV, NP/CHKO do GeoJSON podľa id; difficulty.csv)
+    if table:
+        report += apply_table(table, out)
     print('\n'.join(report))
 
 

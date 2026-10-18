@@ -80,6 +80,8 @@ function SW(px, u) { return u ? 'stroke-width="' + (px * u).toFixed(3) + '"' : '
 /* ---------- scéna: podkladové vrstvy pripravené pre jednu mapu ---------- */
 // refs = [{file, style}]; style je land | surroundings | borders | countries | water | dots | auto | raster.
 var STYLE_RANK = { raster: 0, surroundings: 1, land: 2, landforms: 3, parks: 3, auto: 3, countries: 4, districts: 5, borders: 6, water: 7, dots: 8 };
+// Chránené územia: národné parky (subclass NP) sa kreslia sýtejšie ako ostatné (CHKO).
+var PARK_STRONG = /^(np|n[aá]rodn[yý] park|national ?park)$/i;
 function buildScene(bbox, refs) {
   var proj = makeProj(bbox), view = bboxPad(bbox, 0.35), tol = bboxSpan(bbox) / 2500, dec = decFor(tol);
   return Promise.all((refs || []).map(function (ref) {
@@ -95,13 +97,13 @@ function buildScene(bbox, refs) {
 }
 function vectorLayer(ref, view, tol, dec) {
   return Data.vector(ref.file).then(function (feats) {
-    var L = { kind: 'vec', style: ref.style || 'auto', polys: [], lines: [], pts: [] };
+    var L = { kind: 'vec', style: ref.style || 'auto', polys: [], lines: [], pts: [], strong: [] };
     feats.forEach(function (f) {
       if (!bboxHit(f.bbox, view)) return;
-      var g = f.g;
+      var g = f.g, polys = L.style === 'parks' && PARK_STRONG.test(f.sub) ? L.strong : L.polys;
       if (g.t === 'pt') L.pts.push(g.c);
       else if (g.t === 'line') g.c.forEach(function (l) { if (bboxHit(pathBBox(l), view)) { var s = simpLine(l, tol, dec); if (s.length > 1) L.lines.push(s); } });
-      else g.c.forEach(function (poly) { if (bboxHit(pathBBox(poly[0]), view)) { var s = simpPoly(poly, tol, dec); if (s) L.polys.push(s); } });
+      else g.c.forEach(function (poly) { if (bboxHit(pathBBox(poly[0]), view)) { var s = simpPoly(poly, tol, dec); if (s) polys.push(s); } });
     });
     return L;
   });
@@ -163,8 +165,10 @@ function drawScene(scene, pal, u, noRaster) {
         s += path(P + Ln, 'fill="none" stroke="' + (hasR ? '#141414' : pal.okres) + '" stroke-opacity="0.85" ' + SW(1, u)); break;
       case 'landforms': // pohoria a kotliny: hnedé hranice celkov
         s += path(P, 'fill="none" stroke="' + pal.celky + '" ' + SW(1.5, u)) + path(Ln, 'fill="none" stroke="' + pal.celky + '" ' + SW(1.5, u)); break;
-      case 'parks':     // chránené územia: zelená čiara, slabá zelená výplň
-        s += path(P, 'fill="' + pal.park + '" fill-opacity="0.18" stroke="' + pal.park + '" ' + SW(1.6, u)) + path(Ln, 'fill="none" stroke="' + pal.park + '" ' + SW(1.6, u)); break;
+      case 'parks':     // chránené územia: zelená čiara, slabá zelená výplň; národné parky navrchu sýtejšie a s hrubšou čiarou
+        var NP = L.strong.length ? polysPath(proj, L.strong) : '';
+        s += path(P, 'fill="' + pal.park + '" fill-opacity="0.18" stroke="' + pal.park + '" ' + SW(1.6, u)) + path(Ln, 'fill="none" stroke="' + pal.park + '" ' + SW(1.6, u)) +
+          path(NP, 'fill="' + pal.park + '" fill-opacity="0.42" stroke="' + pal.park + '" ' + SW(2.4, u)); break;
       case 'countries':
         s += path(P, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)) + path(Ln, 'fill="none" stroke="' + pal.border + '" ' + SW(1, u)); break;
       case 'water':

@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.12 (2026-10-18)
+
+- **Národné parky na mape sýtejšie:** pri zapnutej vrstve Chránené územia majú NP sýtejšiu zelenú výplň a hrubšiu čiaru, CHKO ostávajú svetlejšie. Vzorka pri vrstve (legenda) ukazuje oba odtiene. Typ sa berie zo stĺpca `subclass` v tabuľke (`NP` / `CHKO`), názvy s predponou ostávajú.
+- **Nové obtiažnosti Slovenska** z `sk_difficulty_edit.csv` (jaskyne, okresy, vrchy, rieky, pohoria, vodné plochy). Okresy, ktoré prešli na obtiažnosť 3, majú pri EČV úroveň 5.
+- **Názvy z tabuľky:** názov v `*_difficulty_edit.csv` má prednosť pred názvom z FME, priraďuje sa podľa `id` (nový skript `source/apply_table.py`, používa ho aj `sk_upload.py`). Opravy názvov riek a pohorí platia ďalej. Zmenené názvy: Babia hora / Babia Góra, Kremenec / Кременець / Krzemieniec, Prašivá (pri Ďumbieri).
+
 ## 2.11.1 (2026-10-17)
 
 - Precvičovanie má nadpis „Slepá mapa – precvičovanie“ (aj v názve karty prehliadača) a dole malý podpis © samocief.
