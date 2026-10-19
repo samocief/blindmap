@@ -37,22 +37,22 @@ Každá ďalšia zmena (nové dáta z FME, oprava textu) = **Commit** a **Push o
 
 ### Nová tabuľka
 
-1. Vytvor Google tabuľku a v nej hárok **Žiaci** so stĺpcami **Trieda | Meno | Aktívny**. Meno píš ako „Priezvisko Meno“. Aktívny: prázdne alebo „áno“, „nie“ žiaka skryje. Žiakov aj triedy stačí vložiť zo svojho Excelu.
+1. Vytvor Google tabuľku a v nej hárok **Žiaci** so stĺpcami **Trieda | Meno | Skupina | Aktívny**. Meno píš ako „Priezvisko Meno“. Skupina: „A“ alebo „B“, prázdna = trieda píše bez skupín (pozri nižšie). Aktívny: prázdne alebo „áno“, „nie“ žiaka skryje. Žiakov aj triedy stačí vložiť zo svojho Excelu.
 2. **Rozšírenia → Apps Script**. Obsah súboru `Code.gs` v editore zmaž a vlož tam celý `apps-script/Code.gs`. Ulož (ikona diskety).
 3. **Nasadiť → Nové nasadenie** → ozubené koliesko → **Webová aplikácia**:
    - Spustiť ako: **Ja**
    - Kto má prístup: **Ktokoľvek** (žiaci sa neprihlasujú účtom Google)
    - **Nasadiť** a povoľ prístup. Google ukáže varovanie o neoverenej aplikácii: Rozšírené → Prejsť na… (nebezpečné). Skript pristupuje len k tejto tabuľke a k Disku (ukladanie obrázkov).
 4. Obnov tabuľku. V ponuke **Slepá mapa → Otvoriť aplikáciu učiteľa**. Pri prvom otvorení sa skript môže opýtať na adresu webovej aplikácie: nájdeš ju v editore skriptu cez Nasadiť → Spravovať nasadenia (končí na `/exec`).
-5. Otvorí sa okno s odkazom a QR kódom. Na počítači klikni na odkaz, na telefóne naskenuj kód. Aplikácia si tabuľku zapamätá, nabudúce stačí otvoriť `https://samocief.github.io/blindmap/ucitel.html`.
+5. Otvorí sa okno s odkazom. Na počítači klikni na odkaz. Na telefóne klikni na **QR kód pre telefón** a naskenuj ho (kód je skrytý pod tlačidlom, aby ho žiaci nenaskenovali z projektora). Aplikácia si tabuľku zapamätá, nabudúce stačí otvoriť `https://samocief.github.io/blindmap/ucitel.html`.
 
-Odkaz aj QR kód z tohto okna sú kľúčom k tabuľke. Žiakom ich neukazuj.
+Odkaz aj QR kód z tohto okna sú kľúčom k tabuľke. Žiakom ich neukazuj. Ak ho predsa niekto videl, v ponuke **Slepá mapa → Nový kľúč učiteľa** vytvoríš nový: starý odkaz a QR kód prestanú platiť na všetkých zariadeniach (aj odkazy pre dozor), svoj telefón potom pripojíš znova.
 
 ### Prechod zo starej verzie (šablóna „Slepá mapa – šablóna“)
 
 1. V editore skriptu nahraď obsah `Code.gs` novým a súbor `App.html` zmaž (už ho netreba).
 2. **Nasadiť → Spravovať nasadenia** → ceruzka → Verzia: **Nová verzia** → Nasadiť. Adresa ostane rovnaká.
-3. Hárky Nastavenia, Objekty, Sedenie, staré Výsledky a `_balíky` môžeš zmazať. Starý hárok Testy sa sám premenuje na „Testy (verzia 1)“. Stĺpec Skupina v hárku Žiaci sa ignoruje.
+3. Hárky Nastavenia, Objekty, Sedenie, staré Výsledky a `_balíky` môžeš zmazať. Starý hárok Testy sa sám premenuje na „Testy (verzia 1)“. Stĺpec Skupina v hárku Žiaci sa znova používa (skupiny A a B, od verzie 2.13).
 
 ### Aktualizácia skriptu
 
@@ -62,6 +62,10 @@ Keď nová verzia aplikácie zmení aj skript (v [zozname zmien](CHANGELOG.md) j
 2. **Nasadiť → Spravovať nasadenia** → ceruzka → Verzia: **Nová verzia** → **Nasadiť**. Adresa ostane rovnaká, QR kódy a odkazy platia ďalej.
 
 Kým skript nevymeníš, aplikácia funguje po starom, len bez noviniek.
+
+### Skupiny A a B
+
+Trieda, v ktorej majú v hárku Žiaci niektorí žiaci skupinu **A** a niektorí **B**, píše test v dvoch skupinách. Každá skupina dostane vlastné objekty, aby nemali čo odpisovať, a vedľa seba sú vždy dva objekty s rovnakým typom a obtiažnosťou, aby žiadna skupina nemala ľahšie. Stĺpec Skupina sa do staršieho hárka Žiaci doplní sám (na koniec), stačí ho vyplniť. Žiak bez skupiny v takej triede píše skupinu A; aplikácia učiteľa ťa naňho upozorní už pri výbere triedy. Trieda bez skupín (alebo len s jednou) píše jednu spoločnú sadu.
 
 ### Vlastné objekty
 
@@ -75,19 +79,23 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 
 ## 3. Test v triede
 
-1. **Nový test:** trieda a názov testu (obe povinné, vždy začínajú prázdne), oblasť, typy objektov, obtiažnosť, počet, čas na tip. Posledná možnosť v zozname tried je **Externí**: hráči bez zoznamu, každý si napíše svoje meno (napr. kamaráti alebo iná skupina).
-2. **Výber objektov:** zoznam je predvolene skrytý, aby ho žiaci nevideli na projektore. Otvoríš ho tlačidlom **Zobraziť zoznam**.
-   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Kockou pri objekte ho vymeníš za iný, písaním do políčka si ho vyberieš sám.
-   - **Manuál** začne s prázdnymi políčkami. Píš názov (diakritika ani veľké písmená nevadia) a vyber z ponuky, ktorá obsahuje len objekty vyhovujúce filtrom.
-3. **Mapa a hodnotenie:** viditeľné vrstvy (reliéf, povrchové celky, chránené územia, vodstvo, mestá, kraje, okresy; obrys a okolité štáty sú na mape vždy) a hranice percent v % uhlopriečky mapy. Vrstva typu, ktorý sa v teste môže hádať, sa na mapu dať nedá (je zošedená). Náhľad ukazuje vybrané objekty len po zaškrtnutí.
-4. **Spustiť test** → QR kód. Alebo **Pripraviť na neskôr**: žiaci po naskenovaní čakajú, kým test spustíš ty alebo dozor (pozri nižšie).
-5. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie. Na konci zoznamu je **Učiteľ**, ak chceš hrať s triedou. Do priemeru sa nepočíta.
-6. Počas testu žiak po každom tipe vidí len odchýlku v km a percentá, nie správnu polohu. Odchod z aplikácie: prvýkrát 0 % za dané miesto, druhýkrát koniec testu.
-7. V **Prehľade** vidíš, kto píše a kto odovzdal, a veľké číslo **Priemer triedy**. Percentá jednotlivých žiakov ukáže až prepínač **Zobraziť výsledky žiakov**. Pri neprihlásenom žiakovi ťukni **Neprítomný**: v tabuľke dostane „neprítomný“ a nepočíta sa do priemeru (ak sa predsa prihlási, označenie zmizne). **Kopírovať výsledky pre Excel** skopíruje mená a percentá.
-8. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
-9. **Tipy triedy** (až po uzavretí testu): tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
+Test je ako písomka: jeden celkový čas, žiak sa medzi miestami voľne presúva a tipy mení až do odovzdania.
 
-Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: percentá, odchýlky v km pri každom objekte a príznaky (odchod z testu, pokus o prihlásenie z iného zariadenia).
+1. **Nový test:** trieda a názov testu (obe povinné, vždy začínajú prázdne), oblasť, typy objektov, obtiažnosť, počet objektov (pri skupinách v každej skupine) a **celkový čas v minútach**. Posledná možnosť v zozname tried je **Externí**: hráči bez zoznamu, každý si napíše svoje meno (napr. kamaráti alebo iná skupina). Pod triedou je napísané, či píše v skupinách a kto nemá skupinu.
+2. **Výber objektov:** objekty aj mapa s nimi sú predvolene skryté, aby ich žiaci nevideli na projektore. Ukážeš ich tlačidlom **Ukázať objekty**.
+   - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Pri triede so skupinami sú dva stĺpce, A a B, a v každom riadku dva objekty s rovnakým typom a obtiažnosťou. Na telefóne je dvojica pod sebou.
+   - Písaním do políčka si objekt vyberieš sám (diakritika ani veľké písmená nevadia). **Kocka** pri políčku vyberie náhodne iný objekt: pri skupinách s rovnakým typom a obtiažnosťou ako sused vedľa (aj keď si ho zmenil ručne), bez skupín hocijaký z ponuky. Riadok, v ktorom sa typ alebo obtiažnosť dvojice líši, má oranžové číslo.
+   - **Manuál** začne s prázdnymi políčkami.
+3. **Mapa a hodnotenie:** viditeľné vrstvy (reliéf, povrchové celky, chránené územia, vodstvo, mestá, kraje, okresy; obrys a okolité štáty sú na mape vždy) a hranice percent v % uhlopriečky mapy. Vrstva typu, ktorý sa v teste môže hádať, sa na mapu dať nedá (je zošedená).
+4. **Spustiť test** → QR kód. Alebo **Pripraviť na neskôr**: žiaci po naskenovaní čakajú, kým test spustíš ty alebo dozor (pozri nižšie).
+5. Žiaci vyberú svoje meno, test sa zamkne na ich zariadenie. Na konci zoznamu je **Učiteľ**, ak chceš hrať s triedou (píše skupinu A). Do priemeru sa nepočíta.
+6. **Písanie:** čas beží od ťuknutia na Začať a obnovenie stránky ho nevráti. Hore sú dve časomiery: zostávajúci čas a zostávajúce miesta (kým je pás miest kratší ako pás času, žiak stíha), pod nimi čísla miest. Tip sa uloží hneď po ťuknutí a dá sa presunúť; miesto si žiak môže označiť vlajkou „vrátim sa“. Počas písania nevidí odchýlky ani percentá. **Odovzdať** ukáže, koľko miest je bez tipu; keď čas vyprší, test sa odovzdá sám.
+7. **Odchod z testu** (iná karta alebo aplikácia, obnovenie stránky): prvýkrát varovanie a z celkového výsledku sa strhne 10 %, druhýkrát sa test ukončí a odovzdá. Strhnutie je v skripte tabuľky (`LEAVE_PENALTY`).
+8. V **Prehľade** vidíš, kto píše (aj koľko má tipov), kto odovzdal a jeho skupinu, a veľké číslo **Priemer triedy**. Percentá jednotlivých žiakov ukáže až prepínač **Zobraziť výsledky žiakov**. Pri neprihlásenom žiakovi ťukni **Neprítomný**: v tabuľke dostane „neprítomný“ a nepočíta sa do priemeru (ak sa predsa prihlási, označenie zmizne). **Odomknúť** pri píšucom žiakovi mu dovolí prihlásiť sa z iného zariadenia: pokračuje so svojimi tipmi a so zvyšným časom. **Kopírovať výsledky pre Excel** skopíruje mená, skupiny a percentá.
+9. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
+10. **Tipy triedy** (až po uzavretí testu): tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Kopírovať štatistiky** dá tabuľku s rovnakým `id` ako v `*_difficulty_edit.csv` (pri EČV id okresu), typom, skupinou, obtiažnosťou v teste a návrhom, takže ju vložíš vedľa tabuľky obtiažností. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
+
+Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov, tipy a príznaky (odchod z testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
 
 ### Dozor a suplovanie
 

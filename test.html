@@ -7,7 +7,7 @@
 <title>Slepá mapa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2.12">
+<link rel="stylesheet" href="css/app.css?v=2.13">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c4f8a'/%3E%3Cpath d='M7 22l6-12 5 8 3-4 4 8z' fill='%23f5f7ea'/%3E%3Ccircle cx='21' cy='9' r='3' fill='%23ff74b4'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -50,17 +50,23 @@
     </section>
 
     <section id="p-intro" data-screen="p" hidden>
-      <h1 id="p-intro-hello"></h1>
+      <div>
+        <h1 id="p-intro-hello"></h1>
+        <p class="muted" id="p-intro-group" hidden></p>
+      </div>
       <div class="panel">
         <p id="p-intro-n"></p>
         <ul class="rules">
-          <li id="p-intro-time"></li>
+          <li data-i18n="p.rule_free"></li>
           <li data-i18n="p.rule_pin"></li>
+          <li data-i18n="p.rule_flag"></li>
+          <li data-i18n="p.rule_meters"></li>
           <li data-i18n="p.rule_zoom"></li>
           <li data-i18n="p.rule_score"></li>
           <li id="p-intro-landscape" data-i18n="p.rule_landscape" hidden></li>
         </ul>
-        <p class="alert" data-i18n="p.rule_leave"></p>
+        <p class="alert" id="p-intro-leave"></p>
+        <p class="alert" id="p-intro-err" hidden></p>
         <div><button class="primary big" id="p-intro-go" type="button" disabled></button></div>
       </div>
     </section>
@@ -73,11 +79,26 @@
       </div>
     </section>
 
+    <section id="p-submit" data-screen="p" hidden>
+      <h1 data-i18n="p.submit_title"></h1>
+      <div class="panel">
+        <p><b id="s-sum"></b> <span class="muted" data-i18n="p.submit_time"></span> <b id="s-time"></b></p>
+        <div id="s-miss-row" class="stack tight"><span data-i18n="p.submit_miss"></span><div class="qnav multi" id="s-miss"></div></div>
+        <div id="s-marked-row" class="stack tight"><span data-i18n="p.submit_marked"></span><div class="qnav multi" id="s-marked"></div></div>
+        <p class="small muted" data-i18n="p.submit_note"></p>
+        <div class="row">
+          <button class="primary big" id="s-go" type="button" data-i18n="p.submit"></button>
+          <button id="s-back" type="button" data-i18n="p.submit_back"></button>
+        </div>
+      </div>
+    </section>
+
     <section id="p-end" data-screen="p" hidden>
       <h1 id="p-end-title"></h1>
       <p id="p-end-ended" class="alert" hidden data-i18n="p.ended"></p>
+      <p id="p-end-time" class="note" hidden data-i18n="p.time_up"></p>
       <div class="panel">
-        <div><span class="small muted" data-i18n="p.your_result"></span><div class="bigpct" id="p-end-pct"></div></div>
+        <p id="p-end-n"></p>
         <p id="p-end-status" class="muted"></p>
         <div><button id="p-end-retry" type="button" hidden data-i18n="p.retry"></button></div>
       </div>
@@ -89,6 +110,7 @@
         <div><div class="kind" id="r-sub"></div><h1 id="r-title"></h1></div>
         <div class="bigpct" id="r-pct"></div>
       </div>
+      <p class="small muted" id="r-penalty" hidden></p>
       <div class="mapbox" id="r-mapbox"><svg id="r-map" class="map pan" role="img"></svg></div>
       <div class="legend small muted">
         <span><span class="dot" style="background:var(--tip)"></span><span data-i18n="map.legend_tip"></span></span>
@@ -98,29 +120,38 @@
       <ol class="reslist" id="r-list"></ol>
       <div class="row"><button id="r-img" type="button" data-i18n="p.download_img"></button><p id="r-img-status" class="small muted" hidden></p></div>
     </section>
+
+    <footer class="foot2 copy">© samocief</footer>
   </div>
 
-  <section id="p-game" data-screen="p" class="game" hidden>
+  <section id="p-game" data-screen="p" class="game exam" hidden>
     <div class="hud">
       <div class="task">
         <div class="name" id="g-name"></div>
-        <div class="count"><b id="g-i"></b> / <span id="g-n"></span><br><span id="g-sec"></span></div>
+        <div class="count"><b id="g-i"></b> / <span id="g-n"></span></div>
+        <button class="mini quit" id="g-submit" type="button" data-i18n-attr="title:p.submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span data-i18n="p.submit_short"></span></button>
       </div>
-      <div class="bar" id="g-bar"><i></i></div>
+      <div class="meters">
+        <div class="meter" id="m-time" data-i18n-attr="title:p.meter_time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M12 3v2.5M18.5 6.5l1.5-1.5"/></svg><b id="m-time-v"></b><div class="bar"><i></i></div></div>
+        <div class="meter" id="m-tips" data-i18n-attr="title:p.meter_tips"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.3l2.8 2.8L16.3 9"/></svg><b id="m-tips-v"></b><div class="bar"><i></i></div></div>
+      </div>
+      <nav class="qnav" id="g-nav" data-i18n-attr="aria-label:p.nav"></nav>
     </div>
     <div class="mapbox" id="g-mapbox"><svg id="g-map" class="map" role="img"></svg></div>
     <div class="foot">
       <div class="verdict" id="g-msg"></div>
-      <button class="primary big" id="g-btn" type="button" disabled></button>
+      <button class="icon flag" id="g-flag" type="button" aria-pressed="false" data-i18n-attr="title:p.flag; aria-label:p.flag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M6 4h11l-2.5 4L17 12H6"/></svg></button>
+      <button class="icon" id="g-prev" type="button" data-i18n-attr="title:p.prev; aria-label:p.prev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="primary big" id="g-btn" type="button"></button>
     </div>
   </section>
 </main>
 <div id="p-blur" class="cover" hidden><p class="alert" data-i18n="p.blur"></p></div>
 
-<script src="js/geo.js?v=2.12"></script>
-<script src="js/core.js?v=2.12"></script>
-<script src="js/data.js?v=2.12"></script>
-<script src="js/map.js?v=2.12"></script>
-<script src="js/pupil.js?v=2.12"></script>
+<script src="js/geo.js?v=2.13"></script>
+<script src="js/core.js?v=2.13"></script>
+<script src="js/data.js?v=2.13"></script>
+<script src="js/map.js?v=2.13"></script>
+<script src="js/pupil.js?v=2.13"></script>
 </body>
 </html>

@@ -1,6 +1,10 @@
-/* Slepá mapa: stránka žiaka. Odkaz z QR kódu má tvar test.html?s=<skript učiteľa>&t=<test> (alebo ?s=…&t=… na úvodnej adrese, tá presmeruje). */
-var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, keys: null, S: null, view: null, pin: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, wait: null, rview: null, R: null, rsel: -1 };
-var AWAY_HIDDEN_MS = 1000, AWAY_BLUR_MS = 4000, POLL_MS = 8000;
+/* Slepá mapa: stránka žiaka. Odkaz z QR kódu má tvar test.html?s=<skript učiteľa>&t=<test> (alebo ?s=…&t=… na úvodnej adrese, tá presmeruje).
+ * Test ako písomka (od 2.13): jeden celkový čas, žiak sa medzi miestami voľne presúva, tipy mení až do odovzdania a počas písania
+ * nevidí odchýlky ani percentá. Čas beží na serveri od ťuknutia na Začať. Skupinu (A/B) určí tabuľka učiteľa.
+ */
+var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, S: null, view: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, wait: null,
+  rview: null, R: null, rsel: -1, deadline: 0, saveTimer: null, penalty: 0.1 };
+var AWAY_HIDDEN_MS = 1000, AWAY_BLUR_MS = 4000, POLL_MS = 8000, SAVE_MS = 3000, NEED_SCRIPT = '2.3';
 
 function pShow(id) { show(id, 'p'); $('p-wrap').hidden = id === 'p-game'; }
 function pFail(msg) { $('p-fail-msg').textContent = msg; pShow('p-fail'); }
@@ -10,6 +14,7 @@ function pSave() { store(sessKey(), P.S); }
 function firstName(label) { var p = String(label).split(' '); return p.length > 1 ? p.slice(1).join(' ') : label; }
 // Oslovenie: v zozname triedy je „Priezvisko Meno“, externý hráč píše „Meno Priezvisko“.
 function greetName(S) { return S.extName ? String(S.name).split(' ')[0] : firstName(S.name); }
+function pctText(p) { return t('common.pct', { v: Math.round(p * 100) }); }
 
 async function pupilStart() {
   var s = param('s'), testId = param('t');
@@ -23,7 +28,9 @@ async function pupilStart() {
   pupilGuard();
   var info;
   try { info = await apiRetry('pupilInit', { t: testId }, 3); } catch (e) { pFail(errText(e)); return; }
-  P.info = info;
+  // Test ako písomka potrebuje v tabuľke učiteľa skript 2.3.
+  if (cmpVer(info.v, NEED_SCRIPT) < 0) { pFail(t('p.old_script')); return; }
+  P.info = info; P.penalty = typeof info.penalty === 'number' ? info.penalty : 0.1;
   if (info.lang && info.lang !== I18N.lang) { await loadLang(info.lang).catch(function () {}); applyI18n(); }
   document.title = (info.title ? info.title + ' · ' : '') + t('app.title');
   var map = info.map || {};
@@ -33,12 +40,13 @@ async function pupilStart() {
 function pupilRoute() {
   var info = P.info, saved = store(sessKey());
   if (info.state === 'closed') {
-    if (saved && saved.pupilId) pupilResults(); else pFail(t('p.closed'));
+    if (saved && saved.pupilId && saved.sent) pupilResults(); else if (saved && saved.pupilId && saved.done) { P.S = saved; pupilFinish(); } else pFail(t('p.closed'));
     return;
   }
-  if (saved && saved.done && saved.pupilId) { P.S = saved; pupilFinish(); return; }
+  if (saved && saved.done && !saved.sent && saved.pupilId && saved.tips) { P.S = saved; pupilFinish(); return; }   // ešte sa neodoslalo
   if (info.state === 'ready') { pupilWait(); return; }
-  if (saved && saved.pupilId) pupilLogin(saved.pupilId, saved, saved.extName); else pupilNames();
+  // Aj po odovzdaní sa prihlási znova: ak učiteľ povolil nový pokus, začne odznova, inak ostane na obrazovke odovzdaného testu.
+  if (saved && saved.pupilId && saved.tips) pupilLogin(saved.pupilId, saved, saved.extName); else pupilNames();
 }
 
 /* ---------- čakanie, kým učiteľ alebo dozor test spustí ---------- */
@@ -95,6 +103,7 @@ async function pupilLogin(pupilId, saved, extName) {
   var r;
   try { r = await apiRetry('pupilLogin', { t: P.t, p: pupilId, n: extName || '', d: P.device }, 3); }
   catch (e) {
+    if (e.code === 'done' && saved && saved.sent) { P.S = saved; pupilFinish(); return; }
     if (saved) store(sessKey(), null);
     if (e.code === 'not_started') { pupilWait(); return; }
     if (e.code === 'closed') { pFail(t('p.closed')); return; }
@@ -102,22 +111,32 @@ async function pupilLogin(pupilId, saved, extName) {
     if (['taken', 'done', 'not_in_class', 'name_taken', 'bad_name'].indexOf(e.code) >= 0) { pupilNames(errText(e)); return; }
     pFail(errText(e)); return;
   }
-  P.objs = r.objects; P.keys = r.keys;
-  var pid = r.pid || pupilId;
-  var same = saved && saved.pupilId === pid && saved.order && saved.order.length === r.keys.length && saved.order.every(function (k) { return r.keys.indexOf(k) >= 0; });
-  P.S = same ? saved : { pupilId: pid, extName: extName || '', order: shuffle(r.keys), idx: -1, res: {}, deadline: 0, done: false, sent: false, leaves: 0, awayAt: 0, awayIdx: -1, ended: false };
-  P.S.name = r.name; P.S.time = r.time; P.S.scoring = r.scoring;
-  P.S.names = {}; r.keys.forEach(function (k) { P.S.names[k] = { name: r.objects[k].name, type: r.objects[k].type }; });
+  P.objs = r.objects;
+  if (typeof r.penalty === 'number') P.penalty = r.penalty;
+  var pid = r.pid || pupilId, keys = r.keys;
+  var same = saved && !saved.done && saved.pupilId === pid && saved.order && saved.order.length === keys.length && saved.order.every(function (k) { return keys.indexOf(k) >= 0; });
+  var S = P.S = same ? saved : { pupilId: pid, extName: extName || '', order: shuffle(keys), tips: {}, marks: {}, idx: 0, begun: false, leaves: 0, awayAt: 0, done: false, sent: false, ended: false, why: '' };
+  S.name = r.name; S.group = r.group || ''; S.total = r.total; S.scoring = r.scoring;
+  // Tipy uložené na serveri (písal na inom zariadení a učiteľ ho odomkol) doplnia tie, ktoré tu nie sú.
+  if (r.tips) Object.keys(r.tips).forEach(function (k) { if (!S.tips[k] && keys.indexOf(k) >= 0) S.tips[k] = r.tips[k]; });
+  (r.marks || []).forEach(function (k) { if (keys.indexOf(k) >= 0 && S.marks[k] === undefined) S.marks[k] = 1; });
+  S.leaves = Math.max(S.leaves || 0, r.leaves || 0);
+  if (r.begun) { S.begun = true; P.deadline = Date.now() + r.left; } else S.begun = false;
   pSave();
-  if (P.S.done) { pupilFinish(); return; }
-  if (P.S.idx >= 0) { pLoading(t('p.loading_map')); await P.scenePromise; pupilQuestion(); return; }
+  if (S.done) { pupilFinish(); return; }
+  if (S.begun) {
+    if (S.leaves >= 2) { S.ended = true; S.done = true; S.why = 'ended'; pSave(); pupilFinish(); return; }
+    pLoading(t('p.loading_map')); await P.scenePromise; pupilGame(true); return;
+  }
   pupilIntro();
 }
 function pupilIntro() {
   var S = P.S, go = $('p-intro-go');
   $('p-intro-hello').textContent = t('p.hello', { name: greetName(S) });
-  $('p-intro-n').innerHTML = esc(t('p.intro_n', { n: S.order.length })).replace(/\*(.+?)\*/g, '<b>$1</b>');
-  $('p-intro-time').textContent = t('p.rule_time', { n: S.time });
+  $('p-intro-group').textContent = S.group ? t('p.group', { g: S.group }) : ''; $('p-intro-group').hidden = !S.group;
+  $('p-intro-n').innerHTML = esc(t('p.intro_n', { n: S.order.length, min: S.total })).replace(/\*(.+?)\*/g, '<b>$1</b>');
+  $('p-intro-leave').textContent = t('p.rule_leave', { pct: Math.round(P.penalty * 100) });
+  $('p-intro-err').hidden = true;
   go.disabled = true; go.textContent = t('p.loading_map');
   P.scenePromise.then(function (sc) {
     go.disabled = false; go.textContent = t('p.start');
@@ -125,76 +144,122 @@ function pupilIntro() {
     var hint = $('p-intro-landscape');
     if (hint) hint.hidden = !(window.innerHeight > window.innerWidth && sc.B.w / sc.B.h > 1.3);
   });
-  go.onclick = function () { P.S.idx = 0; pSave(); pupilQuestion(); };
+  go.onclick = async function () {
+    go.disabled = true; go.textContent = t('common.loading');
+    var r;
+    try { r = await apiRetry('pupilBegin', { t: P.t, p: S.pupilId, d: P.device }, 3); }
+    catch (e) { go.disabled = false; go.textContent = t('p.start'); $('p-intro-err').textContent = errText(e); $('p-intro-err').hidden = false; return; }
+    S.begun = true; S.leaves = Math.max(S.leaves || 0, r.leaves || 0); P.deadline = Date.now() + r.left; S.idx = 0; pSave();
+    pupilGame(false);
+  };
   pShow('p-intro');
 }
 
-/* ---------- otázky ---------- */
-function pupilOverlay(v) { return P.pin ? drawDot(P.pin, v.proj, v.pal.tip, v.pal.halo, 16, 0) : ''; }
-function pupilQuestion() {
+/* ---------- písanie testu ---------- */
+function curKey() { return P.S.order[P.S.idx]; }
+function pupilOverlay(v) { var c = P.S && P.S.tips[curKey()]; return c ? drawDot(c, v.proj, v.pal.tip, v.pal.halo, 16, 0) : ''; }
+function pupilGame(afterReload) {
   pShow('p-game');
-  var S = P.S, k = S.order[S.idx], o = P.objs[k];
+  P.phase = 'test';
+  if (!P.view) {
+    P.view = new MapView($('g-map'), P.scene, { overlay: pupilOverlay, onTap: pupilTap });
+    mapControls($('g-mapbox'), function () { return P.view; });
+  }
+  pupilQuestion();
+  clearInterval(P.tick); P.tick = setInterval(pupilTimer, 250);
+  // Stránka bola počas písania zatvorená alebo obnovená: počíta sa to ako odchod.
+  if (afterReload && P.S.awayAt) pupilCheckAway(true);
+  if (P.phase === 'test') pupilTimer();
+}
+function pupilQuestion(keepView) {
+  var S = P.S, k = curKey(), o = P.objs[k], last = S.idx + 1 >= S.order.length;
   taskHead($('g-name'), o);
   $('g-i').textContent = S.idx + 1; $('g-n').textContent = S.order.length;
-  P.pin = null;
-  if (!P.view) {
-    P.view = new MapView($('g-map'), P.scene, { overlay: pupilOverlay, onTap: function (c) {
-      if (P.phase !== 'guess') return;
-      P.pin = c; $('g-btn').disabled = false; $('g-msg').textContent = t('p.pin_placed'); P.view.redraw();
-    } });
-    mapControls($('g-mapbox'), function () { return P.view; });
-  } else P.view.reset();
-  if (S.res[k]) { if (S.res[k].why) pupilNext(); else pupilReveal(k); return; }
-  P.phase = 'guess';
-  var b = $('g-btn'); b.textContent = t('p.confirm_tip'); b.disabled = true; b.onclick = pupilConfirm;
-  $('g-msg').textContent = t('p.tap_map');
-  // Stránka bola počas otázky zatvorená alebo obnovená: počíta sa to ako odchod.
-  if (S.deadline && S.awayAt && S.awayIdx === S.idx) { pupilCheckAway(true); return; }
-  if (!S.deadline) S.deadline = Date.now() + S.time * 1000;
-  S.awayAt = 0; pSave();
-  clearInterval(P.tick); P.tick = setInterval(pupilTimer, 200); pupilTimer();
+  $('g-msg').textContent = S.tips[k] ? t('p.tip_saved') : t('p.tap_map');
+  var fl = $('g-flag'); fl.classList.toggle('on', !!S.marks[k]); fl.setAttribute('aria-pressed', S.marks[k] ? 'true' : 'false');
+  $('g-prev').disabled = S.idx === 0;
+  $('g-btn').textContent = last ? t('p.submit') : t('p.next_short') + ' ›';
+  $('g-btn').classList.toggle('primary', !last || pupilAnswered() === S.order.length);
+  if (!keepView) P.view.reset(); else P.view.redraw();
+  pupilNav(); pupilMeters();
+}
+// Mriežka čísel: s tipom (plné), bez tipu (prázdne), práve otvorené (rámik), označené na návrat (vlajka).
+function pupilNav() {
+  var S = P.S, box = $('g-nav'); box.innerHTML = '';
+  S.order.forEach(function (k, i) {
+    var has = !!S.tips[k], mk = !!S.marks[k];
+    var b = el('button', { type: 'button', class: 'qn' + (has ? ' has' : '') + (mk ? ' mk' : '') + (i === S.idx ? ' cur' : ''), text: String(i + 1),
+      'aria-label': t('p.nav_item', { n: i + 1 }) + ', ' + t(has ? 'p.nav_has' : 'p.nav_none') + (mk ? ', ' + t('p.nav_marked') : ''), 'aria-current': i === S.idx ? 'true' : null,
+      onclick: function () { pupilGo(i); } });
+    box.appendChild(b);
+  });
+  var cur = box.children[S.idx];
+  if (cur) { var l = cur.offsetLeft - box.clientWidth / 2 + cur.offsetWidth / 2; box.scrollLeft = Math.max(0, l); }
+}
+function pupilGo(i) { var S = P.S; if (i < 0 || i >= S.order.length) return; S.idx = i; pSave(); pupilQuestion(); }
+function pupilAnswered() { var S = P.S; return S.order.filter(function (k) { return S.tips[k]; }).length; }
+function pupilTap(c) {
+  if (P.phase !== 'test' || $('p-game').hidden) return;
+  var S = P.S, k = curKey();
+  S.tips[k] = [+c[0].toFixed(4), +c[1].toFixed(4)]; pSave();
+  P.view.redraw();
+  $('g-msg').textContent = t('p.tip_saved');
+  if (S.idx + 1 >= S.order.length) $('g-btn').classList.toggle('primary', pupilAnswered() === S.order.length);
+  pupilNav(); pupilMeters(); pupilQueueSave();
+}
+function pupilFlag() {
+  var S = P.S, k = curKey();
+  if (S.marks[k]) delete S.marks[k]; else S.marks[k] = 1;
+  pSave(); pupilQuestion(true); pupilQueueSave();
+}
+// Dve časomiery: zostávajúci čas a zostávajúce miesta. Obe ubúdajú; keď je pás miest kratší než pás času, žiak stíha.
+function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); var m = Math.floor(sec / 60), s = sec % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+function pupilMeters() {
+  var S = P.S, total = (S.total || 1) * 60, left = Math.max(0, (P.deadline - Date.now()) / 1000), n = S.order.length, done = pupilAnswered();
+  $('m-time-v').textContent = fmtClock(left);
+  $('m-time').querySelector('.bar > i').style.width = Math.min(100, left / total * 100) + '%';
+  $('m-tips-v').textContent = done + '/' + n;
+  $('m-tips').querySelector('.bar > i').style.width = (n ? (n - done) / n * 100 : 0) + '%';
+  $('s-time') && ($('s-time').textContent = fmtClock(left));
 }
 function pupilTimer() {
-  var S = P.S, left = (S.deadline - Date.now()) / 1000;
+  if (P.phase !== 'test') return;
+  var S = P.S;
   // Návrat do testu sa kontroluje aj tu: niektoré telefóny po prepnutí aplikácie nepošlú udalosť o návrate.
-  if (S.awayAt && !document.hidden) { pupilCheckAway(false); if (P.phase !== 'guess') return; }
+  if (S.awayAt && !document.hidden) { pupilCheckAway(false); if (P.phase !== 'test') return; }
   // Systémové okno cez stránku (asistent, vyhľadávanie z obrazovky) môže zobrať stránke zameranie bez udalosti blur.
   // Len ak prehliadač zameranie vôbec hlási (inak by sa trestalo neprávom).
   if (document.hasFocus()) P.hadFocus = true;
   else if (P.hadFocus && !document.hidden && $('p-blur').hidden) pupilBlur();
-  $('g-sec').textContent = t('p.seconds', { n: Math.max(0, Math.ceil(left)) });
-  $('g-bar').firstElementChild.style.width = Math.max(0, left / S.time * 100) + '%';
-  $('g-bar').classList.toggle('low', left <= Math.min(10, S.time / 3));
-  if (left <= 0 && !S.awayAt) pupilConfirm();
+  pupilMeters();
+  if (P.deadline - Date.now() <= 0 && !S.awayAt) { S.done = true; S.why = 'time'; pSave(); pupilFinish(); }
 }
-function pupilConfirm() {
-  if (P.phase !== 'guess') return;
-  clearInterval(P.tick);
-  var S = P.S, k = S.order[S.idx], o = P.objs[k];
-  S.res[k] = P.pin ? { c: [+P.pin[0].toFixed(4), +P.pin[1].toFixed(4)], d: round1(measure(o.g, P.pin).d) } : { c: null, d: null };
-  S.deadline = 0; pSave();
-  pupilReveal(k);
+// Priebežné ukladanie na server: pri výmene zariadenia sa tipy nestratia a učiteľ vidí, koľko má žiak hotovo.
+function pupilQueueSave() { clearTimeout(P.saveTimer); P.saveTimer = setTimeout(pupilSaveNow, SAVE_MS); }
+function pupilSaveNow() {
+  clearTimeout(P.saveTimer); P.saveTimer = null;
+  var S = P.S; if (!S || S.done) return;
+  api('pupilSave', { t: P.t, p: S.pupilId, d: P.device, tips: S.tips, mk: Object.keys(S.marks) }).catch(function () {});
 }
-// Po tipe žiak vidí len odchýlku a percentá. Správnu polohu uvidí, až keď učiteľ test uzavrie.
-function pupilReveal(k) {
-  P.phase = 'reveal'; clearInterval(P.tick);
-  var S = P.S, r = S.res[k]; P.pin = r.c; if (P.view) P.view.redraw();
-  $('g-sec').textContent = ''; $('g-bar').firstElementChild.style.width = '0%';
-  var m = $('g-msg'), p = fmtPct(pctFor(r.d, S.scoring.full, S.scoring.zero));
-  if (!r.c) m.innerHTML = esc(t('p.no_tip_time')) + ' <b>' + esc(fmtPct(0)) + '</b>';
-  else if (r.d === 0) m.innerHTML = '<b>' + esc(t('p.exact')) + '</b> ' + esc(p);
-  else m.innerHTML = esc(t('p.deviation')) + ' <b>' + esc(fmtKm(r.d)) + '</b> · ' + esc(p);
-  var b = $('g-btn'); b.disabled = false; b.onclick = pupilNext;
-  b.textContent = S.idx + 1 < S.order.length ? t('p.next') : t('p.submit');
-}
-function pupilNext() {
-  var S = P.S;
-  if (S.idx + 1 < S.order.length) { S.idx++; pSave(); pupilQuestion(); }
-  else { S.done = true; pSave(); pupilFinish(); }
+// Pred odovzdaním: koľko miest je bez tipu a ktoré sú označené. Čas medzitým beží ďalej.
+function pupilAskSubmit() {
+  var S = P.S, miss = [], marked = [];
+  S.order.forEach(function (k, i) { if (!S.tips[k]) miss.push(i); if (S.marks[k]) marked.push(i); });
+  $('s-sum').textContent = t('p.sum_done', { done: S.order.length - miss.length, n: S.order.length });
+  var list = function (box, idx) {
+    box.innerHTML = '';
+    idx.forEach(function (i) { box.appendChild(el('button', { type: 'button', class: 'qn' + (S.tips[S.order[i]] ? ' has' : '') + (S.marks[S.order[i]] ? ' mk' : ''), text: String(i + 1), onclick: function () { pShow('p-game'); pupilGo(i); } })); });
+  };
+  list($('s-miss'), miss); $('s-miss-row').hidden = !miss.length;
+  list($('s-marked'), marked); $('s-marked-row').hidden = !marked.length;
+  $('s-go').onclick = function () { S.done = true; S.why = ''; pSave(); pupilFinish(); };
+  $('s-back').onclick = function () { pShow('p-game'); pupilQuestion(true); };
+  pShow('p-submit');
+  pupilMeters();
 }
 
 /* ---------- stráženie odchodu z testu ---------- */
-// Odchod = skrytá karta alebo iná aplikácia na viac než 1 s, zatvorenie stránky, alebo iné okno na viac než 4 s. Stráži sa len počas otázky.
+// Odchod = skrytá karta alebo iná aplikácia na viac než 1 s, zatvorenie stránky, alebo iné okno na viac než 4 s. Stráži sa celý čas písania.
 function pupilGuard() {
   document.addEventListener('visibilitychange', function () { if (document.hidden) pupilAway(); else { pupilCheckAway(false); if (P.poll) pupilPoll(); } });
   window.addEventListener('pagehide', pupilAway);
@@ -204,50 +269,42 @@ function pupilGuard() {
   $('p-blur').onclick = function () { window.focus(); };
 }
 function pupilBlur() {
-  if (P.phase !== 'guess' || document.hidden) return;
+  if (P.phase !== 'test' || document.hidden) return;
   $('p-blur').hidden = false; clearTimeout(P.blurTimer);
-  P.blurTimer = setTimeout(function () { if (P.phase === 'guess' && !document.hasFocus()) { $('p-blur').hidden = true; pupilLeft(); } else $('p-blur').hidden = true; }, AWAY_BLUR_MS);
+  P.blurTimer = setTimeout(function () { if (P.phase === 'test' && !document.hasFocus()) { $('p-blur').hidden = true; pupilLeft(); } else $('p-blur').hidden = true; }, AWAY_BLUR_MS);
 }
 function pupilAway() {
-  var S = P.S; if (!S || P.phase !== 'guess' || S.awayAt) return;
-  S.awayAt = Date.now(); S.awayIdx = S.idx; pSave();
+  var S = P.S; if (!S || P.phase !== 'test' || S.awayAt) return;
+  S.awayAt = Date.now(); pSave();
+  if (P.saveTimer) pupilSaveNow();
 }
 function pupilCheckAway(afterReload) {
-  // Mimo otázky sa odchod nevyhodnocuje (napr. hneď po obnovení stránky, kým sa test znova načíta).
-  var S = P.S; if (!S || !S.awayAt || P.phase !== 'guess') return;
-  var dt = Date.now() - S.awayAt, same = S.awayIdx === S.idx && !S.res[S.order[S.idx]];
+  var S = P.S; if (!S || !S.awayAt || P.phase !== 'test') return;
+  var dt = Date.now() - S.awayAt;
   S.awayAt = 0; pSave();
-  if (same && (afterReload || dt >= AWAY_HIDDEN_MS)) pupilLeft();
-  else if (afterReload) { clearInterval(P.tick); P.tick = setInterval(pupilTimer, 200); pupilTimer(); }
+  if (afterReload || dt >= AWAY_HIDDEN_MS) pupilLeft();
 }
+// Prvý odchod: varovanie a strhnutie z celkového výsledku (počíta skript tabuľky). Druhý: test sa ukončí a odovzdá.
 function pupilLeft() {
-  if (P.phase !== 'guess') return;
-  var S = P.S, k = S.order[S.idx];
-  clearInterval(P.tick); clearTimeout(P.blurTimer); $('p-blur').hidden = true;
-  S.res[k] = { c: null, d: null, why: 'leave' }; S.leaves = (S.leaves || 0) + 1; S.deadline = 0; S.awayAt = 0; P.pin = null;
-  api('pupilEvent', { t: P.t, p: S.pupilId, d: P.device, what: 'odchod z testu č. ' + S.leaves + ': ' + P.objs[k].name }).catch(function () {});
-  if (S.leaves >= 2) {
-    S.order.forEach(function (x) { if (!S.res[x]) S.res[x] = { c: null, d: null, why: 'ended' }; });
-    S.ended = true; S.done = true; pSave(); pupilFinish(); return;
-  }
-  P.phase = 'left'; pSave();
-  $('p-left-msg').textContent = t('p.left_msg', { obj: P.objs[k].name });
-  $('p-left-go').onclick = function () { P.phase = 'reveal'; pupilNext(); };
+  if (P.phase !== 'test') return;
+  var S = P.S;
+  clearTimeout(P.blurTimer); $('p-blur').hidden = true;
+  S.leaves = (S.leaves || 0) + 1; S.awayAt = 0; pSave();
+  api('pupilEvent', { t: P.t, p: S.pupilId, d: P.device, leave: S.leaves, what: 'odchod z testu č. ' + S.leaves }).catch(function () {});
+  if (S.leaves >= 2) { S.ended = true; S.done = true; S.why = 'ended'; pSave(); pupilFinish(); return; }
+  $('p-left-msg').textContent = t('p.left_msg', { pct: Math.round(P.penalty * 100) });
+  $('p-left-go').onclick = function () { pShow('p-game'); pupilQuestion(true); };
   pShow('p-left');
 }
 
-/* ---------- koniec, odoslanie a čakanie na výsledky ---------- */
-function pupilItems() {
-  var S = P.S;
-  return S.order.map(function (k) { var r = S.res[k] || { c: null, d: null }; return { k: k, c: r.c, d: r.d, why: r.why || '' }; });
-}
+/* ---------- odovzdanie a čakanie na výsledky ---------- */
 function pupilFinish() {
-  P.phase = 'idle'; clearInterval(P.tick);
-  var S = P.S, items = pupilItems(), sum = 0;
-  items.forEach(function (it) { sum += pctFor(it.why ? null : it.d, S.scoring.full, S.scoring.zero); });
-  $('p-end-title').textContent = S.ended ? t('p.end_ended') : t('p.end_done', { name: greetName(S) });
+  P.phase = 'idle'; clearInterval(P.tick); clearTimeout(P.saveTimer); clearTimeout(P.blurTimer); $('p-blur').hidden = true;
+  var S = P.S;
+  $('p-end-title').textContent = S.why === 'time' ? t('p.end_time') : S.ended ? t('p.end_ended') : t('p.end_done', { name: greetName(S) });
   $('p-end-ended').hidden = !S.ended;
-  $('p-end-pct').textContent = fmtPct(items.length ? sum / items.length : 0);
+  $('p-end-time').hidden = S.why !== 'time';
+  $('p-end-n').textContent = t('p.end_n', { done: S.order.filter(function (k) { return S.tips[k]; }).length, n: S.order.length });
   pShow('p-end');
   pupilSend(0);
 }
@@ -258,10 +315,8 @@ function pupilSend(attempt) {
     pupilPollStart(); return;
   }
   st.className = 'muted'; st.innerHTML = '<span class="spin"></span>' + esc(t('p.sending')); again.hidden = true;
-  var tips = pupilItems().map(function (it) { return { k: it.k, c: it.c, why: it.why }; });
-  api('pupilSubmit', { t: P.t, p: S.pupilId, d: P.device, tips: tips }).then(function (r) {
+  api('pupilSubmit', { t: P.t, p: S.pupilId, d: P.device, tips: S.tips, leaves: S.leaves || 0, ended: !!S.ended }).then(function () {
     S.sent = true; pSave();
-    $('p-end-pct').textContent = fmtPct(r.pct);
     pupilSend(0);
   }).catch(function (e) {
     if (attempt < 5 && ['network', 'http', 'bad_response', 'busy', 'server'].indexOf(e.code) >= 0) {
@@ -289,15 +344,17 @@ async function pupilResults() {
   try { R = await apiRetry('pupilResult', { t: P.t, p: saved.pupilId, d: P.device }, 3); }
   catch (e) { pFail(e.code === 'no_result' || e.code === 'not_logged' ? t('p.no_result') : errText(e)); return; }
   try { await P.scenePromise; } catch (e) { /* mapa bez podkladu */ }
-  var order = saved.order && saved.order.length === R.keys.length ? saved.order : R.keys;
+  var order = saved.order && saved.order.length === R.keys.length && saved.order.every(function (k) { return R.keys.indexOf(k) >= 0; }) ? saved.order : R.keys;
   P.R = R; P.rsel = -1;
   P.ritems = order.map(function (k) {
     var o = R.objects[k], tip = R.tips[k];
     return { k: k, name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: R.km[k], why: R.km[k] === null ? (R.why[k] || 'none') : '' };
   });
   $('r-title').textContent = R.name;
-  $('r-sub').textContent = [R.title, R.cls].filter(Boolean).join(' · ');
+  $('r-sub').textContent = [R.title, R.cls, R.group ? t('p.group', { g: R.group }) : ''].filter(Boolean).join(' · ');
   $('r-pct').textContent = fmtPct(R.pct);
+  $('r-penalty').textContent = R.leaves > 0 ? t('p.res_penalty', { pct: Math.round((R.penalty || P.penalty) * 100) }) : '';
+  $('r-penalty').hidden = !(R.leaves > 0);
   var list = $('r-list'); list.innerHTML = '';
   P.ritems.forEach(function (it, i) {
     var pc = pctFor(it.why ? null : it.d, R.scoring.full, R.scoring.zero);
@@ -315,7 +372,7 @@ async function pupilResults() {
 function pupilResultsOverlay(v) {
   var s = '', u = v.uPx(), sel = P.rsel;
   P.ritems.forEach(function (it, i) { s += drawTarget(it.g, v.proj, v.pal, 0, i === sel); });
-  P.ritems.forEach(function (it, i) {
+  P.ritems.forEach(function (it) {
     if (!it.c) return;
     if (it.d > 0) s += drawConn(it.c, measure(it.g, it.c).near, v.proj, v.pal, 0);
   });
@@ -343,4 +400,11 @@ async function pupilImage() {
   } catch (e) { st.textContent = errText(e); }
 }
 
+/* ---------- tlačidlá ---------- */
+(function () {
+  $('g-prev').onclick = function () { pupilGo(P.S.idx - 1); };
+  $('g-btn').onclick = function () { var S = P.S; if (S.idx + 1 < S.order.length) pupilGo(S.idx + 1); else pupilAskSubmit(); };
+  $('g-flag').onclick = pupilFlag;
+  $('g-submit').onclick = pupilAskSubmit;
+})();
 pupilStart();

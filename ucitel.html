@@ -8,7 +8,7 @@
 <title>Slepá mapa · učiteľ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2.12">
+<link rel="stylesheet" href="css/app.css?v=2.13">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c4f8a'/%3E%3Cpath d='M7 22l6-12 5 8 3-4 4 8z' fill='%23f5f7ea'/%3E%3Ccircle cx='21' cy='9' r='3' fill='%23ff74b4'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -48,13 +48,14 @@
           <label for="f-cls"><span data-i18n="t.class"></span><select id="f-cls" required></select></label>
           <label for="f-title"><span data-i18n="t.title"></span><input id="f-title" maxlength="60" autocomplete="off" required data-i18n-attr="placeholder:t.title_ph"></label>
         </div>
+        <div id="f-groups" class="stack tight" hidden></div>
         <div class="row"><div class="field"><span data-i18n="t.regions"></span><select id="f-region"></select></div></div>
         <fieldset><legend data-i18n="t.types"></legend><div class="box"><div id="f-types" class="chips"></div><p id="f-types-msg" class="small muted" hidden></p></div></fieldset>
         <fieldset><legend data-i18n="t.test_setup"></legend><div class="box">
           <div class="dslider" id="f-diff"><input type="hidden" id="f-dmin"><input type="hidden" id="f-dmax"></div>
           <div class="row">
             <label for="f-n"><span data-i18n="t.count"></span><input id="f-n" type="number" min="1" max="40" inputmode="numeric"></label>
-            <label for="f-time"><span data-i18n="t.time"></span><input id="f-time" type="number" min="5" max="600" inputmode="numeric"></label>
+            <label for="f-time"><span data-i18n="t.time"></span><input id="f-time" type="number" min="1" max="240" inputmode="numeric"></label>
           </div>
         </div></fieldset>
       </div>
@@ -65,18 +66,18 @@
           <div class="seg" role="group"><button type="button" id="m-auto" data-i18n="t.mode_auto"></button><button type="button" id="m-manual" data-i18n="t.mode_manual"></button></div>
         </div>
         <p id="pool-info" class="small muted"></p>
-        <button type="button" id="list-toggle" class="listbtn" aria-controls="list-box"></button>
+        <div class="row" style="align-items:center"><button type="button" id="list-toggle" aria-controls="list-box"></button><p id="list-hidden" class="small muted" data-i18n="t.list_hidden"></p></div>
         <div id="list-box" class="stack tight" hidden>
           <ol id="slots" class="slots"></ol>
           <div class="row"><button type="button" id="refill" data-i18n="t.refill"></button><button type="button" id="clear-all" data-i18n="t.clear_all"></button></div>
+          <div class="mapbox fixed" id="prev-box"><svg id="prev-map" class="map pan" role="img"></svg><div class="mapmsg" id="prev-msg"></div></div>
+          <div class="legend small muted prevlegend" id="prev-legend" hidden><span><span class="dot a"></span><span data-i18n="t.legend_a"></span></span><span><span class="dot b"></span><span data-i18n="t.legend_b"></span></span></div>
         </div>
       </div>
 
       <div class="panel">
         <h2 data-i18n="t.step3"></h2>
         <fieldset><legend data-i18n="t.on_map"></legend><div class="box"><div id="f-base" class="chips"></div></div></fieldset>
-        <div class="mapbox fixed" id="prev-box"><svg id="prev-map" class="map pan" role="img"></svg><div class="mapmsg" id="prev-msg"></div></div>
-        <label class="chip" for="prev-show" style="align-self:flex-start"><input type="checkbox" id="prev-show"> <span data-i18n="t.show_chosen"></span></label>
         <div class="row">
           <label for="f-full"><span data-i18n="t.full_pct"></span><input id="f-full" inputmode="decimal"></label>
           <label for="f-zero"><span data-i18n="t.zero_pct"></span><input id="f-zero" inputmode="decimal"></label>
@@ -210,11 +211,11 @@
 </div>
 <div id="print-sheet"></div>
 
-<script src="js/qrcode.js?v=2.12"></script>
-<script src="js/geo.js?v=2.12"></script>
-<script src="js/core.js?v=2.12"></script>
-<script src="js/data.js?v=2.12"></script>
-<script src="js/map.js?v=2.12"></script>
-<script src="js/teacher.js?v=2.12"></script>
+<script src="js/qrcode.js?v=2.13"></script>
+<script src="js/geo.js?v=2.13"></script>
+<script src="js/core.js?v=2.13"></script>
+<script src="js/data.js?v=2.13"></script>
+<script src="js/map.js?v=2.13"></script>
+<script src="js/teacher.js?v=2.13"></script>
 </body>
 </html>

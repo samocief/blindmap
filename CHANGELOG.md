@@ -2,6 +2,31 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.13 (2026-10-19) – treba vymeniť skript tabuľky (verzia 2.3)
+
+**Test ako písomka**
+- **Jeden celkový čas** namiesto času na tip (vo formulári „Celkový čas (min)“). Beží od ťuknutia na Začať a drží ho skript tabuľky, takže ho obnovenie stránky ani iné zariadenie nevráti.
+- **Voľný pohyb medzi miestami:** čísla miest hore (plné = s tipom, oranžová bodka = vlajka „vrátim sa“), šípka späť a Ďalšie dole. Tip sa uloží hneď po ťuknutí a dá sa presúvať až do odovzdania.
+- **Dve časomiery** hore, bez farby: zostávajúci čas a zostávajúce miesta. Oba pásy ubúdajú; kým je pás miest kratší ako pás času, žiak stíha.
+- Počas písania žiak nevidí odchýlky ani percentá, ani hneď po odovzdaní. Mapu a výsledok uvidí po uzavretí testu.
+- **Odovzdať** (hore aj na poslednom mieste) ukáže, ktoré miesta sú bez tipu a ktoré označené, a dá sa k nim vrátiť. Keď čas vyprší, test sa odovzdá sám.
+- **Odchod z testu:** prvý odchod (iná karta, aplikácia, obnovenie stránky) = varovanie a −10 % z celkového výsledku, druhý test ukončí a odovzdá.
+- Tipy sa priebežne ukladajú aj do skriptu. Po odomknutí žiak na inom zariadení pokračuje so svojimi tipmi a zvyšným časom; učiteľ v prehľade vidí, koľko má kto tipov.
+- Vzhľad ako precvičovanie (zadanie so symbolom, mapa, farby vrstiev, podpis).
+
+**Skupiny A a B**
+- Stĺpec **Skupina** v hárku Žiaci (do staršieho hárka sa doplní sám). Trieda so žiakmi v A aj B píše v dvoch skupinách s rôznymi objektmi.
+- Vo formulári sú objekty v dvoch stĺpcoch, vedľa seba vždy rovnaký typ a obtiažnosť (na telefóne dvojica pod sebou). Kocka pri políčku vyberie objekt podľa suseda vedľa; dvojica s iným typom alebo obtiažnosťou má oranžové číslo.
+- Žiaci bez skupiny sú vypísaní pod triedou a pred spustením testu sa aplikácia opýta. Píšu skupinu A.
+- Prehľad, výsledky, tipy triedy, obrázky a kopírovanie pre Excel rátajú s tým, že každý žiak písal len objekty svojej skupiny.
+
+**Ďalšie**
+- Objekty aj mapa s nimi sú v aplikácii učiteľa pod jedným tlačidlom **Ukázať objekty** (predvolene skryté).
+- QR kód pre telefón v okne „Otvoriť aplikáciu učiteľa“ je skrytý pod tlačidlom. Nová položka ponuky **Slepá mapa → Nový kľúč učiteľa** zneplatní starý odkaz a QR kód (ak ich videli žiaci).
+- **Kopírovať štatistiky** (Tipy triedy): stĺpce id (ako v `*_difficulty_edit.csv`, pri EČV id okresu), názov, typ, skupina, obtiažnosť v teste, tipov, medián, priemer, návrh obtiažnosti.
+- Odkaz na precvičovanie z aplikácie učiteľa má namiesto „nič sa neukladá“ text „bez mena a bez prihlásenia“.
+- So skriptom starším ako 2.3 aplikácia učiteľa nové testy nevytvorí (doterajšie sa dajú otvárať) a žiak dostane vysvetlenie.
+
 ## 2.12 (2026-10-18)
 
 - **Národné parky na mape sýtejšie:** pri zapnutej vrstve Chránené územia majú NP sýtejšiu zelenú výplň a hrubšiu čiaru, CHKO ostávajú svetlejšie. Vzorka pri vrstve (legenda) ukazuje oba odtiene. Typ sa berie zo stĺpca `subclass` v tabuľke (`NP` / `CHKO`), názvy s predponou ostávajú.

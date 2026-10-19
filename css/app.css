@@ -147,10 +147,34 @@ ul.rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
   .quit svg{width:20px;height:20px}
   .task .name{font-size:1.45rem}
   .tk .tico{width:2rem;height:2rem}
+  /* test: Odovzdať ostáva aj s textom, poradie miesta je vidieť v mriežke */
+  .exam .count{display:none}
+  .exam .quit{width:auto;padding:4px 10px}
+  .exam .quit span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .exam .quit svg{width:16px;height:16px}
+  .exam .foot .big{padding:12px 16px}
 }
 .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
 .bar > i{display:block;height:100%;width:100%;background:var(--accent);transition:width .2s linear}
 .bar.low > i{background:var(--warn)}
+/* test ako písomka: dve časomiery bez farby (čas a miesta, oba pásy ubúdajú), mriežka miest, vlajka „vrátim sa“ */
+.meters{display:flex;gap:6px 18px}
+.meter{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:7px;color:var(--muted)}
+.meter svg{width:19px;height:19px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.meter b{color:var(--ink);font-variant-numeric:tabular-nums;font-size:.95rem;min-width:2.9em}
+.meter .bar{flex:1 1 auto}
+.meter .bar > i{background:var(--muted);transition:width .25s linear}
+.qnav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:4px 2px 4px;-webkit-overflow-scrolling:touch}
+.qnav.multi{flex-wrap:wrap;overflow:visible}
+.qn{position:relative;flex:0 0 auto;min-width:38px;height:38px;min-height:0;padding:0 6px;border-radius:8px;font-size:.95rem;font-variant-numeric:tabular-nums;background:var(--panel);color:var(--ink)}
+.qn.has{background:color-mix(in srgb,var(--ink) 18%,var(--panel));border-color:transparent}
+.qn.cur{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.qn.mk::after{content:"";position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:var(--warn);border:2px solid var(--bg)}
+button.icon svg{width:22px;height:22px;display:block;margin:auto;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.flag.on{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.flag.on svg path:last-child{fill:currentColor}
+.exam .foot{gap:8px}
+.exam .verdict{font-size:.95rem}
 .game .mapbox{flex:1 1 auto;min-height:200px;margin:0 8px;border-radius:12px}
 .foot{padding:10px 14px calc(12px + env(safe-area-inset-bottom));display:flex;gap:12px;align-items:center;justify-content:space-between}
 .verdict{font-weight:600;flex:1 1 auto}
@@ -188,6 +212,7 @@ td.num{font-weight:600}
 tr.sel td{background:var(--bg)}
 .badge{display:inline-block;font-size:.8rem;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);vertical-align:middle;white-space:nowrap}
 .badge.open{color:var(--ok);border-color:var(--ok)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
 .qr{width:150px;flex:0 0 auto;background:#fff;border-radius:8px;padding:4px}
 .qr svg{display:block;width:100%;height:auto}
 .qrbig{background:#fff;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;color:#18262a;max-width:min(92vw,620px);cursor:default}
@@ -195,8 +220,21 @@ tr.sel td{background:var(--bg)}
 .qrbig b{font-size:1.4rem}
 .testhead{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
 .slots{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.slot{display:grid;grid-template-columns:30px 1fr auto auto;gap:6px;align-items:center}
+/* jeden riadok = číslo a jedno políčko, pri teste so skupinami dve políčka vedľa seba (A a B s rovnakým typom a obtiažnosťou) */
+.slot{display:grid;grid-template-columns:30px minmax(0,1fr);gap:6px 14px;align-items:center}
+.slots.two .slot{grid-template-columns:30px minmax(0,1fr) minmax(0,1fr);align-items:start}
 .slot .n{color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.slots.two .slot .n{padding-top:12px}
+.slot .n.diff{color:var(--warn);font-weight:800;cursor:help}
+.slot.head{font-weight:800;font-size:.95rem}
+.slot.head span:first-child{visibility:hidden}
+.cell{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;min-width:0}
+.slots.two .cell{align-items:start}
+.cell .tag{display:none}
+.slots.two .combo .hint{position:static;transform:none;display:block;margin:3px 0 0 4px;white-space:normal}
+.prevlegend .dot.b{background:var(--tip)}
+.prevlegend .dot.a{background:var(--ok)}
+.grpinfo{margin:0}
 .combo{position:relative}
 .combo input{padding-right:12px}
 .combo input.filled{font-weight:600}
@@ -228,12 +266,22 @@ footer.copy{justify-content:center}
   .foot{padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
   .foot button.big{min-height:44px;padding:8px 18px;font-size:1rem}
   .verdict b{font-size:1.1rem}
+  .qn{height:32px;min-width:32px}
+  .meter b{font-size:.85rem}
 }
 @media (max-width:640px){
   .wrap{padding:14px 12px 32px}
-  .slot{grid-template-columns:22px 1fr auto auto;align-items:start}
+  .slot{grid-template-columns:22px minmax(0,1fr);align-items:start}
   .slot .n{padding-top:12px}
+  .cell{align-items:start}
   .combo .hint{position:static;transform:none;display:block;margin:3px 0 0 4px;white-space:normal}
+  /* na telefóne sú dvojice A a B pod sebou */
+  .slots.two .slot{grid-template-columns:22px minmax(0,1fr);gap:6px}
+  .slots.two .slot .cell + .cell{grid-column:2}
+  .slots.two .slot.head{display:none}
+  .slots.two .cell{grid-template-columns:auto minmax(0,1fr) auto auto}
+  .slots.two .cell .tag{display:inline-flex;align-items:center;justify-content:center;width:22px;height:44px;font-weight:800;color:var(--muted)}
+  .slots.two .slot + .slot{border-top:1px solid var(--line);padding-top:8px}
   th,td{padding:8px 8px}
 }
 

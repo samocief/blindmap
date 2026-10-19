@@ -3,10 +3,10 @@
  * môže ho spustiť a uzavrieť, označiť neprítomných a skopírovať výsledky. Jeho odkaz sa nikam neukladá.
  */
 var T = {
-  s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], mode: 'auto', loadSeq: 0, listOpen: false,
+  s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.1';
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.3';
 
 function tStatus(id, msg, cls) { var e = $(id); e.textContent = msg || ''; e.className = 'small ' + (cls || 'muted'); e.hidden = !msg; }
 function appBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
@@ -41,9 +41,10 @@ async function teacherStart() {
   try { T.init = await apiRetry('tInit', A(), 3); }
   catch (e) { tConnect(e.code === 'auth' ? t('t.connect_auth') : errText(e)); return; }
   try { T.regions = await Data.index(); } catch (e) { T.regions = []; tStatus('t-status', t('t.no_index'), 'bad'); }
+  // Test ako písomka (celkový čas, skupiny A/B) potrebuje skript 2.3. So starším skriptom sa dajú len otvárať doterajšie testy.
   T.oldScript = cmpVer(T.init.v, NEED_SCRIPT) < 0;
   if (T.oldScript) tStatus('t-status', t('t.old_script', { v: T.init.v || '1' }), 'bad');
-  $('prepare').hidden = $('start-hint').hidden = T.oldScript;
+  $('start').disabled = $('prepare').disabled = T.oldScript;
   $('t-sheet').href = T.init.sheetUrl; $('t-sheet').hidden = false;
   $('t-conn').textContent = t('t.connected', { name: T.init.sheetName || '' }); $('t-foot').hidden = false;
   show('t-app', 't');
@@ -90,23 +91,41 @@ function tForm() {
   cls.forEach(function (c) { sel.appendChild(el('option', { value: c, text: t('t.class_opt', { cls: c, n: I.classes[c].length }) })); });
   if (!T.oldScript) sel.appendChild(el('option', { value: OPEN_CLS, text: t('t.class_open') }));
   sel.value = ''; $('f-title').value = '';
-  sel.onchange = function () { sel.classList.remove('invalid'); tStatus('start-msg', ''); };
+  sel.onchange = function () { sel.classList.remove('invalid'); tStatus('start-msg', ''); tClassChanged(); };
   $('f-title').oninput = function () { $('f-title').classList.remove('invalid'); tStatus('start-msg', ''); };
   tListToggle(false);
   $('f-dmin').value = String(F.dmin || 1); $('f-dmax').value = String(F.dmax || 2);
   diffSlider($('f-diff'), $('f-dmin'), $('f-dmax'));
-  $('f-n').value = F.n || 10; $('f-time').value = F.time || 20; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
+  $('f-n').value = F.n || 10; $('f-time').value = F.total || 10; $('f-full').value = F.pFull || 1; $('f-zero').value = F.pZero || 30;
   regionSelect($('f-region'), T.regions, (F.regions || [])[0], tRegionsChanged);
   $('f-dmin').onchange = $('f-dmax').onchange = function () { saveForm({ dmin: +$('f-dmin').value, dmax: +$('f-dmax').value }); tFilter(); };
   // Počet objektov: políčka sa prispôsobia už počas písania; prekresľujú sa len pri skutočnej zmene počtu.
   var nTimer = null;
   $('f-n').oninput = function () { clearTimeout(nTimer); nTimer = setTimeout(function () { var n = parseInt($('f-n').value, 10); if (n >= 1 && n <= 40 && n !== T.slots.length) { saveForm({ n: n }); tResize(); } }, 400); };
   $('f-n').onchange = function () { clearTimeout(nTimer); var n = Math.max(1, Math.min(40, parseInt($('f-n').value, 10) || 10)); $('f-n').value = n; saveForm({ n: n }); if (n !== T.slots.length) tResize(); };
-  $('f-time').onchange = function () { saveForm({ time: Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 20)) }); };
+  $('f-time').onchange = function () { var m = Math.max(1, Math.min(240, parseInt($('f-time').value, 10) || 10)); $('f-time').value = m; saveForm({ total: m }); };
   $('f-full').oninput = $('f-zero').oninput = tScoringInfo;
   $('f-full').onchange = $('f-zero').onchange = function () { saveForm({ pFull: num($('f-full').value, 1), pZero: num($('f-zero').value, 30) }); };
   T.mode = F.mode === 'manual' ? 'manual' : 'auto'; tModeButtons();
+  T.groups = false; T.slotsB = []; tClassChanged();
   tRegionsChanged();
+}
+// Trieda so žiakmi v skupine A aj B (hárok Žiaci, stĺpec Skupina) píše v skupinách: dve sady objektov vedľa seba.
+// Žiakov bez skupiny učiteľ vidí hneď pod triedou (budú písať A), nepriraďujú sa potichu.
+function tGroupInfo() { var c = $('f-cls').value, g = ((T.init && T.init.groups) || {})[c]; return c && c !== OPEN_CLS && g && g.A > 0 && g.B > 0 ? g : null; }
+function tClassChanged() {
+  var c = $('f-cls').value, g = tGroupInfo(), box = $('f-groups'), on = !!g;
+  box.innerHTML = '';
+  if (g) {
+    box.appendChild(el('p', { class: 'small muted', text: t('t.groups_info', { cls: c, a: g.A, b: g.B }) }));
+    if (g.none.length) box.appendChild(el('p', { class: 'small bad', text: t('t.groups_missing', { names: g.none.join(', ') }) }));
+  } else if (c && c !== OPEN_CLS && T.init && T.init.groups) box.appendChild(el('p', { class: 'small muted', text: t('t.groups_one', { cls: c }) }));
+  box.hidden = !box.firstChild;
+  if (on === T.groups) return;
+  T.groups = on;
+  T.slotsB = on ? T.slots.map(function () { return null; }) : [];
+  if (on && T.mode === 'auto') tFillEmpty();
+  tSlots();
 }
 
 // Zmena oblastí: načítajú sa objekty a ponuka vrstiev mapy.
@@ -135,6 +154,7 @@ async function tRegionsChanged() {
   $('f-types-msg').textContent = items.length ? '' : t('t.no_objects'); $('f-types-msg').hidden = !!items.length;
   // výber z minulého razu ostane, ak sa ešte dá
   T.slots = T.slots.map(function (o) { return o && byId[o.id] ? byId[o.id] : null; });
+  T.slotsB = T.slotsB.map(function (o) { return o && byId[o.id] ? byId[o.id] : null; });
   tFilter();
   tScene();
 }
@@ -177,6 +197,7 @@ function tFilter() {
     .sort(function (a, b) { return a.name.localeCompare(b.name, I18N.lang); });
   var ok = {}; T.pool.forEach(function (o) { ok[o.id] = 1; });
   T.slots = T.slots.map(function (o) { return o && ok[o.id] ? o : null; });
+  T.slotsB = T.slotsB.map(function (o) { return o && ok[o.id] ? o : null; });
   chipCounts($('f-types'), T.poolAll, dmin, dmax);
   tLockLayers(); tScene();
   tResize();
@@ -184,25 +205,37 @@ function tFilter() {
 function tResize() {
   var n = Math.max(1, Math.min(40, parseInt($('f-n').value, 10) || 10));
   T.slots = T.slots.slice(0, n); while (T.slots.length < n) T.slots.push(null);
+  if (T.groups) { T.slotsB = T.slotsB.slice(0, n); while (T.slotsB.length < n) T.slotsB.push(null); }
   if (T.mode === 'auto') tFillEmpty();
   tSlots();
 }
-// Zoznam objektov je predvolene skrytý: učiteľ zvyčajne zrkadlí obrazovku na projektor.
+// Objekty a mapa s nimi sú predvolene skryté: učiteľ zvyčajne zrkadlí obrazovku na projektor.
 function tListToggle(open) {
-  T.listOpen = open; $('list-box').hidden = !open;
+  T.listOpen = open; $('list-box').hidden = !open; $('list-hidden').hidden = open;
   $('list-toggle').textContent = t(open ? 't.hide_list' : 't.show_list') + (open ? ' ▴' : ' ▾');
   $('list-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open && T.pview) setTimeout(function () { T.pview.fit(); }, 0);
 }
 function tModeButtons() { $('m-auto').classList.toggle('on', T.mode === 'auto'); $('m-manual').classList.toggle('on', T.mode === 'manual'); $('refill').hidden = T.mode !== 'auto'; }
+function tClearAll() { T.slots = T.slots.map(function () { return null; }); T.slotsB = T.slotsB.map(function () { return null; }); }
 function tSetMode(m) {
   T.mode = m; saveForm({ mode: m }); tModeButtons();
-  if (m === 'manual') T.slots = T.slots.map(function () { return null; }); else tFillEmpty();
+  if (m === 'manual') tClearAll(); else tFillEmpty();
   tSlots();
 }
-// Náhodný objekt z ponuky. Vyvažuje obtiažnosti a typy; pri výmene uprednostní rovnaký typ a obtiažnosť.
-// Náhodný objekt na doplnenie prázdnych políčok (Auto): vyvažuje obtiažnosti a typy.
-function tRandom(exclude) {
+function colArr(col) { return col === 'B' ? T.slotsB : T.slots; }
+// Už vybrané objekty v oboch skupinách (okrem jedného políčka): ten istý objekt nemôže byť dvakrát ani v A aj B.
+function usedIds(col, except) {
+  var u = {};
+  [['A', T.slots], ['B', T.slotsB]].forEach(function (c) { c[1].forEach(function (o, i) { if (o && !(c[0] === col && i === except)) u[o.id] = 1; }); });
+  return u;
+}
+function pick(list) { return list.length ? list[Math.floor(Math.random() * list.length)] : null; }
+// Náhodný objekt na doplnenie prázdnych políčok (Auto): vyvažuje obtiažnosti a typy v stĺpci A.
+// pair = pri skupinách vyberá len objekty, ku ktorým ostáva ďalší s rovnakým typom a obtiažnosťou (pre stĺpec B).
+function tRandom(exclude, pair) {
   var avail = T.pool.filter(function (x) { return !exclude[x.id]; });
+  if (pair) { var two = avail.filter(function (x) { return avail.some(function (y) { return y !== x && y.type === x.type && y.diff === x.diff; }); }); if (two.length) avail = two; }
   if (!avail.length) return null;
   var cd = {}, ct = {};
   T.slots.forEach(function (o) { if (o) { cd[o.diff] = (cd[o.diff] || 0) + 1; ct[o.type] = (ct[o.type] || 0) + 1; } });
@@ -210,62 +243,91 @@ function tRandom(exclude) {
   avail = avail.filter(function (x) { return (cd[x.diff] || 0) === m; });
   m = Math.min.apply(null, avail.map(function (x) { return ct[x.type] || 0; }));
   avail = avail.filter(function (x) { return (ct[x.type] || 0) === m; });
-  return avail[Math.floor(Math.random() * avail.length)];
+  return pick(avail);
 }
-function usedIds(except) { var u = {}; T.slots.forEach(function (o, i) { if (o && i !== except) u[o.id] = 1; }); return u; }
-function tFillEmpty() { T.slots.forEach(function (o, i) { if (!o) T.slots[i] = tRandom(usedIds(i)); }); }
-function tRefill() { T.slots = T.slots.map(function () { return null; }); tFillEmpty(); tSlots(); }
+// Objekt k susedovi v druhej skupine: rovnaký typ a obtiažnosť; ak taký nie je, rovnaký typ s najbližšou obtiažnosťou, potom rovnaká obtiažnosť.
+function tMatch(ref, exclude) {
+  if (!ref) return tRandom(exclude);
+  var avail = T.pool.filter(function (x) { return !exclude[x.id]; }), best = avail.filter(function (x) { return x.type === ref.type && x.diff === ref.diff; });
+  if (!best.length) {
+    var same = avail.filter(function (x) { return x.type === ref.type; });
+    if (same.length) { var m = Math.min.apply(null, same.map(function (x) { return Math.abs(x.diff - ref.diff); })); best = same.filter(function (x) { return Math.abs(x.diff - ref.diff) === m; }); }
+  }
+  if (!best.length) best = avail.filter(function (x) { return x.diff === ref.diff; });
+  return pick(best.length ? best : avail);
+}
+function samePair(a, b) { return !a || !b || (a.type === b.type && a.diff === b.diff); }
+// Doplnenie po riadkoch: najprv A, hneď k nemu B, aby dvojica s rovnakým typom a obtiažnosťou ostala voľná.
+function tFillEmpty() {
+  T.slots.forEach(function (o, i) {
+    if (!T.slots[i]) T.slots[i] = tRandom(usedIds('A', i), T.groups && !T.slotsB[i]);
+    if (T.groups && !T.slotsB[i]) T.slotsB[i] = tMatch(T.slots[i], usedIds('B', i));
+  });
+}
+function tRefill() { tClearAll(); tFillEmpty(); tSlots(); }
 
-/* ---------- políčka objektov (vyhľadávanie s ponukou) ---------- */
+/* ---------- políčka objektov (vyhľadávanie s ponukou, kocka, výmaz) ---------- */
 function tSlots() {
   // Ak práve píšeš do niektorého políčka, po prekreslení v ňom ostaneš.
   var box = $('slots'), act = document.activeElement, keep = -1;
   if (act && box.contains(act) && act.tagName === 'INPUT') keep = Array.prototype.indexOf.call(box.querySelectorAll('input'), act);
-  box.innerHTML = '';
+  box.innerHTML = ''; box.classList.toggle('two', T.groups);
+  if (T.groups) box.appendChild(el('li', { class: 'slot head', 'aria-hidden': 'true' }, [el('span', { text: '#' }), el('span', { text: t('t.col_a') }), el('span', { text: t('t.col_b') })]));
   T.slots.forEach(function (o, i) { box.appendChild(slotRow(i)); });
   if (keep >= 0 && box.querySelectorAll('input')[keep]) box.querySelectorAll('input')[keep].focus();
-  var filled = T.slots.filter(Boolean).length;
+  var filled = T.slots.filter(Boolean).length + T.slotsB.filter(Boolean).length, total = T.slots.length * (T.groups ? 2 : 1);
   $('pool-info').textContent = !tCodes().length ? t('t.pick_region')
-    : t('t.pool_info', { n: T.pool.length, filled: filled, total: T.slots.length }) + (T.pool.length < T.slots.length ? ' ' + t('t.pool_short') : '');
+    : t('t.pool_info', { n: T.pool.length, filled: filled, total: total }) + (T.pool.length < total ? ' ' + t('t.pool_short') : '');
+  $('prev-legend').hidden = !T.groups;
   if (T.pview) T.pview.redraw();
 }
 function slotRow(i) {
-  var o = T.slots[i], act = -1, items = [];
-  var inp = el('input', { type: 'text', value: o ? o.name : '', placeholder: t('t.slot_ph'), autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': t('t.slot_aria', { n: i + 1 }), class: o ? 'filled' : '' });
+  var bad = T.groups && !samePair(T.slots[i], T.slotsB[i]);
+  var kids = [el('span', { class: 'n' + (bad ? ' diff' : ''), text: (i + 1) + '.', title: bad ? t('t.pair_diff') : null })];
+  kids.push(slotCell(i, 'A'));
+  if (T.groups) kids.push(slotCell(i, 'B'));
+  return el('li', { class: 'slot' }, kids);
+}
+function slotCell(i, col) {
+  var arr = colArr(col), o = arr[i], act = -1, items = [];
+  var inp = el('input', { type: 'text', value: o ? o.name : '', placeholder: t('t.slot_ph'), autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false',
+    'aria-label': (T.groups ? col + ' ' : '') + t('t.slot_aria', { n: i + 1 }), class: o ? 'filled' : '' });
   var hint = el('span', { class: 'hint' }, o ? [typeIcon(o.type), typeOne(o.type) + (o.note ? ' ' + o.note : '') + ' · ' + o.diff] : []);
   var list = el('ul', { class: 'sugg', hidden: true, role: 'listbox' });
   function render() {
-    var q = normName(inp.value), used = usedIds(i);
+    var q = normName(inp.value), used = usedIds(col, i);
     items = T.pool.filter(function (x) { if (used[x.id]) return false; if (!q) return true; var n = normName(x.name); return n.indexOf(q) === 0 || n.indexOf(' ' + q) >= 0 || (q.length > 2 && n.indexOf(q) >= 0); });
     if (q) items.sort(function (a, b) { return (normName(b.name).indexOf(q) === 0) - (normName(a.name).indexOf(q) === 0); });
     items = items.slice(0, 40);
     list.innerHTML = '';
     items.forEach(function (x, j) {
-      list.appendChild(el('li', { class: j === act ? 'act' : '', role: 'option', onmousedown: function (e) { e.preventDefault(); }, onclick: function () { pick(x); } },
+      list.appendChild(el('li', { class: j === act ? 'act' : '', role: 'option', onmousedown: function (e) { e.preventDefault(); }, onclick: function () { choose(x); } },
         [el('b', {}, [typeIcon(x.type), x.name]), el('span', { text: typeOne(x.type) + (x.note ? ' ' + x.note : '') + ' · ' + t('t.diff_short', { n: x.diff }) + (x.custom ? ' · ' + t('t.custom') : '') })]));
     });
     if (!items.length) list.appendChild(el('li', { class: 'empty', text: T.pool.length ? t('t.no_match') : t('t.pool_empty') }));
     list.hidden = false;
     var a = list.querySelector('.act'); if (a) a.scrollIntoView({ block: 'nearest' });
   }
-  function pick(x) { T.slots[i] = x; list.hidden = true; inp.blur(); tSlots(); }
+  function choose(x) { arr[i] = x; list.hidden = true; inp.blur(); tSlots(); }
   inp.onfocus = function () { inp.select(); hint.hidden = true; act = -1; render(); setTimeout(function () { inp.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 250); };
   inp.oninput = function () { act = 0; render(); };
   inp.onkeydown = function (e) {
     if (e.key === 'ArrowDown') { act = Math.min(act + 1, items.length - 1); render(); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { act = Math.max(act - 1, 0); render(); e.preventDefault(); }
-    else if (e.key === 'Enter') { if (items[Math.max(0, act)]) pick(items[Math.max(0, act)]); e.preventDefault(); }
+    else if (e.key === 'Enter') { if (items[Math.max(0, act)]) choose(items[Math.max(0, act)]); e.preventDefault(); }
     else if (e.key === 'Escape') inp.blur();
   };
-  inp.onblur = function () { list.hidden = true; var cur = T.slots[i]; inp.value = cur ? cur.name : ''; hint.hidden = false; };
-  var dice = el('button', { type: 'button', class: 'icon', title: t('t.dice'), 'aria-label': t('t.dice'), text: '🎲', onclick: function () {
-    // Kocka: úplne náhodný iný objekt z celej ponuky filtra (bez ohľadu na typ a obtiažnosť), okrem už vybraných.
-    var ex = usedIds(i); if (T.slots[i]) ex[T.slots[i].id] = 1;
-    var avail = T.pool.filter(function (x) { return !ex[x.id]; });
-    if (avail.length) { T.slots[i] = avail[Math.floor(Math.random() * avail.length)]; tSlots(); }
+  inp.onblur = function () { list.hidden = true; var cur = arr[i]; inp.value = cur ? cur.name : ''; hint.hidden = false; };
+  // Kocka: pri skupinách iný objekt s rovnakým typom a obtiažnosťou ako sused vedľa (aj keď ho učiteľ zmenil ručne),
+  // bez skupín úplne náhodný iný objekt z celej ponuky filtra. Už vybrané objekty sa neopakujú.
+  var other = T.groups ? colArr(col === 'A' ? 'B' : 'A')[i] : null, tip = T.groups && other ? t('t.dice_pair') : t('t.dice');
+  var dice = el('button', { type: 'button', class: 'icon', title: tip, 'aria-label': tip, text: '🎲', onclick: function () {
+    var ex = usedIds(col, i); if (arr[i]) ex[arr[i].id] = 1;
+    var x = other ? tMatch(other, ex) : pick(T.pool.filter(function (y) { return !ex[y.id]; }));
+    if (x) { arr[i] = x; tSlots(); }
   } });
-  var clr = el('button', { type: 'button', class: 'icon', title: t('t.clear'), 'aria-label': t('t.clear'), text: '✕', disabled: !o, onclick: function () { T.slots[i] = null; tSlots(); } });
-  return el('li', { class: 'slot' }, [el('span', { class: 'n', text: (i + 1) + '.' }), el('div', { class: 'combo' }, [inp, hint, list]), dice, clr]);
+  var clr = el('button', { type: 'button', class: 'icon', title: t('t.clear'), 'aria-label': t('t.clear'), text: '✕', disabled: !o, onclick: function () { arr[i] = null; tSlots(); } });
+  return el('div', { class: 'cell' }, [el('span', { class: 'tag', text: col }), el('div', { class: 'combo' }, [inp, hint, list]), dice, clr]);
 }
 
 /* ---------- mapa: vrstvy, náhľad, hodnotenie ---------- */
@@ -296,11 +358,12 @@ function tScene() {
     tScoringInfo();
   });
 }
+// Náhľad s vybranými objektmi (len keď sú objekty ukázané): skupina A zelenou, B ružovou.
 function tPreviewOverlay(v) {
-  if (!$('prev-show').checked) return '';
-  var s = '', u = v.uPx();
-  T.slots.forEach(function (o) { if (o) s += drawTarget(o.g, v.proj, v.pal, 0); });
-  T.slots.forEach(function (o, i) { if (o) s += drawLabel(anchorOf(o.g), v.proj, (i + 1) + '. ' + o.name, v.pal.ink, v.pal.halo, u, 12, o.g.t === 'pt' ? -12 : 0, false); });
+  if (!T.listOpen) return '';
+  var s = '', u = v.uPx(), palB = Object.assign({}, v.pal, { ok: v.pal.tip }), sets = [['A', T.slots, v.pal]].concat(T.groups ? [['B', T.slotsB, palB]] : []);
+  sets.forEach(function (x) { x[1].forEach(function (o) { if (o) s += drawTarget(o.g, v.proj, x[2], 0); }); });
+  sets.forEach(function (x) { x[1].forEach(function (o, i) { if (o) s += drawLabel(anchorOf(o.g), v.proj, (T.groups ? x[0] : '') + (i + 1) + '. ' + o.name, v.pal.ink, v.pal.halo, u, 12, o.g.t === 'pt' ? -12 : 0, false); }); });
   return s;
 }
 function tScoringInfo() {
@@ -314,8 +377,14 @@ function tScoringInfo() {
 /* ---------- spustenie testu ---------- */
 // state: 'open' = spustiť hneď, 'ready' = pripraviť na neskôr (spustí ho učiteľ alebo dozor).
 async function tStart(state) {
-  var clsSel = $('f-cls').value, open = clsSel === OPEN_CLS, title = $('f-title').value.trim(), chosen = T.slots.filter(Boolean), sc = T.scene;
-  var pf = num($('f-full').value, 1), pz = num($('f-zero').value, 30), time = Math.max(5, Math.min(600, parseInt($('f-time').value, 10) || 20));
+  if (T.oldScript) { tStatus('start-msg', t('t.old_script', { v: T.init.v || '1' }), 'bad'); return; }
+  var clsSel = $('f-cls').value, open = clsSel === OPEN_CLS, title = $('f-title').value.trim(), sc = T.scene, groups = T.groups && !open;
+  var pf = num($('f-full').value, 1), pz = num($('f-zero').value, 30), total = Math.max(1, Math.min(240, parseInt($('f-time').value, 10) || 10));
+  // Pri skupinách ide do testu len úplný riadok (A aj B); celkom prázdny riadok sa vynechá.
+  var rows = T.slots.map(function (a, i) { return { a: a, b: groups ? T.slotsB[i] : null }; });
+  if (groups && rows.some(function (r) { return !!r.a !== !!r.b; })) { tStatus('start-msg', t('t.err_pairs'), 'bad'); if (!T.listOpen) tListToggle(true); return; }
+  rows = rows.filter(function (r) { return r.a; });
+  var chosen = rows.map(function (r) { return r.a; }), chosenB = groups ? rows.map(function (r) { return r.b; }) : [];
   $('f-cls').classList.toggle('invalid', !clsSel); $('f-title').classList.toggle('invalid', !title);
   if (!clsSel || !title) {
     tStatus('start-msg', t(!clsSel && !title ? 't.err_required' : !clsSel ? 't.err_class' : 't.err_title'), 'bad');
@@ -325,24 +394,27 @@ async function tStart(state) {
   if (!chosen.length) { tStatus('start-msg', t('t.err_objects'), 'bad'); return; }
   if (!sc) { tStatus('start-msg', t('t.loading_map'), 'bad'); return; }
   if (!(pz > pf && pf >= 0)) { tStatus('start-msg', t('t.scoring_bad'), 'bad'); return; }
+  var gi = groups ? tGroupInfo() : null;
+  if (gi && gi.none.length && !confirm(t('t.groups_confirm', { names: gi.none.join(', ') }))) return;
   var tol = bboxSpan(sc.bbox) / 6000, dec = decFor(tol), objects = {};
-  chosen.forEach(function (o) { objects[o.id] = { name: o.name, type: o.type, g: simpGeom(o.g, tol, dec) }; });
-  var codes = tCodes(), types = uniq(chosen.map(function (o) { return o.type; }));
+  chosen.concat(chosenB).forEach(function (o) { objects[o.id] = { name: o.name, type: o.type, diff: o.diff, g: simpGeom(o.g, tol, dec) }; });
+  var codes = tCodes(), types = uniq(chosen.concat(chosenB).map(function (o) { return o.type; }));
   var dmin = Math.min(+$('f-dmin').value, +$('f-dmax').value), dmax = Math.max(+$('f-dmin').value, +$('f-dmax').value);
   var cfg = {
     cls: open ? '' : clsSel, open: open, state: state, title: title,
     regions: codes.map(function (c) { var r = regionByCode(c); return regionLabel(c, r && r.names); }).join(', '), types: types.map(typeLabel).join(', '),
-    diff: dmin === dmax ? String(dmin) : dmin + '–' + dmax, time: time, full: round1(sc.diag * pf / 100), zero: round1(sc.diag * pz / 100), diag: Math.round(sc.diag), lang: I18N.lang,
-    map: { bbox: sc.bbox, base: tBaseRefs() }, names: chosen.map(function (o) { return o.name; })
+    diff: dmin === dmax ? String(dmin) : dmin + '–' + dmax, total: total, full: round1(sc.diag * pf / 100), zero: round1(sc.diag * pz / 100), diag: Math.round(sc.diag), lang: I18N.lang,
+    map: { bbox: sc.bbox, base: tBaseRefs() }, names: chosen.map(function (o) { return o.name; }), namesB: chosenB.map(function (o) { return o.name; })
   };
   $('start').disabled = $('prepare').disabled = true; tStatus('start-msg', t('t.saving'));
   try {
-    var r = await api('tCreateTest', A({ cfg: cfg, pack: { keys: chosen.map(function (o) { return o.id; }), objects: objects } }));
+    var ids = function (l) { return l.map(function (o) { return o.id; }); };
+    var r = await api('tCreateTest', A({ cfg: cfg, pack: { keys: ids(chosen), keysB: ids(chosenB), objects: objects } }));
     tStatus('start-msg', '');
-    var x = { id: r.id, created: '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: title, n: chosen.length, time: time, state: T.oldScript ? 'open' : state, dk: r.dk || '' };
+    var x = { id: r.id, created: '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: title, n: chosen.length, groups: groups, total: total, state: state, dk: r.dk || '' };
     T.init.tests.push(x);
-    // ďalší test sa začína s prázdnou triedou, názvom a skrytým zoznamom
-    $('f-cls').value = ''; $('f-title').value = ''; tListToggle(false); $('prev-show').checked = false; if (T.pview) T.pview.redraw();
+    // ďalší test sa začína s prázdnou triedou, názvom a skrytými objektmi
+    $('f-cls').value = ''; $('f-title').value = ''; tClassChanged(); tListToggle(false); if (T.pview) T.pview.redraw();
     tStarted(x);
   } catch (e) { tStatus('start-msg', t('t.err_save', { msg: errText(e) }), 'bad'); }
   $('start').disabled = $('prepare').disabled = false;
@@ -381,7 +453,7 @@ function tDozorShow(x) {
   tQrShow(t('t.dozor_title', { title: x.title || x.id }), dozorUrl(x.id, x.dk), { warn: t('t.dozor_warn'), print: function () { tPrint(x); } });
 }
 function tPrint(x) {
-  var box = $('print-sheet'), meta = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), t('t.n_objects', { n: x.n }), t('t.time_short', { n: x.time })].join(' · ');
+  var box = $('print-sheet'), meta = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), t('t.n_objects', { n: x.n }), t('t.time_short', { n: x.total }), x.groups ? t('t.groups_ab') : ''].filter(Boolean).join(' · ');
   box.innerHTML = '';
   box.appendChild(el('h1', { text: t('app.title') + ': ' + (x.title || x.id) }));
   box.appendChild(el('p', { text: meta }));
@@ -398,9 +470,11 @@ function tPrint(x) {
 }
 // Odkaz na precvičovanie s rovnakými filtrami ako formulár (oblasť, typy, obtiažnosť, počet, čas, vrstvy mapy). Bez tabuľky a bez mien.
 function tPractice() {
-  var a = +$('f-dmin').value, b = +$('f-dmax').value, time = parseInt($('f-time').value, 10) || 0;
+  // Čas na tip v precvičovaní: celkový čas testu rozdelený na objekty, zaokrúhlený na najbližšiu ponúkanú možnosť.
+  var a = +$('f-dmin').value, b = +$('f-dmax').value, n = parseInt($('f-n').value, 10) || 10, per = (parseInt($('f-time').value, 10) || 10) * 60 / n;
+  var time = [10, 15, 20, 30, 60].reduce(function (best, x) { return Math.abs(x - per) < Math.abs(best - per) ? x : best; }, 20);
   var q = 'r=' + tCodes().join(',') + '&t=' + chipVals($('f-types')).join(',') + '&d=' + Math.min(a, b) + '-' + Math.max(a, b) +
-    '&n=' + (parseInt($('f-n').value, 10) || 10) + '&s=' + ([10, 15, 20, 30, 60].indexOf(time) >= 0 ? time : 0) +
+    '&n=' + n + '&s=' + time +
     '&l=' + chipVals($('f-base')).map(encodeURIComponent).join(',');
   tQrShow(t('t.practice_title'), appBase() + '?' + q);
 }
@@ -445,7 +519,13 @@ async function tOpenTest(id) {
     tSub(T.sub); tPollStart();
   } catch (e) { tStatus('test-msg', errText(e), 'bad'); }
 }
-function tSummary() { var x = T.cur.d.test; return { id: x.id, title: x.title, cls: x.cls, open: x.open, n: x.keys.length, time: x.time, dk: T.cur.dk }; }
+function tSummary() { var x = T.cur.d.test; return { id: x.id, title: x.title, cls: x.cls, open: x.open, n: keysA(x).length, total: x.total, groups: !!x.groups, dk: T.cur.dk }; }
+// Objekty jednej skupiny (test bez skupín: všetky). Testy zo staršieho skriptu nemajú keysA.
+function keysA(x) { return x.keysA || x.keys; }
+function keysOf(r) { return r && r.keys ? r.keys : T.cur.d.test.keys; }
+function groupOfKey(k) { var x = T.cur.d.test; return x.groups && (x.keysB || []).indexOf(k) >= 0 ? 'B' : x.groups ? 'A' : ''; }
+// Poradie objektu v jeho skupine pre popis „A3.“ / „B3.“ (bez skupín „3.“).
+function keyLabel(k) { var x = T.cur.d.test, g = groupOfKey(k), list = g === 'B' ? x.keysB : keysA(x); return g + (list.indexOf(k) + 1) + '. '; }
 // Posledný odovzdaný pokus každého žiaka, s percentami podľa aktuálnych hraníc.
 // res = všetky odovzdané testy (aj učiteľ), stat = bez učiteľa (priemer, tipy triedy), absent = neprítomní.
 function tPrepResults() {
@@ -455,7 +535,12 @@ function tPrepResults() {
   Object.keys(last).forEach(function (k) { var r = last[k]; if (r.absent) T.cur.absent[k] = r; else { r.pct = resPct(r); T.cur.res.push(r); } });
   T.cur.stat = T.cur.res.filter(function (r) { return !r.teacher; });
 }
-function resPct(r) { var sc = T.cur.d.test.scoring, keys = T.cur.d.test.keys, s = 0; keys.forEach(function (k) { s += pctFor(r.km[k], sc.full, sc.zero); }); return keys.length ? s / keys.length : 0; }
+// Percentá žiaka: priemer za objekty jeho skupiny, za odchod z testu mínus strhnutie (rovnako ako skript tabuľky).
+function resPct(r) {
+  var sc = T.cur.d.test.scoring, keys = keysOf(r), s = 0;
+  keys.forEach(function (k) { s += pctFor(r.km[k], sc.full, sc.zero); });
+  return Math.max(0, (keys.length ? s / keys.length : 0) - (r.leaves > 0 ? T.cur.d.penalty || 0 : 0));
+}
 function classAvg() { var a = T.cur.stat; return a.length ? a.reduce(function (s, r) { return s + r.pct; }, 0) / a.length : null; }
 function tRefresh() {
   return api('tTest', A({ t: T.cur.id })).then(function (d) {
@@ -486,7 +571,8 @@ function tHead() {
   $('test-toggle').textContent = st === 'ready' ? t('t.start_test') : st === 'open' ? t('t.close_test') : t('t.reopen_test');
   $('test-toggle').className = st === 'closed' ? '' : 'primary';
   $('test-toggle-hint').textContent = st === 'ready' ? t('t.ready_hint') : st === 'open' ? t('t.close_hint') : t('t.closed_hint');
-  $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: x.keys.length }), t('t.time_short', { n: x.time }), x.created, x.id].filter(Boolean).join(' · ');
+  $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: keysA(x).length }), x.groups ? t('t.groups_ab') : '',
+    x.total ? t('t.time_short', { n: x.total }) : '', x.created, x.id].filter(Boolean).join(' · ');
 }
 async function tToggleState() {
   var x = T.cur.d.test, next = NEXT_STATE[x.state] || 'open';
@@ -504,8 +590,8 @@ async function tToggleState() {
 /* prehľad */
 // Riadky prehľadu: žiaci triedy (učiteľ na konci), k tomu odovzdané testy mien, ktoré už v zozname nie sú.
 function tRows() {
-  var d = T.cur.d, rows = d.pupils.map(function (p) { return { id: p.id, label: p.teacher ? t('p.teacher') : p.label, teacher: !!p.teacher }; });
-  T.cur.res.forEach(function (r) { if (!rows.some(function (p) { return p.id.split('#')[0] === r.pupilId; })) rows.push({ id: r.pupilId, label: r.teacher ? t('p.teacher') : r.name, teacher: r.teacher }); });
+  var d = T.cur.d, rows = d.pupils.map(function (p) { return { id: p.id, label: p.teacher ? t('p.teacher') : p.label, teacher: !!p.teacher, group: p.group || '', nogroup: !!p.nogroup }; });
+  T.cur.res.forEach(function (r) { if (!rows.some(function (p) { return p.id.split('#')[0] === r.pupilId; })) rows.push({ id: r.pupilId, label: r.teacher ? t('p.teacher') : r.name, teacher: r.teacher, group: r.group || '' }); });
   return rows.filter(function (p) { return !p.teacher; }).concat(rows.filter(function (p) { return p.teacher; }));
 }
 function tOverview() {
@@ -515,8 +601,9 @@ function tOverview() {
     var key = p.id.split('#')[0], r = seen[key] ? null : by[key], L = d.logins.p[p.id], ab = !r && !L && !!T.cur.absent[key], st, cls = '', btn = null;
     seen[key] = 1;
     if (!p.teacher) total++;
+    var pr = d.prog && d.prog[p.id];
     if (r) { st = t('t.st_done', { time: (/(\d\d:\d\d)/.exec(r.sent) || [])[1] || '' }); cls = 'ok'; if (!p.teacher) done++; }
-    else if (L) { st = t('t.st_writing', { time: String(L.t).slice(0, 5) }); if (!p.teacher) writing++; }
+    else if (L) { st = pr ? t('t.st_writing_n', { time: String(L.t).slice(0, 5), n: pr.n, total: keysA(x).length }) : t('t.st_writing', { time: String(L.t).slice(0, 5) }); if (!p.teacher) writing++; }
     else if (ab) { st = t('t.st_absent'); cls = 'absent'; absent++; }
     else st = t('t.st_none');
     var flags = r && r.flag ? [r.flag] : d.logins.f.filter(function (f) { return f.p === p.id; }).map(function (f) { return f.k + ' ' + f.t; });
@@ -530,7 +617,8 @@ function tOverview() {
   // stĺpec Príznak len vtedy, keď nejaký príznak je (na telefóne by inak tabuľka nevošla)
   var anyFlag = list.some(function (o) { return o.flags.length; });
   list.forEach(function (o) {
-    var cells = [el('td', { text: o.p.label }), el('td', { class: o.cls, text: o.st })];
+    var nm = el('td', {}, [o.p.label, x.groups && o.p.group && !o.p.teacher ? el('span', { class: 'badge' + (o.p.nogroup ? ' warn' : ''), style: 'margin-left:6px', title: o.p.nogroup ? t('t.no_group') : null, text: o.p.group }) : null]);
+    var cells = [nm, el('td', { class: o.cls, text: o.st })];
     if (T.showRes) cells.push(el('td', { class: 'num', text: o.r ? fmtPct(o.r.pct) : '' }));
     if (anyFlag) cells.push(el('td', { class: o.flags.length ? 'bad small' : 'small', text: o.flags.join('; ') }));
     cells.push(el('td', { class: 'act' }, [o.btn]));
@@ -543,7 +631,7 @@ function tOverview() {
   var avg = classAvg();
   $('avg-label').textContent = t(x.open ? 't.avg_label_open' : 't.avg_label');
   $('avg-pct').textContent = avg === null ? '–' : fmtPct(avg);
-  $('avg-note').textContent = avg === null ? t('t.no_results') : t(x.open ? 't.avg_note_open' : 't.avg_note');
+  $('avg-note').textContent = avg === null ? t('t.no_results') : t(x.open ? 't.avg_note_open' : 't.avg_note', { pct: Math.round((d.penalty || 0) * 100) });
 }
 async function tAbsent(p, on, btn) {
   if (btn) btn.disabled = true;
@@ -552,12 +640,12 @@ async function tAbsent(p, on, btn) {
 }
 // Výsledky do Excelu: meno a percentá (bez učiteľa), neprítomní s textom.
 function tCopyResults() {
-  var by = {}, seen = {}, lines = [[t('t.tsv_pupil'), t('t.tsv_result')].join('\t')];
+  var g = !!T.cur.d.test.groups, by = {}, seen = {}, lines = [[t('t.tsv_pupil')].concat(g ? [t('t.tsv_group')] : [], [t('t.tsv_result')]).join('\t')];
   T.cur.res.forEach(function (r) { by[r.pupilId] = r; });
   tRows().forEach(function (p) {
     var key = p.id.split('#')[0]; if (p.teacher || seen[key]) return; seen[key] = 1;
     var r = by[key];
-    lines.push([p.label, r ? Math.round(r.pct * 100) : T.cur.absent[key] ? t('t.st_absent') : ''].join('\t'));
+    lines.push([p.label].concat(g ? [r ? r.group : p.group] : [], [r ? Math.round(r.pct * 100) : T.cur.absent[key] ? t('t.st_absent') : '']).join('\t'));
   });
   copyText(lines.join('\n'), 'over-msg', t('t.copied_results'));
 }
@@ -566,6 +654,7 @@ function tCopyResults() {
 function objStats(k) {
   var d = T.cur.d, sc = d.test.scoring, ds = [], miss = 0, full = 0, sumP = 0, n = 0;
   T.cur.stat.forEach(function (r) {
+    if (keysOf(r).indexOf(k) < 0) return;   // objekt druhej skupiny
     var v = r.km[k]; n++;
     if (v === null || v === undefined) { miss++; ds.push(Infinity); } else { ds.push(v); if (v <= sc.full) full++; }
     sumP += pctFor(v, sc.full, sc.zero);
@@ -581,7 +670,7 @@ function tClass() {
   var keys = T.cur.d.test.keys, pack = T.cur.pack;
   if (keys.indexOf(T.objKey) < 0) T.objKey = keys[0];
   var sel = $('class-obj'); sel.innerHTML = '';
-  keys.forEach(function (k, i) { sel.appendChild(el('option', { value: k, text: (i + 1) + '. ' + pack.objects[k].name })); }); sel.value = T.objKey;
+  keys.forEach(function (k) { sel.appendChild(el('option', { value: k, text: keyLabel(k) + pack.objects[k].name })); }); sel.value = T.objKey;
   var o = pack.objects[T.objKey];
   var ck = $('class-kind'); ck.innerHTML = ''; ck.appendChild(typeIcon(o.type)); ck.appendChild(document.createTextNode(typeOne(o.type)));
   tClassStats();
@@ -608,7 +697,7 @@ function tClassStats() {
   var tb = el('tbody');
   keys.map(function (k) { return { k: k, s: objStats(k) }; }).sort(function (a, b) { return a.s.avg - b.s.avg; }).forEach(function (x) {
     tb.appendChild(el('tr', { class: x.k === T.objKey ? 'sel' : '' }, [
-      el('td', {}, [el('button', { type: 'button', class: 'linkbtn', text: pack.objects[x.k].name, onclick: function () { T.objKey = x.k; tClass(); } })]),
+      el('td', {}, [el('button', { type: 'button', class: 'linkbtn', text: (T.cur.d.test.groups ? groupOfKey(x.k) + ': ' : '') + pack.objects[x.k].name, onclick: function () { T.objKey = x.k; tClass(); } })]),
       el('td', { class: 'num', text: x.s.med === null ? '–' : fmtKm(x.s.med) }), el('td', { class: 'num', text: x.s.n ? fmtPct(x.s.avg) : '–' }),
       el('td', { class: 'num', text: x.s.suggest === null ? '–' : String(x.s.suggest) })]));
   });
@@ -616,12 +705,15 @@ function tClassStats() {
   box.appendChild(el('table', {}, [el('thead', {}, [el('tr', {}, [t('t.col_obj_hard'), t('t.st_median'), t('t.st_avg'), t('t.st_suggest')].map(function (h, i) { return el('th', { class: i ? 'num' : '', text: h }); }))]), tb]));
 }
 function tClassStep(dir) { var keys = T.cur.d.test.keys, i = keys.indexOf(T.objKey); T.objKey = keys[(i + dir + keys.length) % keys.length]; tClass(); }
-// Štatistiky na vloženie do objekty.xlsx (oddelené tabulátorom).
+// Štatistiky na vloženie vedľa tabuľky obtiažností (*_difficulty_edit.csv): id ako v tabuľke (pri EČV id okresu), typ,
+// obtiažnosť, s ktorou bol objekt v teste, a návrh podľa mediánu odchýlky triedy. Oddelené tabulátorom.
 function tCopyStats() {
-  var pack = T.cur.pack, lines = [[t('t.tsv_id'), t('t.tsv_name'), t('t.st_tips'), t('t.st_median'), t('t.st_avg'), t('t.st_suggest')].join('\t')];
+  var pack = T.cur.pack, g = !!T.cur.d.test.groups;
+  var lines = [[t('t.tsv_id'), t('t.tsv_name'), t('t.tsv_type')].concat(g ? [t('t.tsv_group')] : [], [t('t.tsv_diff'), t('t.st_tips'), t('t.st_median'), t('t.st_avg'), t('t.st_suggest')]).join('\t')];
   T.cur.d.test.keys.forEach(function (k) {
-    var s = objStats(k), dot = function (x) { return String(x).replace('.', I18N.lang === 'en' ? '.' : ','); };
-    lines.push([k, pack.objects[k].name, s.n - s.miss, s.med === null || s.med === Infinity ? '' : dot(round1(s.med)), s.n ? Math.round(s.avg * 100) : '', s.suggest === null ? '' : s.suggest].join('\t'));
+    var s = objStats(k), o = pack.objects[k], dot = function (x) { return String(x).replace('.', I18N.lang === 'en' ? '.' : ','); };
+    var id = o.type && k.slice(-(o.type.length + 1)) === '-' + o.type ? k.slice(0, -(o.type.length + 1)) : k;   // odvodený typ (EČV): id okresu
+    lines.push([id, o.name, typeOne(o.type)].concat(g ? [groupOfKey(k)] : [], [o.diff || '', s.n - s.miss, s.med === null || s.med === Infinity ? '' : dot(round1(s.med)), s.n ? Math.round(s.avg * 100) : '', s.suggest === null ? '' : s.suggest]).join('\t'));
   });
   copyText(lines.join('\n'), 'class-msg', t('t.copied'));
 }
@@ -641,7 +733,7 @@ function tScore() {
   }
   var tb = el('tbody');
   T.cur.res.slice().sort(function (a, b) { return a.teacher - b.teacher || a.name.localeCompare(b.name, I18N.lang); }).forEach(function (r) {
-    tb.appendChild(el('tr', {}, [el('td', { text: r.teacher ? t('p.teacher') : r.name }), el('td', { class: 'num', text: fmtPct(r.pct) }),
+    tb.appendChild(el('tr', {}, [el('td', { text: (r.teacher ? t('p.teacher') : r.name) + (r.group ? ' (' + r.group + ')' : '') }), el('td', { class: 'num', text: fmtPct(r.pct) }),
       el('td', {}, [el('button', { type: 'button', class: 'mini', text: t('t.image'), onclick: function () { tShowImage(r); } })])]));
   });
   if (!T.cur.res.length) box.appendChild(el('p', { class: 'muted', style: 'padding:12px', text: t('t.no_results') }));
@@ -658,7 +750,7 @@ async function tSaveScoring() {
 function recFor(r) {
   var x = T.cur.d.test, pack = T.cur.pack;
   return { title: x.title || t('app.title'), name: r.name, cls: x.cls, when: (r.sent || '').slice(0, 10), pct: r.pct, scoring: x.scoring,
-    items: x.keys.map(function (k) { var o = pack.objects[k], tip = r.tips[k]; return { name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: r.km[k], why: r.km[k] === null ? (r.why[k] || 'none') : '' }; }) };
+    items: keysOf(r).map(function (k) { var o = pack.objects[k], tip = r.tips[k]; return { name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: r.km[k], why: r.km[k] === null ? (r.why[k] || 'none') : '' }; }) };
 }
 function fileNameFor(r) { return (T.cur.d.test.cls + ' ' + r.name + '.png').replace(/[\\/:*?"<>|]/g, '_'); }
 async function tShowImage(r) {
@@ -699,8 +791,7 @@ async function tExportAll() {
   on('m-auto', function () { tSetMode('auto'); });
   on('m-manual', function () { tSetMode('manual'); });
   on('refill', tRefill);
-  on('clear-all', function () { T.slots = T.slots.map(function () { return null; }); tSlots(); });
-  on('prev-show', function () { if (T.pview) T.pview.redraw(); }, 'onchange');
+  on('clear-all', function () { tClearAll(); tSlots(); });
   on('start', function () { tStart('open'); });
   on('prepare', function () { tStart('ready'); });
   on('list-toggle', function () { tListToggle(!T.listOpen); });
