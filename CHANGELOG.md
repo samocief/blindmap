@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.14 (2026-10-19)
+
+- Slovensko má druhý podkladový raster **Farebný reliéf** (mapa SHMÚ, georeferencovaná na hranicu SR, prepočítaná do WGS 84).
+- Podkladové rastre sa vyberajú ako „jeden alebo žiadny“: zapnutie jedného vypne ostatné, vypnutím všetkých je mapa úplne slepá. Predvolene ostáva Reliéf.
+
 ## 2.13 (2026-10-19) – treba vymeniť skript tabuľky (verzia 2.3)
 
 **Test ako písomka**

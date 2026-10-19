@@ -44,6 +44,7 @@ var THEME_ICONS = {
 var SVG_SW = '<svg viewBox="0 0 26 16" fill="none" stroke-linecap="round" stroke-linejoin="round">';
 var LAYER_SWATCH = {
   relief: '<path d="M1 15 9 3l5 7 3-3 8 8z" style="fill:#7a7a7a"/><path d="M9 3l5 7 3-3 8 8H13z" style="fill:#c2c2c2"/>',
+  hypso: '<path d="M1 15 9 3l5 7 3-3 8 8z" style="fill:#4f8f3a"/><path d="M5.5 9 9 3l3.5 5-2 1.5-1.5-1.5-2 2z" style="fill:#8a4b2a"/><path d="M15.5 8.5 17 7l3 3-2 .5z" style="fill:#c9a24a"/>',
   landforms: '<path d="M2 14 8 3l5 6 3-3 8 8z" style="stroke:var(--celky);stroke-width:2"/>',
   parks: '<rect x="1.5" y="3" width="10.5" height="10" rx="2.5" style="fill:var(--park);fill-opacity:.18;stroke:var(--park);stroke-width:1.6"/><rect x="14" y="3" width="10.5" height="10" rx="2.5" style="fill:var(--park);fill-opacity:.5;stroke:var(--park);stroke-width:2.4"/>',
   water: '<path d="M1 10c3-5 6 4 9 0s6 4 9 0c2-2.5 4-1.5 6-1" style="stroke:var(--water);stroke-width:2.4"/>',
@@ -375,7 +376,8 @@ function sceneRefs(regions, codes, files) {
   var add = function (file, style) { if (!seen[file]) { seen[file] = 1; refs.push({ file: file, style: style }); } };
   codes.forEach(function (c) {
     var r = regions.filter(function (x) { return x.code === c; })[0]; if (!r) return;
-    r.base.forEach(function (b) { var st = layerStyle(b.name, b.raster); if (st === 'land' || st === 'surroundings' || want[b.file]) add(b.file, st); });
+    var ras = 0;   // podkladový raster najviac jeden (prvý zapnutý)
+    r.base.forEach(function (b) { var st = layerStyle(b.name, b.raster); if (st === 'raster' && want[b.file] && ras++) return; if (st === 'land' || st === 'surroundings' || want[b.file]) add(b.file, st); });
     r.objects.forEach(function (o) { if (want[o.file]) add(o.file, layerStyle(o.type, false)); });
   });
   return refs;
@@ -385,17 +387,20 @@ function sceneRefs(regions, codes, files) {
 var LAYER_GROUPS = [
   { key: 'landforms', types: ['mountains', 'lowlands'] }, { key: 'parks', types: ['parks'] }, { key: 'water', types: ['rivers', 'lakes', 'seas', 'oceans'] },
   { key: 'cities', types: ['cities'] }, { key: 'countries', types: ['countries'] }, { key: 'regions', types: ['regions'] }, { key: 'districts', types: ['districts'] }];
-// Ponuka vrstiev: reliéf (predvolene zapnutý), ďalšie podkladové vrstvy okrem obrysu a okolia, potom skupiny súborov objektov.
-// value = súbory oddelené |, type = typy objektov z týchto súborov (aj odvodené, napr. EČV pri okresoch).
+// Ponuka vrstiev: podkladové rastre (zapnutý najviac jeden, predvolene prvý; žiadny = úplne slepá mapa), ďalšie podkladové vrstvy
+// okrem obrysu a okolia, potom skupiny súborov objektov.
+// value = súbory oddelené |, type = typy objektov z týchto súborov (aj odvodené, napr. EČV pri okresoch), excl = skupina „najviac jedna“.
 function layerItems(regions, codes) {
   var items = [];
   codes.forEach(function (c) {
     var r = regions.filter(function (x) { return x.code === c; })[0]; if (!r) return;
-    var pre = codes.length > 1 ? regionLabel(c, r.names) + ': ' : '';
+    var pre = codes.length > 1 ? regionLabel(c, r.names) + ': ' : '', firstRaster = true;
     r.base.forEach(function (b) {
       var st = layerStyle(b.name, b.raster);
       if (st === 'land' || st === 'surroundings') return;
-      items.push({ value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: st === 'raster', swatch: layerSwatch(st === 'raster' ? 'relief' : st === 'borders' ? 'regions' : st) });
+      var it = { value: b.file, label: pre + (has('layer.' + b.name) ? t('layer.' + b.name) : b.name), def: false, swatch: layerSwatch(st === 'raster' ? (b.name === 'relief' ? 'relief' : 'hypso') : st === 'borders' ? 'regions' : st) };
+      if (st === 'raster') { it.def = firstRaster; firstRaster = false; it.excl = 'raster-' + c; }
+      items.push(it);
     });
     LAYER_GROUPS.forEach(function (g) {
       var files = uniq(r.objects.filter(function (o) { return g.types.indexOf(o.type) >= 0; }).map(function (o) { return o.file; }));
@@ -406,14 +411,29 @@ function layerItems(regions, codes) {
   });
   return items;
 }
+// Zo skupiny „najviac jedna“ (podkladové rastre) nechá zapnutú len prvú.
+function oneOfExcl(items, checked) {
+  var seen = {};
+  return checked.filter(function (v) {
+    var it = items.filter(function (x) { return x.value === v; })[0];
+    if (!it || !it.excl) return true;
+    if (seen[it.excl]) return false;
+    return (seen[it.excl] = true);
+  });
+}
 // Je položka ponuky vrstiev zapnutá podľa zoznamu z odkazu? (hodnota celá, alebo niektorý jej súbor)
 function layerInList(value, list) { var fs = String(value).split('|'); return list.some(function (f) { return f === value || fs.indexOf(f) >= 0; }); }
 // Zaškrtávacie „čipy“.
 function renderChips(box, items, checked, onchange) {
   box.innerHTML = '';
   items.forEach(function (it, i) {
-    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type });
-    inp.checked = checked.indexOf(it.value) >= 0; inp.onchange = onchange || null;
+    var id = box.id + '-' + i, inp = el('input', { type: 'checkbox', id: id, value: it.value, 'data-type': it.type, 'data-excl': it.excl });
+    inp.checked = checked.indexOf(it.value) >= 0;
+    // skupina „najviac jedna“: zapnutie vypne ostatné, vypnutie nechá žiadnu
+    inp.onchange = function (ev) {
+      if (it.excl && inp.checked) box.querySelectorAll('input[data-excl="' + it.excl + '"]').forEach(function (o) { if (o !== inp) o.checked = false; });
+      if (onchange) onchange.call(inp, ev);
+    };
     var pic = it.icon ? el('span', { class: 'ico', 'aria-hidden': 'true', html: it.icon }) : it.swatch ? el('span', { class: 'sw', 'aria-hidden': 'true', html: it.swatch }) : null;
     box.appendChild(el('label', { class: 'chip', for: id }, [inp, pic, el('span', { text: it.label }), it.cnt != null ? el('span', { class: 'cnt', text: '(' + it.cnt + ')' }) : null]));
   });

@@ -75,6 +75,7 @@ async function cRegions() {
 function cBaseChips(codes) {
   var S = cSet(), on = S.base || [], seen = S.seen || [], items = layerItems(C.regions, codes), all = items.map(function (x) { return x.value; });
   var checked = items.filter(function (x) { return C.linkBase ? layerInList(x.value, C.linkBase) : seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
+  checked = oneOfExcl(items, checked);
   C.linkBase = null;
   chipsC($('c-base'), items, checked, function () { cSave({ base: layersAfterChange($('c-base'), cSet().base) }); });
   cSave({ seen: uniq(seen.concat(all)), base: uniq(on.filter(function (f) { return all.indexOf(f) < 0; }).concat(checked)) });

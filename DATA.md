@@ -17,6 +17,8 @@ data/
     base_land.json        podkladové vrstvy, len sa kreslia
     base_relief.png       raster
     base_relief.pgw       world file k rastru
+    base_shmu.jpg         ďalší raster (farebný reliéf SHMÚ)
+    base_shmu.jgw         world file k nemu
   eu/                     Európa
   ...
 source/
@@ -180,6 +182,8 @@ Kreslia sa pod objekty, nedajú sa hádať. Štýl vyberá aplikácia podľa ná
 | iný názov | podľa geometrie, neutrálne |
 
 Keď je na mape raster, hlavné územie sa kreslí bez výplne, aby reliéf nebol zakrytý.
+
+Oblasť môže mať v `base` viac rastrov. V ponuke vrstiev je zapnutý najviac jeden (zapnutie jedného vypne ostatné, dajú sa vypnúť všetky = úplne slepá mapa). Predvolene je zapnutý prvý v poradí z `index.json`. Názov v ponuke je v `lang/sk.json` v sekcii `layer` podľa mena súboru bez `base_` (`base_shmu.jpg` → `layer.shmu`).
 
 ### Rastre
 

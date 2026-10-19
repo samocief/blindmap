@@ -335,7 +335,7 @@ function tBaseChips(codes) {
   var F = form(), on = F.base || [], seen = F.seen || [], items = layerItems(T.regions, codes);
   var vals = items.map(function (x) { return x.value; });
   // vrstvy, ktoré učiteľ už videl, majú jeho posledné nastavenie; nové vrstvy podľa predvoľby
-  var checked = items.filter(function (x) { return seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; });
+  var checked = oneOfExcl(items, items.filter(function (x) { return seen.indexOf(x.value) >= 0 ? on.indexOf(x.value) >= 0 : x.def; }).map(function (x) { return x.value; }));
   chips($('f-base'), items, checked, function () { saveForm({ base: layersAfterChange($('f-base'), form().base) }); tScene(); });
   saveForm({ seen: uniq(seen.concat(vals)), base: uniq(on.filter(function (f) { return vals.indexOf(f) < 0; }).concat(checked)) });
   tLockLayers();
