@@ -60,7 +60,9 @@ function sheet_(ss, def) {
 }
 function append_(sh, rows) {
   if (!rows.length) return;
-  sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+  const r = sh.getLastRow() + 1;
+  sh.getRange(r, 1, rows.length, rows[0].length).setValues(rows);
+  sh.getRange(r, 1, rows.length, 1).setNumberFormat('dd.mm.yyyy hh:mm:ss');   // Čas: dátum aj čas
 }
 // Text do bunky: skrátený a bez možnosti vložiť vzorec (=, +, -, @ na začiatku).
 function txt_(v, max) {
