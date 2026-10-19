@@ -340,8 +340,8 @@ function tBaseChips(codes) {
   saveForm({ seen: uniq(seen.concat(vals)), base: uniq(on.filter(function (f) { return vals.indexOf(f) < 0; }).concat(checked)) });
   tLockLayers();
 }
-// Vrstva typu, ktorý sa môže hádať (je v ponuke podľa skupiny a obtiažnosti), sa zošedí.
-function tLockLayers() { lockLayers($('f-base'), uniq(T.pool.map(function (o) { return o.type; })), form().base); }
+// Učiteľ má plnú kontrolu nad vrstvami: hádaný typ sa už nezošedí, môže ho zapnúť (napr. rieky pri hádaní riek).
+function tLockLayers() { lockLayers($('f-base'), [], form().base); }
 function tBaseRefs() { return sceneRefs(T.regions, tCodes(), chipVals($('f-base'))); }
 function tScene() {
   var codes = tCodes(), bbox = tBBox(codes), refs = tBaseRefs();
