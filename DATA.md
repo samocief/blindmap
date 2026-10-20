@@ -79,6 +79,7 @@ Jeden súbor GeoJSON (FeatureCollection) na oblasť a typ, súradnice v **EPSG:4
 | `name_en`, `name_de` … | nie | Preklady názvu na neskôr. |
 | `active` | nie | `0` objekt skryje (inak sa vynecháva už vo FME). |
 | `ele` | nie | Výška v metroch (vrchy, sedlá). Aplikácia ju pripíše do zátvorky za názov bez jednotky, napr. `Kriváň (2495)`. `sk_upload.py` ju preberie z FME a zaokrúhli. |
+| `len` | nie | Dĺžka jaskyne v metroch, rovnako do zátvorky za názov, napr. `Domica (5368)`. |
 
 Geometria môže byť bod, línia alebo plocha (aj Multi…). Odchýlka sa meria k najbližšiemu bodu objektu; tip vnútri plochy má odchýlku 0 km. Pri bode stačí bod, pri rieke línia, pri pohorí, kraji alebo jazere plocha.
 

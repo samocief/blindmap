@@ -40,7 +40,7 @@ LANDFORM = {'highland': 'mountains', 'lowland': 'lowlands'}
 TO_LOWLAND = {'Východoslovenská pahorkatina', 'Dolnomoravský úval'}
 
 # atribúty, ktoré ostanú v GeoJSON (ďalšie doplní z tabuľky apply_table.py)
-KEEP = {'districts': ['id', 'name', 'abbrev'], 'peaks': ['id', 'name', 'ele'], 'saddles': ['id', 'name', 'ele']}
+KEEP = {'districts': ['id', 'name', 'abbrev'], 'peaks': ['id', 'name', 'ele'], 'saddles': ['id', 'name', 'ele'], 'caves': ['id', 'name', 'len']}
 TABLES = ('sk_difficulty_edit.csv', 'sk_difficulty.csv', 'difficulty.csv')
 
 
@@ -83,9 +83,10 @@ def flat(g):
 
 def feature(p, g, kind):
     props = {k: p[k] for k in KEEP.get(kind, ['id', 'name']) if p.get(k) not in (None, '')}
-    if 'ele' in props:   # výška zaokrúhlená na celé metre, aplikácia ju píše do zátvorky za názov
-        try: props['ele'] = int(float(str(props['ele']).replace(',', '.')) + 0.5)
-        except ValueError: del props['ele']
+    for k in ('ele', 'len'):   # výška / dĺžka zaokrúhlená na celé metre, aplikácia ju píše do zátvorky za názov
+        if k in props:
+            try: props[k] = int(float(str(props[k]).replace(',', '.')) + 0.5)
+            except ValueError: del props[k]
     return {'type': 'Feature', 'properties': props, 'geometry': g}
 
 
