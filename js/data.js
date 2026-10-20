@@ -314,6 +314,7 @@ var Data = {
         var d = row && row.difficulty !== undefined && row.difficulty !== '' ? row.difficulty : p.difficulty !== undefined ? p.difficulty : p.Difficulty !== undefined ? p.Difficulty : p.level !== undefined ? p.level : p.Level !== undefined ? p.Level : p.obtiaznost;
         var diff = Math.max(1, Math.min(5, Math.round(+String(d).replace(',', '.')) || 3));
         if (entry.difficultyMap && entry.difficultyMap[diff] !== undefined) diff = Math.max(1, Math.min(5, +entry.difficultyMap[diff] || diff));
+        if (!entry.nameField && p.ele !== undefined && p.ele !== '' && !isNaN(+p.ele)) name = name + ' (' + Math.round(+p.ele) + ')';   // výška vrchov a sediel, bez jednotky
         var o = { id: entry.nameField ? baseId + '-' + type : baseId, name: String(name), type: type, diff: diff, g: g, bbox: geomBBox(g), regions: [region] };
         if (entry.noteField && field(entry.noteField)) o.note = String(field(entry.noteField));
         out.push(o);
