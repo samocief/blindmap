@@ -2,7 +2,7 @@
  * Test ako písomka (od 2.13): jeden celkový čas, žiak sa medzi miestami voľne presúva, tipy mení až do odovzdania a počas písania
  * nevidí odchýlky ani percentá. Čas beží na serveri od ťuknutia na Začať. Skupinu (A/B) určí tabuľka učiteľa.
  */
-var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, S: null, view: null, phase: 'idle', tick: null, device: '', blurTimer: null, poll: null, wait: null,
+var P = { t: '', info: null, scene: null, scenePromise: null, objs: null, S: null, view: null, phase: 'idle', tick: null, device: '', blurTimer: null, wake: null, poll: null, wait: null,
   rview: null, R: null, rsel: -1, deadline: 0, saveTimer: null, penalty: 0.1 };
 var AWAY_HIDDEN_MS = 1000, AWAY_BLUR_MS = 4000, POLL_MS = 8000, SAVE_MS = 3000, NEED_SCRIPT = '2.3';
 
@@ -144,6 +144,7 @@ function pupilIntro() {
     var hint = $('p-intro-landscape');
     if (hint) hint.hidden = !(window.innerHeight > window.innerWidth && sc.B.w / sc.B.h > 1.3);
   });
+  $('p-intro-wake').textContent = t('wakeLock' in navigator ? 'p.rule_lock' : 'p.rule_lock_old');
   go.onclick = async function () {
     go.disabled = true; go.textContent = t('common.loading');
     var r;
@@ -167,6 +168,7 @@ function pupilGame(afterReload) {
   }
   pupilQuestion();
   clearInterval(P.tick); P.tick = setInterval(pupilTimer, 250);
+  pupilWake();
   // Stránka bola počas písania zatvorená alebo obnovená: počíta sa to ako odchod.
   if (afterReload && P.S.awayAt) pupilCheckAway(true);
   if (P.phase === 'test') pupilTimer();
@@ -261,13 +263,23 @@ function pupilAskSubmit() {
 /* ---------- stráženie odchodu z testu ---------- */
 // Odchod = skrytá karta alebo iná aplikácia na viac než 1 s, zatvorenie stránky, alebo iné okno na viac než 4 s. Stráži sa celý čas písania.
 function pupilGuard() {
-  document.addEventListener('visibilitychange', function () { if (document.hidden) pupilAway(); else { pupilCheckAway(false); if (P.poll) pupilPoll(); } });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) pupilAway(); else { pupilCheckAway(false); pupilWake(); if (P.poll) pupilPoll(); } });
   window.addEventListener('pagehide', pupilAway);
   window.addEventListener('pageshow', function () { if (!document.hidden) pupilCheckAway(false); });
   window.addEventListener('blur', pupilBlur);
   window.addEventListener('focus', function () { clearTimeout(P.blurTimer); $('p-blur').hidden = true; if (!document.hidden) pupilCheckAway(false); });
   $('p-blur').onclick = function () { window.focus(); };
 }
+// Obrazovka počas písania nezhasne sama (zhasnutie zo šetrenia batérie by sa rátalo ako odchod).
+// Zámok obrazovky prehliadač po skrytí stránky uvoľní, preto sa po návrate žiada znova.
+function pupilWake() {
+  if (P.phase !== 'test' || document.hidden || !('wakeLock' in navigator) || (P.wake && !P.wake.released)) return;
+  navigator.wakeLock.request('screen').then(function (w) {
+    if (P.phase !== 'test') { w.release().catch(function () {}); return; }
+    P.wake = w;
+  }).catch(function () {});
+}
+function pupilWakeOff() { if (P.wake) { P.wake.release().catch(function () {}); P.wake = null; } }
 function pupilBlur() {
   if (P.phase !== 'test' || document.hidden) return;
   $('p-blur').hidden = false; clearTimeout(P.blurTimer);
@@ -299,7 +311,7 @@ function pupilLeft() {
 
 /* ---------- odovzdanie a čakanie na výsledky ---------- */
 function pupilFinish() {
-  P.phase = 'idle'; clearInterval(P.tick); clearTimeout(P.saveTimer); clearTimeout(P.blurTimer); $('p-blur').hidden = true;
+  P.phase = 'idle'; pupilWakeOff(); clearInterval(P.tick); clearTimeout(P.saveTimer); clearTimeout(P.blurTimer); $('p-blur').hidden = true;
   var S = P.S;
   $('p-end-title').textContent = S.why === 'time' ? t('p.end_time') : S.ended ? t('p.end_ended') : t('p.end_done', { name: greetName(S) });
   $('p-end-ended').hidden = !S.ended;

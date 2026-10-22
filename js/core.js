@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.14', dataUrl: 'data/' };
+var APP = { version: '2.15', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }

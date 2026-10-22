@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.15 (2026-10-22)
+
+- **Test: obrazovka počas písania nezhasne** (Screen Wake Lock). Zamknutie telefónu zo šetrenia batérie sa doteraz rátalo ako odchod s −10 %. Ručné zamknutie tlačidlom sa ako odchod ráta naďalej – prehliadač nevie rozlíšiť zamknutie od prepnutia do inej aplikácie. Pravidlá pred testom to žiakom hovoria; starší prehliadač bez tejto funkcie dostane radu ťukať občas na mapu.
+
 ## 2026-10-22 – vyhľadávače
 
 - Úvodná stránka má popis, kľúčové slová (SK/EN/DE), kanonickú adresu a údaje pre Google; pribudol `sitemap.xml` pre Google Search Console.

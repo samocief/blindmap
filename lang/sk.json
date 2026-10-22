@@ -215,6 +215,8 @@
   "tap_item": "Ťuknutím na miesto v zozname ho priblížiš.",
   "download_img": "Stiahnuť obrázok",
   "rule_landscape": "Keď otočíš telefón na šírku, mapa bude väčšia.",
+  "rule_lock": "Obrazovka počas testu sama nezhasne. Telefón nezamykaj – aj zamknutie sa počíta ako odchod.",
+  "rule_lock_old": "Tvoj prehliadač nevie zabrániť zhasnutiu obrazovky. Ťukaj občas na mapu, aby sa telefón nezamkol – zamknutie sa počíta ako odchod.",
   "practice": "Precvičovať slepú mapu",
   "wait_title": "Test ešte nezačal",
   "wait_text": "Keď ho učiteľ spustí, test sa tu otvorí sám. Stránku nechaj otvorenú.",
