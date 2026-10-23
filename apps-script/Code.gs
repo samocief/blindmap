@@ -13,7 +13,7 @@
  *
  * Od 2.4: id testu „trieda_MM-dd_HH:mm“ (napr. 9A_10-23_09:58), hárok výsledkov „Res_<id>“ hneď za hárkom Testy, najnovší vľavo.
  */
-const VERSION = '2.4';
+const VERSION = '2.4.1';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
@@ -186,7 +186,9 @@ function dozorKey_(testId) {
   return Utilities.base64EncodeWebSafe(sig).replace(/=+$/, '').slice(0, 16);
 }
 function dozorAuth_(req) {
-  if (!DOZOR_OK[req.a] || !req.t || String(req.dk) !== dozorKey_(String(req.t))) fail_('auth');
+  // test so starým id (pred 2.4): odkaz pre dozor so starým id platí naďalej
+  const ok = req.t && (String(req.dk) === dozorKey_(String(req.t)) || (req.tOld && String(req.dk) === dozorKey_(String(req.tOld))));
+  if (!DOZOR_OK[req.a] || !ok) fail_('auth');
   req.dozor = true;
 }
 
@@ -212,6 +214,7 @@ function handle_(req) {
   try {
     const fn = ROUTES[req && req.a];
     if (!fn) return { error: 'bad_request', msg: String(req && req.a) };
+    if (req.t) { const al = aliases_()[String(req.t)]; if (al) { req.tOld = String(req.t); req.t = al; } }   // staré odkazy a QR kódy
     if (/^t[A-Z]/.test(req.a)) { if (req.dk && !req.k) dozorAuth_(req); else auth_(req); }
     return fn(req) || { ok: true };
   } catch (err) {
@@ -493,7 +496,52 @@ function organizeResults_() {
   });
   if (active) try { ss_().setActiveSheet(active); } catch (e) { /* nevadí */ }
 }
-function organizeResults() { organizeResults_(); setOwnProp_('RESORD', '1'); }
+function organizeResults() { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '2'); }
+
+/* ---------- premenovanie starých id testov (pred 2.4: 8B-261021-1204 -> 8B_10-21_12:04) ---------- */
+// Staré id ostávajú ako prezývky: odkazy, QR kódy a odkazy pre dozor so starým id fungujú ďalej.
+function aliases_() { try { return JSON.parse(ownProp_('ALIAS') || '{}') || {}; } catch (e) { return {}; } }
+function renameOldIds_() {
+  const t = testsTable_(), cI = t.need('id testu'), al = aliases_(), map = {};
+  const ids = t.rows.map(function (r) { return s_(r[cI]); });
+  ids.forEach(function (id, i) {
+    const m = /^([0-9A-Za-z]*)-\d\d(\d\d)(\d\d)-(\d\d)(\d\d)([a-z]?)$/.exec(id);
+    if (!m) return;
+    let nid = (m[1] || 'test') + '_' + m[2] + '-' + m[3] + '_' + m[4] + ':' + m[5] + m[6];
+    for (let k = 97; ids.indexOf(nid) >= 0 || ss_().getSheetByName(resultsName_(nid)); k++) nid = nid.replace(/[a-z]?$/, String.fromCharCode(k));
+    map[id] = nid; ids[i] = nid;
+  });
+  const olds = Object.keys(map);
+  if (!olds.length) return;
+  // hárok Testy
+  t.sheet.getRange(2, cI + 1, ids.length, 1).setNumberFormat('@').setValues(ids.map(function (x) { return [x]; }));
+  // hárky výsledkov
+  olds.forEach(function (o) {
+    const sh = ss_().getSheetByName(resultsName_(o)) || ss_().getSheetByName(oldResultsName_(o));
+    if (sh) sh.setName(resultsName_(map[o]));
+  });
+  // balíky testov
+  const pk = ss_().getSheetByName(SH.packs);
+  if (pk && pk.getLastRow() > 1) {
+    const rng = pk.getRange(2, 1, pk.getLastRow() - 1, 1), v = rng.getValues();
+    rng.setNumberFormat('@').setValues(v.map(function (r) { const o = s_(r[0]); return [map[o] || o]; }));
+  }
+  // prihlásenia a začiatky písania
+  const all = props_().getProperties();
+  Object.keys(all).forEach(function (k) {
+    const m = /^([LS]2_)(.+)$/.exec(k);
+    if (m && map[m[2]]) { props_().setProperty(m[1] + map[m[2]], all[k]); props_().deleteProperty(k); }
+  });
+  // priečinky s obrázkami na Drive
+  try {
+    const it = DriveApp.getFileById(ss_().getId()).getParents(), root = it.hasNext() ? it.next() : DriveApp.getRootFolder();
+    const fs = root.getFoldersByName('Slepá mapa – obrázky');
+    if (fs.hasNext()) { const f = fs.next(); olds.forEach(function (o) { const x = f.getFoldersByName(o); if (x.hasNext()) x.next().setName(map[o]); }); }
+  } catch (e) { /* obrázky nie sú dôležité */ }
+  olds.forEach(function (o) { al[o] = map[o]; forgetTest_(o); });
+  Object.keys(al).forEach(function (o) { if (map[al[o]]) al[o] = map[al[o]]; });
+  setOwnProp_('ALIAS', JSON.stringify(al));
+}
 // Zapíše riadok podľa hlavičky hárka: vals = {stĺpec: hodnota}, cells = hodnoty objektov v poradí test.keys.
 function appendResult_(sh, test, vals, cells) {
   const t = tableOf_(sh), row = t.head.map(function () { return ''; });
@@ -755,7 +803,7 @@ function pupilResult_(req) {
 function tInit_() {
   ensureBaseSheets_();
   // jednorazovo po aktualizácii na 2.4: premenovanie a zoradenie starších hárkov výsledkov
-  if (!ownProp_('RESORD')) { try { withLock_(organizeResults_); setOwnProp_('RESORD', '1'); } catch (e) { /* skúsi sa znova nabudúce */ } }
+  if (ownProp_('RESORD') !== '2') { try { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '2'); } catch (e) { /* skúsi sa znova nabudúce */ } }
   const pupils = readPupils_(), classes = {};
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();

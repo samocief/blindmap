@@ -7,6 +7,7 @@ Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `
 - **Id testu** má tvar `trieda_MM-dd_HH:mm`, napr. `9A_10-23_09:58` (rovnako v aplikácii aj v tabuľke). Staré testy si svoje id nechávajú.
 - **Hárky výsledkov** sa volajú `Res_<id testu>` namiesto `Výsledky <id testu>` a nový hárok ide hneď za hárok Testy: najnovší vľavo, najstarší vpravo.
 - Pri prvom otvorení aplikácie učiteľa po výmene skriptu sa staré hárky premenujú a zoradia samy. Znova sa to dá spustiť v ponuke Slepá mapa → Usporiadať hárky výsledkov.
+- **2.4.1:** premenujú sa aj id starších testov (`8B-261021-1204` → `8B_10-21_12:04`) v hárku Testy, výsledkoch, balíkoch a priečinkoch obrázkov. Staré odkazy, QR kódy a odkazy pre dozor fungujú ďalej.
 - Mazanie starých prihlásení (po 60 dňoch) sa riadi stĺpcom „vytvorený“ v hárku Testy, lebo nové id už neobsahuje rok.
 
 ## 2.15 (2026-10-22)
