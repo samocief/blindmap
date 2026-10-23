@@ -95,7 +95,7 @@ Test je ako písomka: jeden celkový čas, žiak sa medzi miestami voľne presú
 9. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
 10. **Tipy triedy** (až po uzavretí testu): tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Kopírovať štatistiky** dá tabuľku s rovnakým `id` ako v `*_difficulty_edit.csv` (pri EČV id okresu), typom, skupinou, obtiažnosťou v teste a návrhom, takže ju vložíš vedľa tabuľky obtiažností. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
 
-Výsledky sú v tabuľke v hárku „Výsledky <id testu>“: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov, tipy a príznaky (odchod z testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
+Výsledky sú v tabuľke v hárku „Res_<id testu>“ (napr. `Res_9A_10-23_09:58`), hárky idú hneď za hárkom Testy, najnovší vľavo: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov, tipy a príznaky (odchod z testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
 
 ### Dozor a suplovanie
 

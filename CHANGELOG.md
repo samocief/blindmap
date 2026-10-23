@@ -2,6 +2,13 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2026-10-23 – skript tabuľky 2.4 (treba vymeniť skript tabuľky)
+
+- **Id testu** má tvar `trieda_MM-dd_HH:mm`, napr. `9A_10-23_09:58` (rovnako v aplikácii aj v tabuľke). Staré testy si svoje id nechávajú.
+- **Hárky výsledkov** sa volajú `Res_<id testu>` namiesto `Výsledky <id testu>` a nový hárok ide hneď za hárok Testy: najnovší vľavo, najstarší vpravo.
+- Pri prvom otvorení aplikácie učiteľa po výmene skriptu sa staré hárky premenujú a zoradia samy. Znova sa to dá spustiť v ponuke Slepá mapa → Usporiadať hárky výsledkov.
+- Mazanie starých prihlásení (po 60 dňoch) sa riadi stĺpcom „vytvorený“ v hárku Testy, lebo nové id už neobsahuje rok.
+
 ## 2.15 (2026-10-22)
 
 - **Test: obrazovka počas písania nezhasne** (Screen Wake Lock). Zamknutie telefónu zo šetrenia batérie sa doteraz rátalo ako odchod s −10 %. Ručné zamknutie tlačidlom sa ako odchod ráta naďalej – prehliadač nevie rozlíšiť zamknutie od prepnutia do inej aplikácie. Pravidlá pred testom to žiakom hovoria; starší prehliadač bez tejto funkcie dostane radu ťukať občas na mapu.

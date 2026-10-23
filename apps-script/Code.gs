@@ -1,5 +1,5 @@
 /**
- * Slepá mapa, verzia 2.3: skript tabuľky učiteľa (Google Apps Script).
+ * Slepá mapa, verzia 2.4: skript tabuľky učiteľa (Google Apps Script).
  *
  * Aplikácia beží na GitHub Pages (APP_URL). Tento skript je len most k tabuľke učiteľa:
  * číta zoznam žiakov, ukladá testy a zapisuje výsledky. Údaje žiakov ostávajú v tabuľke učiteľa.
@@ -10,8 +10,10 @@
  * Test ako písomka (od 2.3): jeden celkový čas, žiak sa medzi miestami voľne presúva a tipy mení až do odovzdania.
  * Trieda so žiakmi v skupinách A aj B (stĺpec Skupina v hárku Žiaci) dostane dve sady objektov s rovnakými typmi a obtiažnosťami.
  * Prvý odchod z testu strhne z celkového výsledku LEAVE_PENALTY, druhý test ukončí.
+ *
+ * Od 2.4: id testu „trieda_MM-dd_HH:mm“ (napr. 9A_10-23_09:58), hárok výsledkov „Res_<id>“ hneď za hárkom Testy, najnovší vľavo.
  */
-const VERSION = '2.3';
+const VERSION = '2.4';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
@@ -225,6 +227,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('Slepá mapa')
     .addItem('Otvoriť aplikáciu učiteľa', 'showTeacherLink')
     .addItem('Zmeniť adresu webovej aplikácie', 'changeUrl')
+    .addItem('Usporiadať hárky výsledkov (najnovšie vľavo)', 'organizeResults')
     .addSeparator()
     .addItem('Nový kľúč učiteľa (odhlási všetky zariadenia)', 'newTeacherKey')
     .addToUi();
@@ -435,24 +438,38 @@ function saveLogins_(id, L) { if (L.f.length > 30) L.f = L.f.slice(-30); props_(
 // aby po odomknutí (iné zariadenie) žiak pokračoval so zvyšným časom a odchody sa nestratili. Nový pokus ich maže.
 function starts_(id) { try { return JSON.parse(props_().getProperty('S2_' + id)) || {}; } catch (e) { return {}; } }
 function saveStarts_(id, S) { props_().setProperty('S2_' + id, JSON.stringify(S)); }
-// Vlastnosti skriptu majú obmedzené miesto: prihlásenia testov starších než 60 dní sa mažú (výsledky v tabuľke ostávajú).
-function pruneLogins_() {
-  const limit = Number(Utilities.formatDate(new Date(Date.now() - 60 * 864e5), tz_(), 'yyMMdd'));
-  const all = props_().getProperties();
-  Object.keys(all).forEach(function (k) {
-    const m = /^[LS]2_.*-(\d{6})-\d{4}[a-z]?$/.exec(k);
-    if (m && Number(m[1]) < limit) props_().deleteProperty(k);
+// Vlastnosti skriptu majú obmedzené miesto: prihlásenia testov starších než 60 dní (podľa stĺpca vytvorený v hárku Testy) sa mažú.
+// Výsledky v tabuľke ostávajú.
+function pruneLogins_(t) {
+  const cI = t.col('id testu'), cV = t.col('vytvoreny');
+  if (cI < 0 || cV < 0) return;
+  const limit = Utilities.formatDate(new Date(Date.now() - 60 * 864e5), tz_(), 'yyyy-MM-dd'), old = {};
+  t.rows.forEach(function (r) { const id = s_(r[cI]), c = s_(r[cV]).slice(0, 10); if (id && /^\d{4}-\d\d-\d\d$/.test(c) && c < limit) old[id] = 1; });
+  Object.keys(props_().getProperties()).forEach(function (k) {
+    const m = /^[LS]2_(.+)$/.exec(k);
+    if (m && old[m[1]]) props_().deleteProperty(k);
   });
 }
 
 /* ---------- výsledky ---------- */
-function resultsName_(id) { return 'Výsledky ' + id; }
+// Hárok výsledkov sa volá „Res_<id testu>“ (do verzie 2.3 „Výsledky <id>“; starý názov sa pri prvom použití premenuje).
+function resultsName_(id) { return 'Res_' + id; }
+function oldResultsName_(id) { return 'Výsledky ' + id; }
+function resultsGet_(id) {
+  const sh = ss_().getSheetByName(resultsName_(id));
+  if (sh) return sh;
+  const old = ss_().getSheetByName(oldResultsName_(id));
+  if (old) old.setName(resultsName_(id));
+  return old;
+}
+// Nový hárok výsledkov ide hneď za hárok Testy, takže najnovší je vľavo.
+function afterTests_() { const t = ss_().getSheetByName(SH.tests); return t ? t.getIndex() : ss_().getSheets().length; }
 // Hárok výsledkov: odoslané | žiak | (skupina) | výsledok (%) | odchýlky v km pri objektoch | odchody | tipy | príznak.
 // Stĺpce sa čítajú podľa hlavičky; objekty idú hneď za stĺpcom výsledok v poradí test.keys (pri skupinách najprv A, potom B).
 function createResultsSheet_(test) {
   const names = resNames_(test), fixed = test.groups ? RES_FIXED_AB : RES_FIXED;
   const head = fixed.concat(names).concat(RES_TAIL3);
-  const sh = ss_().insertSheet(resultsName_(test.id), ss_().getSheets().length);
+  const sh = ss_().insertSheet(resultsName_(test.id), afterTests_());
   if (sh.getMaxColumns() < head.length) sh.insertColumnsAfter(sh.getMaxColumns(), head.length - sh.getMaxColumns());
   sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#d9d9d9').setWrap(true);
   sh.setFrozenRows(1); sh.setFrozenColumns(2);
@@ -460,7 +477,23 @@ function createResultsSheet_(test) {
   if (names.length) sh.getRange(2, fixed.length + 1, 500, names.length).setNumberFormat('0.0').setHorizontalAlignment('right');
   return sh;
 }
-function resultsSheet_(test) { return ss_().getSheetByName(resultsName_(test.id)) || createResultsSheet_(test); }
+function resultsSheet_(test) { return resultsGet_(test.id) || createResultsSheet_(test); }
+// Premenuje staré hárky „Výsledky <id>“ na „Res_<id>“ a zoradí hárky výsledkov hneď za hárok Testy: najnovší test vľavo.
+function organizeResults_() {
+  const tests = ss_().getSheetByName(SH.tests);
+  if (!tests) return;
+  const t = testsTable_(), cI = t.need('id testu'), active = ss_().getActiveSheet();
+  // riadky v hárku Testy idú podľa času vytvorenia; najstarší sa presúva prvý, každý ďalší sa vloží pred neho
+  t.rows.forEach(function (r) {
+    const id = s_(r[cI]), sh = id ? resultsGet_(id) : null;
+    if (!sh) return;
+    const ti = tests.getIndex(), si = sh.getIndex();
+    ss_().setActiveSheet(sh);
+    ss_().moveActiveSheet(si < ti ? ti : ti + 1);
+  });
+  if (active) try { ss_().setActiveSheet(active); } catch (e) { /* nevadí */ }
+}
+function organizeResults() { organizeResults_(); setOwnProp_('RESORD', '1'); }
 // Zapíše riadok podľa hlavičky hárka: vals = {stĺpec: hodnota}, cells = hodnoty objektov v poradí test.keys.
 function appendResult_(sh, test, vals, cells) {
   const t = tableOf_(sh), row = t.head.map(function () { return ''; });
@@ -473,7 +506,7 @@ function appendResult_(sh, test, vals, cells) {
 // Riadky výsledkov. Neprítomný žiak má riadok s textom „neprítomný“ namiesto percent; učiteľ má riadok s menom Učiteľ.
 // keys = objekty, ktoré žiak písal (jeho skupina), leaves = počet odchodov (prvý strháva LEAVE_PENALTY).
 function readResults_(test) {
-  const sh = ss_().getSheetByName(resultsName_(test.id));
+  const sh = resultsGet_(test.id);
   if (!sh) return [];
   const t = tableOf_(sh), cN = t.need('ziak'), cS = t.col('odoslane'), cT = t.col('tipy'), cF = t.col('priznak'), cR = t.need('vysledok'), cG = t.col('skupina'), cL = t.col('odchody');
   const first = cR + 1, back = {}; Object.keys(WHY).forEach(function (k) { back[normName(WHY[k])] = k; });
@@ -497,7 +530,7 @@ function readResults_(test) {
 }
 // Zmaže riadky „neprítomný“ daného žiaka (prišiel neskôr alebo učiteľ označenie zrušil).
 function clearAbsentRows_(test, label) {
-  const sh = ss_().getSheetByName(resultsName_(test.id));
+  const sh = resultsGet_(test.id);
   if (!sh || sh.getLastRow() < 2) return;
   const t = tableOf_(sh), cN = t.need('ziak'), cR = t.need('vysledok');
   for (let i = t.rows.length - 1; i >= 0; i--) {
@@ -721,6 +754,8 @@ function pupilResult_(req) {
 /* ---------- učiteľ (s kľúčom) a dozor (s kľúčom jedného testu) ---------- */
 function tInit_() {
   ensureBaseSheets_();
+  // jednorazovo po aktualizácii na 2.4: premenovanie a zoradenie starších hárkov výsledkov
+  if (!ownProp_('RESORD')) { try { withLock_(organizeResults_); setOwnProp_('RESORD', '1'); } catch (e) { /* skúsi sa znova nabudúce */ } }
   const pupils = readPupils_(), classes = {};
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();
@@ -741,9 +776,10 @@ function tCreateTest_(req) {
   const total = Math.max(1, Math.min(240, Math.round(Number(cfg.total) || 10)));
   return withLock_(function () {
     const t = testsTable_();
-    let id = cls.replace(/[^0-9A-Za-z]/g, '').slice(0, 8) + '-' + now_('yyMMdd-HHmm');
+    // id: trieda_mesiac-deň_hodina:minúta, napr. 9A_10-23_09:58 (pri zhode sa pridá písmeno: 9A_10-23_09:58a)
+    let id = (cls.replace(/[^0-9A-Za-z]/g, '').slice(0, 8) || 'test') + '_' + now_('MM-dd_HH:mm');
     const ids = t.rows.map(function (r) { return s_(r[t.need('id testu')]); });
-    for (let k = 97; ids.indexOf(id) >= 0 || ss_().getSheetByName(resultsName_(id)); k++) id = id.replace(/[a-z]?$/, String.fromCharCode(k));
+    for (let k = 97; ids.indexOf(id) >= 0 || ss_().getSheetByName(resultsName_(id)) || ss_().getSheetByName(oldResultsName_(id)); k++) id = id.replace(/[a-z]?$/, String.fromCharCode(k));
     const row = t.head.map(function () { return ''; });
     const put = function (p, v) { const i = t.col(p); if (i >= 0) row[i] = v; };
     const names = [].concat(cfg.names || []).map(String), namesB = [].concat(cfg.namesB || []).map(String);
@@ -757,7 +793,7 @@ function tCreateTest_(req) {
     t.sheet.getRange(r, 1, 1, row.length).setNumberFormat('@').setValues([row.map(function (v) { return typeof v === 'number' ? v : String(v); })]);
     t.sheet.getRange(r, t.col('100') + 1, 1, 3).setNumberFormat('0.0');
     createResultsSheet_({ id: id, groups: keysB.length > 0, names: names, namesB: namesB, keys: all, keysA: keysA, keysB: keysB });
-    try { pruneLogins_(); } catch (e) { /* upratovanie nie je dôležité */ }
+    try { pruneLogins_(t); } catch (e) { /* upratovanie nie je dôležité */ }
     savePack_(id, JSON.stringify({ v: 3, keys: all, objects: pack.objects }));
     return { id: id, cls: cls, dk: dozorKey_(id), total: total };
   });
@@ -804,7 +840,7 @@ function tSetTest_(req) {
     if (!(zero > full && full >= 0)) fail_('bad_request');
     set('100', full); set('0 % od', zero);
     // prepočet percent v hárku výsledkov (riadky neprítomných ostávajú)
-    const sh = ss_().getSheetByName(resultsName_(f.test.id));
+    const sh = resultsGet_(f.test.id);
     if (sh && sh.getLastRow() > 1) {
       const test = f.test; test.scoring = { full: full, zero: zero };
       const cR = tableOf_(sh).need('vysledok') + 1, rng = sh.getRange(2, cR, sh.getLastRow() - 1, 1), vals = rng.getValues();
