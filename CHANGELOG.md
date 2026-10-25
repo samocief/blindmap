@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2026-10-25 – skript tabuľky 2.4.2 (treba vymeniť skript tabuľky)
+
+- Oprava: premenovanie starších testov z 2.4.1 (`Res_8B-261021-1204` → `Res_8B_10-21_12:04`) sa nespustilo, lebo tabuľka mala
+  zaznačené, že je už hotové z 2.4. Teraz sa spustí pri najbližšom otvorení aplikácie učiteľa.
+
 ## 2.16 (2026-10-25)
 
 - **Test: pás času a pás miest sú pod sebou**, rovnako dlhé a začínajú na rovnakom mieste. Hneď vidno, či žiak stíha (pás miest kratší ako pás času) alebo mešká.

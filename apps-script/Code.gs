@@ -13,7 +13,7 @@
  *
  * Od 2.4: id testu „trieda_MM-dd_HH:mm“ (napr. 9A_10-23_09:58), hárok výsledkov „Res_<id>“ hneď za hárkom Testy, najnovší vľavo.
  */
-const VERSION = '2.4.1';
+const VERSION = '2.4.2';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
@@ -496,7 +496,7 @@ function organizeResults_() {
   });
   if (active) try { ss_().setActiveSheet(active); } catch (e) { /* nevadí */ }
 }
-function organizeResults() { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '2'); }
+function organizeResults() { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '3'); }
 
 /* ---------- premenovanie starých id testov (pred 2.4: 8B-261021-1204 -> 8B_10-21_12:04) ---------- */
 // Staré id ostávajú ako prezývky: odkazy, QR kódy a odkazy pre dozor so starým id fungujú ďalej.
@@ -802,8 +802,8 @@ function pupilResult_(req) {
 /* ---------- učiteľ (s kľúčom) a dozor (s kľúčom jedného testu) ---------- */
 function tInit_() {
   ensureBaseSheets_();
-  // jednorazovo po aktualizácii na 2.4: premenovanie a zoradenie starších hárkov výsledkov
-  if (ownProp_('RESORD') !== '2') { try { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '2'); } catch (e) { /* skúsi sa znova nabudúce */ } }
+  // jednorazovo po aktualizácii na 2.4.2: premenovanie starých id testov a zoradenie hárkov výsledkov (v 2.4.1 sa nespustilo)
+  if (ownProp_('RESORD') !== '3') { try { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '3'); } catch (e) { /* skúsi sa znova nabudúce */ } }
   const pupils = readPupils_(), classes = {};
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();
