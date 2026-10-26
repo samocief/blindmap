@@ -2,6 +2,13 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.17 (2026-10-26)
+
+- **Stráž zmenšeného okna:** rozdelená obrazovka, plávajúce okno alebo zmenšený prehliadač počas testu hneď zakryje test. Ak žiak okno do 4 s nezväčší, počíta sa to ako odchod (raz za jedno zmenšenie). Otočenie telefónu ani priblíženie stránky (Ctrl +) to nespustí.
+- **Kontrola pred začiatkom:** ak je okno oproti obrazovke príliš malé (napr. už rozdelená obrazovka), tlačidlo Začať žiaka nepustí, kým okno nezväčší.
+- **Dôvod odchodu v udalostiach:** pri každom odchode sa zapíše aj dôvod (iná karta alebo aplikácia, iné okno, zatvorená alebo obnovená stránka, zmenšené okno). Odchody, ktoré nastanú naraz (napr. rozdelená obrazovka = iné okno aj zmenšené okno), sa rátajú ako jeden.
+- Skript tabuľky sa nemení.
+
 ## 2026-10-25 – skript tabuľky 2.4.2 (treba vymeniť skript tabuľky)
 
 - Oprava: premenovanie starších testov z 2.4.1 (`Res_8B-261021-1204` → `Res_8B_10-21_12:04`) sa nespustilo, lebo tabuľka mala
