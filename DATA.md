@@ -190,9 +190,13 @@ Oblasť môže mať v `base` viac rastrov. V ponuke vrstiev je zapnutý najviac 
 ### Rastre
 
 - Formát **JPG** (reliéf, batymetria, všetko nepriehľadné), **PNG** (keď treba priehľadnosť) alebo **WebP**.
-- Súradnice **EPSG:4326**, k obrázku **world file** s rovnakým menom: `base_relief.jpg` + `base_relief.jgw`, `.png` + `.pgw`, alebo `.wld`. Vo FME stačí v PNG/JPEG writeri zapnúť generovanie world file.
-- Šírka do zhruba 3000 px.
-- Pre malé územie (Slovensko) sa raster kreslí priamo. Pre svetadiel ho aplikácia raz pri načítaní prepočíta do projekcie mapy.
+- K obrázku **world file** s rovnakým menom: `base_relief.jpg` + `base_relief.jgw`, `.png` + `.pgw`, `.webp` + `.wpw`, alebo `.wld`. Vo FME stačí vo writeri zapnúť generovanie world file.
+- **Malé územie (Slovensko):** súradnice **EPSG:4326**, raster sa kreslí priamo. Šírka do zhruba 3000 px.
+- **Svetadiel:** raster exportovať **priamo v projekcii mapy** – LAEA na **guli R = 6 371 008,8 m** (nie elipsoid WGS 84, ten je posunutý o niekoľko km), stred = stred `bbox` oblasti z `index.json`, jednotky metre. Vedľa obrázka musí byť **`.prj`** (`base_relief.prj`) s touto projekciou – WKT, ako ho zapíše FME/QGIS, alebo PROJ reťazec, napr. `+proj=laea +lat_0=44.5 +lon_0=-110 +R=6371008.8 +units=m`. Taký raster sa položí bez prepočtu a nestráca rozlíšenie. Odporúčaná dlhšia strana 4000–5000 px, formát JPG alebo WebP (PNG je pri takej veľkosti zbytočne ťažké).
+  - Stredy: **Severná Amerika** `bbox` −170, 5, −50, 84 → lon_0 = −110, lat_0 = 44,5. **Južná Amerika** `bbox` −83, −57, −33, 14 → lon_0 = −58, lat_0 = −21,5. **Európa** `bbox` −25, 34, 45, 71,5 → lon_0 = 10, lat_0 = 52,75.
+  - Rozsah: celý `bbox` + 35 % okraj na každú stranu (toľko aplikácia zobrazuje).
+  - Ak sa `bbox` oblasti zmení, zmení sa aj stred projekcie – raster treba exportovať znova. Kým sa to nestane, aplikácia ho prepočíta v prehliadači (funguje, ale s rozlíšením max. 2048 px).
+- Raster v EPSG:4326 pre svetadiel funguje tiež, aplikácia ho raz pri načítaní prepočíta do projekcie mapy (max. 2048 px, pri priblížení je mäkký).
 
 ## Projekcia mapy
 

@@ -331,7 +331,9 @@ var Data = {
     });
   },
 
-  // Raster s world file (.jgw, .pgw, .wld …) v súradniciach WGS 84. Vracia {img, bounds:[západ, juh, východ, sever]}.
+  // Raster s world file (.jgw, .pgw, .wld …). Súradnice buď EPSG:4326, alebo LAEA v metroch – vtedy musí mať vedľa seba .prj
+  // (WKT alebo PROJ reťazec so stredom projekcie). Vracia {img, bounds:[západ, juh, východ, sever]} v stupňoch
+  // a pri projektovanom rastri aj crs {kind, lon0, lat0} a ext:[x0, y0, x1, y1] v km v rovine mapy (os Y nadol).
   raster: function (file) {
     if (!Data._raster[file]) {
       var stem = file.replace(/\.[^.]+$/, ''), ext = file.split('.').pop().toLowerCase();
@@ -348,13 +350,39 @@ var Data = {
       Data._raster[file] = Promise.all([tryWorld(0), img]).then(function (r) {
         var v = r[0].trim().split(/\s+/).map(Number), im = r[1];
         if (v.length < 6 || v.some(isNaN)) throw ApiError('world_missing', file);
-        var A = v[0], E = v[3], west = v[4] - A / 2, north = v[5] - E / 2;
-        return { img: im, bounds: [west, north + E * im.naturalHeight, west + A * im.naturalWidth, north] };
+        var A = v[0], E = v[3], west = v[4] - A / 2, north = v[5] - E / 2, east = west + A * im.naturalWidth, south = north + E * im.naturalHeight;
+        if (Math.abs(A) < 1 && Math.abs(west) <= 540 && Math.abs(north) <= 90) return { img: im, bounds: [west, south, east, north] };
+        return fetch(APP.dataUrl + stem + '.prj').then(function (pr) { return pr.ok ? pr.text() : ''; }, function () { return ''; }).then(function (txt) {
+          var crs = parseCrs(txt);
+          if (!crs) throw ApiError('prj_missing', file);
+          var k = crs.unit / 1000, ext = [west * k, -north * k, east * k, -south * k];
+          var P = makeProj([crs.lon0, crs.lat0, crs.lon0, crs.lat0], 'laea'), bb = null, n = 24, i, ll;
+          for (i = 0; i <= n; i++) [[i / n, 0], [i / n, 1], [0, i / n], [1, i / n]].forEach(function (t) {
+            ll = P.inv([ext[0] + t[0] * (ext[2] - ext[0]), ext[1] + t[1] * (ext[3] - ext[1])]);
+            if (isFinite(ll[0]) && isFinite(ll[1])) bb = bboxUnion(bb, [ll[0], ll[1], ll[0], ll[1]]);
+          });
+          if (!bb) throw ApiError('prj_missing', file);
+          return { img: im, bounds: bb, crs: { kind: 'laea', lon0: crs.lon0, lat0: crs.lat0 }, ext: ext };
+        });
       }).catch(function (e) { delete Data._raster[file]; throw e; });
     }
     return Data._raster[file];
   }
 };
+
+// Projekcia rastra z .prj: WKT (ESRI/OGC) alebo PROJ reťazec. Podporovaná je len LAEA. Vracia {lon0, lat0, unit (m)} alebo null.
+function parseCrs(txt) {
+  if (!txt) return null;
+  var t = String(txt);
+  if (!/lambert_azimuthal_equal_area|lambert azimuthal equal area|proj=laea/i.test(t)) return null;
+  var num = function (re) { var m = t.match(re); return m ? Number(m[1]) : NaN; };
+  var lon0 = num(/(?:central_meridian|longitude_of_(?:center|centre|origin)|longitude of natural origin)"?\s*,\s*(-?[\d.]+)/i), lat0 = num(/(?:latitude_of_(?:center|centre|origin)|latitude of natural origin)"?\s*,\s*(-?[\d.]+)/i);
+  if (isNaN(lon0)) lon0 = num(/\+lon_0=(-?[\d.]+)/); if (isNaN(lat0)) lat0 = num(/\+lat_0=(-?[\d.]+)/);
+  if (isNaN(lon0) || isNaN(lat0)) return null;
+  var unit = /\+units=km/.test(t) ? 1000 : 1, um = t.match(/UNIT\s*\[\s*"(?:metre|meter|kilometre|kilometer)"\s*,\s*([\d.]+)/gi);
+  if (um && um.length) { var last = um[um.length - 1].match(/,\s*([\d.]+)/); if (last) unit = Number(last[1]) || 1; }
+  return { lon0: lon0, lat0: lat0, unit: unit };
+}
 
 // Štýl vrstvy na mape podľa jej názvu alebo typu objektov.
 function layerStyle(name, raster) {

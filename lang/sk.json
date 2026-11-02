@@ -160,6 +160,7 @@
   "no_col": "V tabuľke chýba stĺpec ({msg}).",
   "data_missing": "Súbor s mapou sa nepodarilo načítať: {msg}",
   "world_missing": "K rastru chýba world file: {msg}",
+  "prj_missing": "Raster nie je v stupňoch a chýba k nemu .prj s projekciou LAEA: {msg}",
   "unknown": "Nastala chyba: {msg}",
   "not_started": "Test ešte nezačal.",
   "name_taken": "Toto meno už hrá na inom zariadení. Pridaj k nemu napríklad začiatočné písmeno priezviska.",

@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.18 (2026-11-02)
+
+- **Rastre pre svetadiely v projekcii mapy:** raster môže byť namiesto EPSG:4326 priamo v LAEA (world file v metroch + `.prj` so stredom projekcie). Keď stred sedí s mapou, položí sa bez prepočtu v plnom rozlíšení, takže reliéf je ostrý aj pri priblížení. Inak ho aplikácia prepočíta ako doteraz. Postup v [DATA.md](DATA.md#rastre).
+- Skript tabuľky sa nemení.
+
 ## 2.17 (2026-10-26)
 
 - **Stráž zmenšeného okna:** rozdelená obrazovka, plávajúce okno alebo zmenšený prehliadač počas testu hneď zakryje test. Ak žiak okno do 4 s nezväčší, počíta sa to ako odchod (raz za jedno zmenšenie). Otočenie telefónu ani priblíženie stránky (Ctrl +) to nespustí.

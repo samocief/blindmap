@@ -43,7 +43,7 @@ function makeProj(bbox, kind) {
         return [lon0 + l / RAD, Math.asin(Math.max(-1, Math.min(1, Math.sin(th) / M))) / RAD];
       } };
   }
-  return { kind: 'laea',
+  return { kind: 'laea', lon0: lon0, lat0: lat0,
     fwd: function (c) {
       var l = wrapLon(c[0] - lon0) * RAD, f = c[1] * RAD, sf = Math.sin(f), cf = Math.cos(f), cl = Math.cos(l);
       var k = Math.sqrt(2 / Math.max(1e-9, 1 + s0 * sf + c0 * cf * cl));
@@ -111,14 +111,19 @@ function vectorLayer(ref, view, tol, dec) {
 function rasterLayer(ref, proj, view) {
   return Data.raster(ref.file).then(function (r) {
     var b = r.bounds;
-    if (proj.kind === 'eqc') {
+    if (!r.crs && proj.kind === 'eqc') {
       var p1 = proj.fwd([b[0], b[3]]), p2 = proj.fwd([b[2], b[1]]);
       return { kind: 'raster', style: 'raster', img: r.img, href: r.img.src, x: p1[0], y: p1[1], w: p2[0] - p1[0], h: p2[1] - p1[1] };
+    }
+    // Raster už v projekcii mapy (LAEA s rovnakým stredom): položí sa priamo, bez prepočtu a bez straty rozlíšenia.
+    if (r.crs && proj.kind === 'laea' && Math.abs(wrapLon(r.crs.lon0 - proj.lon0)) < 1e-3 && Math.abs(r.crs.lat0 - proj.lat0) < 1e-3) {
+      var e = r.ext;
+      return { kind: 'raster', style: 'raster', img: r.img, href: r.img.src, x: e[0], y: e[1], w: e[2] - e[0], h: e[3] - e[1] };
     }
     return reprojectRaster(r, proj, view);
   });
 }
-// Raster v WGS 84 prepočítaný do projekcie mapy (pixel po pixeli, raz pri načítaní).
+// Raster prepočítaný do projekcie mapy (pixel po pixeli, raz pri načítaní). Zdroj je v WGS 84 alebo v inej LAEA.
 function reprojectRaster(r, proj, view) {
   var b = r.bounds, clip = [Math.max(b[0], view[0]), Math.max(b[1], view[1]), Math.min(b[2], view[2]), Math.min(b[3], view[3])];
   if (clip[0] >= clip[2] || clip[1] >= clip[3]) return Promise.resolve(null);
@@ -130,12 +135,14 @@ function reprojectRaster(r, proj, view) {
   var src = sctx.getImageData(0, 0, srcW, srcH).data;
   var oc = document.createElement('canvas'); oc.width = W; oc.height = H;
   var octx = oc.getContext('2d'), out = octx.createImageData(W, H), od = out.data;
-  var kx = srcW / (b[2] - b[0]), ky = srcH / (b[3] - b[1]), i, j, ll, sx, sy, si, oi;
+  var e = r.ext, sp = r.crs ? makeProj([r.crs.lon0, r.crs.lat0, r.crs.lon0, r.crs.lat0], 'laea') : null;
+  var kx = sp ? srcW / (e[2] - e[0]) : srcW / (b[2] - b[0]), ky = sp ? srcH / (e[3] - e[1]) : srcH / (b[3] - b[1]), i, j, ll, q, sx, sy, si, oi;
   for (j = 0; j < H; j++) {
     var y = R.y + (j + 0.5) * R.h / H;
     for (i = 0; i < W; i++) {
       ll = proj.inv([R.x + (i + 0.5) * R.w / W, y]);
-      sx = (ll[0] - b[0]) * kx; sy = (b[3] - ll[1]) * ky;
+      if (sp) { if (!isFinite(ll[0])) continue; q = sp.fwd(ll); sx = (q[0] - e[0]) * kx; sy = (q[1] - e[1]) * ky; }
+      else { sx = (ll[0] - b[0]) * kx; sy = (b[3] - ll[1]) * ky; }
       if (!(sx >= 0 && sy >= 0 && sx < srcW && sy < srcH)) continue;
       si = ((sy | 0) * srcW + (sx | 0)) * 4; oi = (j * W + i) * 4;
       od[oi] = src[si]; od[oi + 1] = src[si + 1]; od[oi + 2] = src[si + 2]; od[oi + 3] = src[si + 3];
