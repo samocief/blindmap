@@ -2,6 +2,11 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.19 (2026-11-02)
+
+- **Pripravené svetadiely:** `index.json` má bboxy pre Severnú a Južnú Ameriku, Afriku, Áziu a Austráliu s Oceániou. Z nich sa určuje stred projekcie pre rastre (tabuľka v [DATA.md](DATA.md#rastre)). Oblasť bez objektov sa v ponuke nezobrazí, kým k nej nepribudnú dáta.
+- Skript tabuľky sa nemení.
+
 ## 2.18 (2026-11-02)
 
 - **Rastre pre svetadiely v projekcii mapy:** raster môže byť namiesto EPSG:4326 priamo v LAEA (world file v metroch + `.prj` so stredom projekcie). Keď stred sedí s mapou, položí sa bez prepočtu v plnom rozlíšení, takže reliéf je ostrý aj pri priblížení. Inak ho aplikácia prepočíta ako doteraz. Postup v [DATA.md](DATA.md#rastre).
