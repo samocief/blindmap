@@ -37,6 +37,36 @@
         "eu/peninsulas.json"
       ],
       "base": ["eu/base_land.json", "eu/base_surroundings.json"]
+    },
+    {
+      "code": "na",
+      "bbox": [-170, 5, -50, 84],
+      "objects": [],
+      "base": []
+    },
+    {
+      "code": "sa",
+      "bbox": [-83, -57, -33, 14],
+      "objects": [],
+      "base": []
+    },
+    {
+      "code": "af",
+      "bbox": [-20, -36, 55, 38],
+      "objects": [],
+      "base": []
+    },
+    {
+      "code": "as",
+      "bbox": [25, -11, 180, 78],
+      "objects": [],
+      "base": []
+    },
+    {
+      "code": "au",
+      "bbox": [110, -48, 180, 0],
+      "objects": [],
+      "base": []
     }
   ]
 }

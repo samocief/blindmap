@@ -193,7 +193,19 @@ Oblasť môže mať v `base` viac rastrov. V ponuke vrstiev je zapnutý najviac 
 - K obrázku **world file** s rovnakým menom: `base_relief.jpg` + `base_relief.jgw`, `.png` + `.pgw`, `.webp` + `.wpw`, alebo `.wld`. Vo FME stačí vo writeri zapnúť generovanie world file.
 - **Malé územie (Slovensko):** súradnice **EPSG:4326**, raster sa kreslí priamo. Šírka do zhruba 3000 px.
 - **Svetadiel:** raster exportovať **priamo v projekcii mapy** – LAEA na **guli R = 6 371 008,8 m** (nie elipsoid WGS 84, ten je posunutý o niekoľko km), stred = stred `bbox` oblasti z `index.json`, jednotky metre. Vedľa obrázka musí byť **`.prj`** (`base_relief.prj`) s touto projekciou – WKT, ako ho zapíše FME/QGIS, alebo PROJ reťazec, napr. `+proj=laea +lat_0=44.5 +lon_0=-110 +R=6371008.8 +units=m`. Taký raster sa položí bez prepočtu a nestráca rozlíšenie. Odporúčaná dlhšia strana 4000–5000 px, formát JPG alebo WebP (PNG je pri takej veľkosti zbytočne ťažké).
-  - Stredy: **Severná Amerika** `bbox` −170, 5, −50, 84 → lon_0 = −110, lat_0 = 44,5. **Južná Amerika** `bbox` −83, −57, −33, 14 → lon_0 = −58, lat_0 = −21,5. **Európa** `bbox` −25, 34, 45, 71,5 → lon_0 = 10, lat_0 = 52,75.
+  - Stredy (bbox je v `index.json`, súradnicový systém vo FME je v `MyCoordSysDefs.fme`):
+
+    | Oblasť | `bbox` | lon_0 | lat_0 | FME |
+    |---|---|---|---|---|
+    | eu Európa | −25, 34, 45, 71,5 | 10 | 52,75 | `LAEA_EU_SLEPA` |
+    | na Severná Amerika | −170, 5, −50, 84 | −110 | 44,5 | `LAEA_NA_SLEPA` |
+    | sa Južná Amerika | −83, −57, −33, 14 | −58 | −21,5 | `LAEA_SA_SLEPA` |
+    | af Afrika | −20, −36, 55, 38 | 17,5 | 1 | `LAEA_AF_SLEPA` |
+    | as Ázia | 25, −11, 180, 78 | 102,5 | 33,5 | `LAEA_AS_SLEPA` |
+    | au Austrália a Oceánia | 110, −48, 180, 0 | 145 | −24 | `LAEA_OC_SLEPA` |
+
+  - Oblasť bez objektov (`"objects": []`) sa v ponuke nezobrazí, takže bbox môže byť v `index.json` pripravený vopred.
+  - Obmedzenia: `bbox` nesmie prechádzať cez 180° poludník (Polynézia a Čukotka zatiaľ mimo). Antarktída by s bboxom cez 360° dostala Equal Earth – potrebuje polárny režim v `js/map.js` (lat_0 = −90).
   - Rozsah: celý `bbox` + 35 % okraj na každú stranu (toľko aplikácia zobrazuje).
   - Ak sa `bbox` oblasti zmení, zmení sa aj stred projekcie – raster treba exportovať znova. Kým sa to nestane, aplikácia ho prepočíta v prehliadači (funguje, ale s rozlíšením max. 2048 px).
 - Raster v EPSG:4326 pre svetadiel funguje tiež, aplikácia ho raz pri načítaní prepočíta do projekcie mapy (max. 2048 px, pri priblížení je mäkký).

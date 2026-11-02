@@ -289,7 +289,7 @@ var Data = {
           };
           Data._reg[code] = reg;
           return reg;
-        });
+        }).filter(function (reg) { return reg.objects.length; });   // oblasť bez objektov (zatiaľ len pripravený bbox) sa v ponuke neukáže
       });
     }
     return Data._idx;
