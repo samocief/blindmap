@@ -12,16 +12,19 @@
  * Prvý odchod z testu strhne z celkového výsledku LEAVE_PENALTY, druhý test ukončí.
  *
  * Od 2.4: id testu „trieda_MM-dd_HH:mm“ (napr. 9A_10-23_09:58), hárok výsledkov „Res_<id>“ hneď za hárkom Testy, najnovší vľavo.
+ *
+ * Od 2.5: hárok Žiaci môže byť zasadací poriadok skopírovaný z Excelu (Trieda | Rad | A | B | A | B …), skupina je v hlavičke stĺpca.
+ * Test so šachovnicou (stĺpec „šachovnica“ v hárku Testy) má v každom druhom rade skupiny prehodené.
  */
-const VERSION = '2.4.2';
+const VERSION = '2.5';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
-const PUPIL_HEAD = ['Trieda', 'Meno', 'Skupina', 'Aktívny'];
+const PUPIL_HEAD = ['Trieda', 'Rad', 'A', 'B', 'A', 'B', 'A', 'B', 'A', 'B'];   // nový hárok Žiaci: zasadací poriadok
 const CUSTOM_HEAD = ['Názov', 'Typ', 'Oblasť', 'Obtiažnosť', 'Súradnice'];
 const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
   '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa', 'režim',
-  'celkový čas (min)', 'objekty B', 'id objektov B'];
+  'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica'];
 const RES_FIXED = ['odoslané', 'žiak', 'výsledok (%)'];        // testy do verzie 2.2
 const RES_FIXED_AB = ['odoslané', 'žiak', 'skupina', 'výsledok (%)'];
 const RES_TAIL3 = ['odchody', 'tipy (šírka, dĺžka)', 'príznak'];
@@ -163,8 +166,8 @@ function ensureCols_(sh, head) {
 function ensureBaseSheets_() {
   const pupils = sheetByNames_(SH.pupils);
   if (!pupils) ensureSheet_(SH.pupils[0], PUPIL_HEAD);
-  // Hárok Žiaci zo starších verzií dostane na koniec stĺpec Skupina (A/B), ak ho ešte nemá.
-  else if (pupils.getLastColumn() > 0 && tableOf_(pupils).col(['skupina', 'group']) < 0) ensureCols_(pupils, ['Skupina']);
+  // Hárok Žiaci zo starších verzií (zoznam s menami) dostane na koniec stĺpec Skupina (A/B), ak ho ešte nemá. Zasadací poriadok nie.
+  else if (pupils.getLastColumn() > 0) { const pt = tableOf_(pupils); if (pt.col(['meno', 'name', 'ziak']) >= 0 && pt.col(['skupina', 'group']) < 0) ensureCols_(pupils, ['Skupina']); }
   if (!sheetByNames_(SH.custom)) ensureSheet_(SH.custom[0], CUSTOM_HEAD);
 }
 // Kľúč a adresa sa ukladajú spolu s id tabuľky: v kópii tabuľky (iný učiteľ) neplatia a vytvoria sa nové.
@@ -291,31 +294,70 @@ function showTeacherLink() {
 
 /* ---------- čítanie tabuľky ---------- */
 function pupilKey_(cls, label) { return normName(cls) + '|' + normName(label); }
-// Hárok Žiaci: Trieda | Meno („Priezvisko Meno“) | Skupina (A/B, voliteľne) | Aktívny. Voliteľne samostatný stĺpec Priezvisko. Ostatné stĺpce sa ignorujú.
-function readPupils_() {
+// Rovnaká trieda aj pri inom zápise: „9.A“ = „9A“ = „9 a“.
+function sameCls_(a, b) { return normName(a).replace(/ /g, '') === normName(b).replace(/ /g, ''); }
+// Hárok Žiaci v jednom z dvoch tvarov:
+//  1. zasadací poriadok (celá tabuľka skopírovaná z Excelu): Trieda | Rad | A | B | A | B …
+//     Skupina je v hlavičke stĺpca (jedno písmeno, aj C, D …), prázdna bunka = prázdne miesto. Riadok bez triedy patrí k triede nad ním,
+//     zopakovaná hlavička sa preskočí. Stĺpec Rad je číslo radu (bez neho sa rady počítajú zhora).
+//  2. zoznam: Trieda | Meno („Priezvisko Meno“) | Skupina (A/B, voliteľne) | Aktívny. Voliteľne samostatný stĺpec Priezvisko.
+// Každý žiak má group (skupina zo stĺpca) a galt (šachovnica: v každom druhom rade sú skupiny posunuté o jednu, A↔B, pri A/B/C A→B→C→A).
+// alt = true: test so šachovnicou, group = galt.
+function readPupils_(alt) {
   const sh = sheetByNames_(SH.pupils);
   if (!sh) fail_('no_sheet', SH.pupils[0]);
   const t = tableOf_(sh);
-  const cC = t.need(['trieda', 'class']), cS = t.col(['priezvisko', 'surname', 'last name']), cN = t.need(['meno', 'name', 'ziak']), cA = t.col(['aktivny', 'active']);
-  const cG = t.col(['skupina', 'group']);
+  const cC = t.need(['trieda', 'class']);
   const out = [], used = {};
+  const add = function (cls, label, group, galt, active, seat) {
+    let id = pupilKey_(cls, label);
+    if (used[id]) id += '#' + (++used[id]); else used[id] = 1;
+    out.push({ id: id, cls: cls, label: label, group: alt ? galt : group, galt: galt, active: active, seat: seat });
+  };
+  const gCols = [];
+  t.head.forEach(function (h, i) { if (/^[a-z]$/.test(h)) gCols.push(i); });
+  const cN = t.col(['meno', 'name', 'ziak']);
+  if (cN < 0 && gCols.length) {
+    const letters = [];
+    gCols.forEach(function (i) { const g = t.head[i].toUpperCase(); if (letters.indexOf(g) < 0) letters.push(g); });
+    const cR = t.col(['rad', 'row']), rowNo = {};
+    let cls = '';
+    t.rows.forEach(function (row) {
+      const c = s_(row[cC]);
+      if (normName(c) === 'trieda' || normName(c) === 'class') return;   // zopakovaná hlavička
+      if (c) cls = c;
+      if (!cls) return;
+      const names = gCols.filter(function (i) { return s_(row[i]); });
+      if (!names.length) return;
+      const n = cR >= 0 ? num_(row[cR]) : null;
+      const r = n !== null ? Math.max(0, Math.round(n) - 1) : (rowNo[cls] = (rowNo[cls] || 0) + 1) - 1;
+      names.forEach(function (i) {
+        const g = t.head[i].toUpperCase();
+        add(cls, s_(row[i]).replace(/\s+/g, ' '), g, letters[(letters.indexOf(g) + r) % letters.length], true, true);
+      });
+    });
+    return out;
+  }
+  if (cN < 0) fail_('no_col', t.label + ': meno');
+  const cS = t.col(['priezvisko', 'surname', 'last name']), cA = t.col(['aktivny', 'active']), cG = t.col(['skupina', 'group']);
   t.rows.forEach(function (row) {
     const cls = s_(row[cC]), label = ((cS >= 0 && cS !== cN ? s_(row[cS]) + ' ' : '') + s_(row[cN])).trim();
     if (!cls || !label) return;
-    let id = pupilKey_(cls, label);
-    if (used[id]) id += '#' + (++used[id]); else used[id] = 1;
     const g = cG >= 0 ? normName(row[cG]).split(' ').pop() : '';   // „A“, „b“, „Skupina B“
-    out.push({ id: id, cls: cls, label: label, group: g === 'a' ? 'A' : g === 'b' ? 'B' : '', active: cA >= 0 ? yes_(row[cA]) : true });
+    const grp = g === 'a' ? 'A' : g === 'b' ? 'B' : '';
+    add(cls, label, grp, grp, cA >= 0 ? yes_(row[cA]) : true, false);
   });
   return out;
 }
-// Skupiny tried: {trieda: {A: počet, B: počet, none: [mená bez skupiny]}}. Dve sady dostane trieda, ktorá má žiakov v A aj v B.
+// Skupiny tried: {trieda: {A: počet, B: počet, none: [mená bez skupiny], alt: {A, B} pri šachovnici, seat: zasadací poriadok}}.
 function classGroups_(pupils) {
   const out = {};
   pupils.forEach(function (p) {
     if (!p.active) return;
-    const o = out[p.cls] = out[p.cls] || { A: 0, B: 0, none: [] };
-    if (p.group) o[p.group]++; else o.none.push(p.label);
+    const o = out[p.cls] = out[p.cls] || { A: 0, B: 0, none: [], alt: { A: 0, B: 0 }, seat: false };
+    if (p.group) o[p.group] = (o[p.group] || 0) + 1; else o.none.push(p.label);
+    if (p.galt) o.alt[p.galt] = (o.alt[p.galt] || 0) + 1;
+    if (p.seat) o.seat = true;
   });
   return out;
 }
@@ -371,7 +413,7 @@ function testObj_(t, row) {
     open: normName(g('rezim')) === normName(MODE.open),
     scoring: { full: num_(g('100')) || 0, zero: num_(g('0 % od')) || 1 }, diag: num_(g('uhlopriecka')) || 0,
     names: list(g('objekty')), namesB: list(g('objekty b')),
-    keysA: keysA, keysB: keysB, keys: keysA.concat(keysB), groups: keysB.length > 0,
+    keysA: keysA, keysB: keysB, keys: keysA.concat(keysB), groups: keysB.length > 0, alt: keysB.length > 0 && normName(g('sachovnica')) === 'ano',
     title: s_(g('nazov')), lang: s_(g('jazyk')) || 'sk', map: map
   };
 }
@@ -596,7 +638,7 @@ function player_(test, pupilId, name) {
     return { id: pupilKey_(test.cls, n), label: n };
   }
   if (pupilId === teacherId_(test)) return { id: pupilId, label: TEACHER, teacher: true };
-  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.active && p.id === pupilId; })[0];
+  const me = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active && p.id === pupilId; })[0];
   if (!me) fail_('not_in_class');
   return { id: me.id, label: me.label, group: me.group };
 }
@@ -609,7 +651,7 @@ function pctOf_(km, keys, sc, leaves) {
 // Skupina hráča v teste so skupinami: zo stĺpca Skupina; učiteľ, externý hráč a žiak bez skupiny píšu A.
 function groupOf_(test, pupilId) {
   if (!test.groups || test.open || pupilId === teacherId_(test)) return test.groups ? 'A' : '';
-  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pupilId; })[0];
+  const me = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.id === pupilId; })[0];
   return me && me.group === 'B' ? 'B' : 'A';
 }
 /* ---------- priebežne uložené tipy (vyrovnávacia pamäť, 6 hodín) ---------- */
@@ -636,7 +678,7 @@ function pupilInit_(req) {
   const L = logins_(test.id);
   let names = [];
   if (!test.open) {
-    names = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
+    names = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active; })
       .map(function (p) { const e = L.p[p.id]; return { id: p.id, label: p.label, done: !!(e && e.done) }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
     const tid = teacherId_(test), te = L.p[tid];
@@ -742,7 +784,7 @@ function pupilSubmit_(req) {
   let label = '', group = '';
   if (test.open) label = e0.n || '';
   else if (pupilId === teacherId_(test)) label = TEACHER;
-  else { const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pupilId; })[0]; label = me ? me.label : ''; group = me ? me.group : ''; }
+  else { const me = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.id === pupilId; })[0]; label = me ? me.label : ''; group = me ? me.group : ''; }
   if (!label) fail_('not_in_class');
   if (test.groups) group = group === 'B' ? 'B' : 'A'; else group = '';
   const keys = groupKeys_(test, group), pack = loadPack_(testId), tips = cleanTips_(tipsIn_(req.tips), keys);
@@ -808,7 +850,7 @@ function tInit_() {
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();
   const tests = t.rows.map(function (r) { return testObj_(t, r); }).filter(function (x) { return x.id; })
-    .map(function (x) { return { id: x.id, created: x.created, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keysA.length, groups: x.groups, total: x.total, state: x.state }; });
+    .map(function (x) { return { id: x.id, created: x.created, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keysA.length, groups: x.groups, alt: x.alt, total: x.total, state: x.state }; });
   return { v: VERSION, classes: classes, groups: classGroups_(pupils), penalty: LEAVE_PENALTY, tests: tests, custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName() };
 }
 // cfg: {cls, open, state, title, regions, types, diff, total (min), full, zero, diag, lang, map:{bbox, base}, names, namesB}
@@ -836,7 +878,7 @@ function tCreateTest_(req) {
     put('stav', cfg.state === 'ready' ? STATE.ready : STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
     put('objekty', names.join('; ')); put('id objektov', keysA.join('; ')); put('nazov', String(cfg.title || '')); put('jazyk', String(cfg.lang || 'sk'));
     put('mapa', JSON.stringify(cfg.map || null)); put('rezim', open ? MODE.open : MODE.cls);
-    if (keysB.length) { put('objekty b', namesB.join('; ')); put('id objektov b', keysB.join('; ')); }
+    if (keysB.length) { put('objekty b', namesB.join('; ')); put('id objektov b', keysB.join('; ')); put('sachovnica', cfg.alt ? 'áno' : ''); }
     const r = t.sheet.getLastRow() + 1;
     t.sheet.getRange(r, 1, 1, row.length).setNumberFormat('@').setValues([row.map(function (v) { return typeof v === 'number' ? v : String(v); })]);
     t.sheet.getRange(r, t.col('100') + 1, 1, 3).setNumberFormat('0.0');
@@ -855,7 +897,7 @@ function tTest_(req) {
     // externí hráči: zoznam vzniká z prihlásení
     pupils = Object.keys(L.p).map(function (id) { return { id: id, label: L.p[id].n || id }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
   } else {
-    pupils = readPupils_().filter(function (p) { return p.cls === test.cls && p.active; })
+    pupils = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active; })
       .map(function (p) { return { id: p.id, label: p.label, group: test.groups ? p.group || 'A' : '', nogroup: test.groups && !p.group }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
     pupils.push({ id: teacherId_(test), label: TEACHER, teacher: true, group: test.groups ? 'A' : '' });
@@ -916,7 +958,7 @@ function tAbsent_(req) {
   if (!f) fail_('no_test');
   const test = f.test, pid = String(req.p || '');
   if (test.open || pid === teacherId_(test)) fail_('bad_request');
-  const me = readPupils_().filter(function (p) { return p.cls === test.cls && p.id === pid; })[0];
+  const me = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.id === pid; })[0];
   if (!me) fail_('not_in_class');
   withLock_(function () {
     const L = logins_(test.id);

@@ -112,12 +112,22 @@ function tForm() {
 }
 // Trieda so žiakmi v skupine A aj B (hárok Žiaci, stĺpec Skupina) píše v skupinách: dve sady objektov vedľa seba.
 // Žiakov bez skupiny učiteľ vidí hneď pod triedou (budú písať A), nepriraďujú sa potichu.
+// Šachovnica (len pri zasadacom poriadku v hárku Žiaci): v každom druhom rade sú skupiny prehodené, takže inú skupinu má aj sused vpredu a vzadu.
+function altOn(g) { return !!(g && g.seat && form().alt); }
+function groupCounts(g) { return altOn(g) && g.alt ? { A: g.alt.A || 0, B: g.alt.B || 0, none: g.none } : g; }
+function altChip(g, after) {
+  var inp = el('input', { type: 'checkbox' }); inp.checked = altOn(g);
+  inp.onchange = function () { saveForm({ alt: inp.checked }); after(); };
+  return el('div', { class: 'stack tight' }, [el('label', { class: 'chip', style: 'align-self:flex-start' }, [inp, ' ' + t('t.alt')]), el('p', { class: 'small muted', text: t('t.alt_hint') })]);
+}
 function tGroupInfo() { var c = $('f-cls').value, g = ((T.init && T.init.groups) || {})[c]; return c && c !== OPEN_CLS && g && g.A > 0 && g.B > 0 ? g : null; }
 function tClassChanged() {
   var c = $('f-cls').value, g = tGroupInfo(), box = $('f-groups'), on = !!g;
   box.innerHTML = '';
   if (g) {
-    box.appendChild(el('p', { class: 'small muted', text: t('t.groups_info', { cls: c, a: g.A, b: g.B }) }));
+    var gc = groupCounts(g);
+    box.appendChild(el('p', { class: 'small muted', text: t('t.groups_info', { cls: c, a: gc.A, b: gc.B }) }));
+    if (g.seat) box.appendChild(altChip(g, tClassChanged));
     if (g.none.length) box.appendChild(el('p', { class: 'small bad', text: t('t.groups_missing', { names: g.none.join(', ') }) }));
   } else if (c && c !== OPEN_CLS && T.init && T.init.groups) box.appendChild(el('p', { class: 'small muted', text: t('t.groups_one', { cls: c }) }));
   box.hidden = !box.firstChild;
@@ -404,14 +414,15 @@ async function tStart(state) {
     cls: open ? '' : clsSel, open: open, state: state, title: title,
     regions: codes.map(function (c) { var r = regionByCode(c); return regionLabel(c, r && r.names); }).join(', '), types: types.map(typeLabel).join(', '),
     diff: dmin === dmax ? String(dmin) : dmin + '–' + dmax, total: total, full: round1(sc.diag * pf / 100), zero: round1(sc.diag * pz / 100), diag: Math.round(sc.diag), lang: I18N.lang,
-    map: { bbox: sc.bbox, base: tBaseRefs() }, names: chosen.map(function (o) { return o.name; }), namesB: chosenB.map(function (o) { return o.name; })
+    map: { bbox: sc.bbox, base: tBaseRefs() }, names: chosen.map(function (o) { return o.name; }), namesB: chosenB.map(function (o) { return o.name; }),
+    alt: groups && altOn(tGroupInfo())
   };
   $('start').disabled = $('prepare').disabled = true; tStatus('start-msg', t('t.saving'));
   try {
     var ids = function (l) { return l.map(function (o) { return o.id; }); };
     var r = await api('tCreateTest', A({ cfg: cfg, pack: { keys: ids(chosen), keysB: ids(chosenB), objects: objects } }));
     tStatus('start-msg', '');
-    var x = { id: r.id, created: '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: title, n: chosen.length, groups: groups, total: total, state: state, dk: r.dk || '' };
+    var x = { id: r.id, created: '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: title, n: chosen.length, groups: groups, alt: !!cfg.alt, total: total, state: state, dk: r.dk || '' };
     T.init.tests.push(x);
     // ďalší test sa začína s prázdnou triedou, názvom a skrytými objektmi
     $('f-cls').value = ''; $('f-title').value = ''; tClassChanged(); tListToggle(false); if (T.pview) T.pview.redraw();
@@ -453,7 +464,7 @@ function tDozorShow(x) {
   tQrShow(t('t.dozor_title', { title: x.title || x.id }), dozorUrl(x.id, x.dk), { warn: t('t.dozor_warn'), print: function () { tPrint(x); } });
 }
 function tPrint(x) {
-  var box = $('print-sheet'), meta = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), t('t.n_objects', { n: x.n }), t('t.time_short', { n: x.total }), x.groups ? t('t.groups_ab') : ''].filter(Boolean).join(' · ');
+  var box = $('print-sheet'), meta = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), t('t.n_objects', { n: x.n }), t('t.time_short', { n: x.total }), x.groups ? t('t.groups_ab') : '', x.alt ? t('t.alt_short') : ''].filter(Boolean).join(' · ');
   box.innerHTML = '';
   box.appendChild(el('h1', { text: t('app.title') + ': ' + (x.title || x.id) }));
   box.appendChild(el('p', { text: meta }));
@@ -571,7 +582,7 @@ function tHead() {
   $('test-toggle').textContent = st === 'ready' ? t('t.start_test') : st === 'open' ? t('t.close_test') : t('t.reopen_test');
   $('test-toggle').className = st === 'closed' ? '' : 'primary';
   $('test-toggle-hint').textContent = st === 'ready' ? t('t.ready_hint') : st === 'open' ? t('t.close_hint') : t('t.closed_hint');
-  $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: keysA(x).length }), x.groups ? t('t.groups_ab') : '',
+  $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: keysA(x).length }), x.groups ? t('t.groups_ab') : '', x.alt ? t('t.alt_short') : '',
     x.total ? t('t.time_short', { n: x.total }) : '', x.created, x.id].filter(Boolean).join(' · ');
 }
 async function tToggleState() {

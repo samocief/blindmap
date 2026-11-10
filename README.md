@@ -37,7 +37,7 @@ Každá ďalšia zmena (nové dáta z FME, oprava textu) = **Commit** a **Push o
 
 ### Nová tabuľka
 
-1. Vytvor Google tabuľku a v nej hárok **Žiaci** so stĺpcami **Trieda | Meno | Skupina | Aktívny**. Meno píš ako „Priezvisko Meno“. Skupina: „A“ alebo „B“, prázdna = trieda píše bez skupín (pozri nižšie). Aktívny: prázdne alebo „áno“, „nie“ žiaka skryje. Žiakov aj triedy stačí vložiť zo svojho Excelu.
+1. Vytvor Google tabuľku a v nej hárok **Žiaci**: vlož doň celý zasadací poriadok zo svojho Excelu (**Trieda | Rad | A | B | A | B …**, pozri [Skupiny A a B](#skupiny-a-a-b)), alebo zoznam so stĺpcami **Trieda | Meno | Skupina | Aktívny**. Meno píš ako „Priezvisko Meno“. Skupina: „A“ alebo „B“, prázdna = trieda píše bez skupín. Aktívny: prázdne alebo „áno“, „nie“ žiaka skryje.
 2. **Rozšírenia → Apps Script**. Obsah súboru `Code.gs` v editore zmaž a vlož tam celý `apps-script/Code.gs`. Ulož (ikona diskety).
 3. **Nasadiť → Nové nasadenie** → ozubené koliesko → **Webová aplikácia**:
    - Spustiť ako: **Ja**
@@ -66,6 +66,8 @@ Kým skript nevymeníš, aplikácia funguje po starom, len bez noviniek.
 ### Skupiny A a B
 
 Trieda, v ktorej majú v hárku Žiaci niektorí žiaci skupinu **A** a niektorí **B**, píše test v dvoch skupinách. Každá skupina dostane vlastné objekty, aby nemali čo odpisovať, a vedľa seba sú vždy dva objekty s rovnakým typom a obtiažnosťou, aby žiadna skupina nemala ľahšie. Stĺpec Skupina sa do staršieho hárka Žiaci doplní sám (na koniec), stačí ho vyplniť. Žiak bez skupiny v takej triede píše skupinu A; aplikácia učiteľa ťa naňho upozorní už pri výbere triedy. Trieda bez skupín (alebo len s jednou) píše jednu spoločnú sadu.
+
+**Zasadací poriadok v hárku Žiaci** (od verzie skriptu 2.5): celú tabuľku zasadacieho poriadku stačí skopírovať zo svojho Excelu do hárka Žiaci. Hlavička: `Trieda | Rad | A | B | A | B | …`. Každá bunka pod písmenom je jedno miesto, skupina žiaka je písmeno v hlavičke jeho stĺpca, prázdna bunka je prázdne miesto. Riadok bez triedy patrí k triede nad ním, zopakovaná hlavička sa preskočí, trieda „7A“ je to isté ako „7.A“. Skupiny teda idú po stĺpcoch: vedľa seba sedia rôzne skupiny, za sebou tá istá. Prepínač **Šachovnica** pri novom teste skupiny v každom druhom rade prehodí (podľa stĺpca Rad), takže inú skupinu má aj sused vpredu a vzadu. Hlavička môže mať aj ďalšie písmená (A/B/C), testy však zatiaľ majú len dve sady (A a B), žiaci ďalších skupín píšu A. Starší tvar hárka (Trieda | Meno | Skupina | Aktívny) funguje ďalej.
 
 ### Vlastné objekty
 

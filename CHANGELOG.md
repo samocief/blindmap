@@ -2,6 +2,12 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.20 (2026-11-10) – skript tabuľky 2.5
+
+- **Hárok Žiaci = zasadací poriadok.** Celú tabuľku zo Skola.xlsx (hárok Sedenie) stačí vložiť do hárka Žiaci: `Trieda | Rad | A | B | A | B …`. Skupina žiaka je písmeno v hlavičke jeho stĺpca, prázdna bunka je prázdne miesto. Riadok bez triedy patrí k triede nad ním, zopakovaná hlavička sa preskočí. Starý tvar (Trieda | Meno | Skupina | Aktívny) funguje ďalej, stĺpec Skupina sa do zasadacieho poriadku nedopĺňa.
+- **Šachovnica** (nový test, trieda so skupinami zo zasadacieho poriadku): v každom druhom rade sa skupiny prehodia, takže inú skupinu má aj sused vpredu a vzadu. Uloží sa do nového stĺpca `šachovnica` v hárku Testy. Bez nej idú skupiny po stĺpcoch.
+- Trieda „7A“ a „7.A“ je tá istá. Hlavička môže mať aj písmeno C a ďalšie, testy však majú zatiaľ len dve sady objektov; ďalšie skupiny píšu A.
+
 ## 2.19 (2026-11-02)
 
 - **Pripravené svetadiely:** `index.json` má bboxy pre Severnú a Južnú Ameriku, Afriku, Áziu a Austráliu s Oceániou. Z nich sa určuje stred projekcie pre rastre (tabuľka v [DATA.md](DATA.md#rastre)). Oblasť bez objektov sa v ponuke nezobrazí, kým k nej nepribudnú dáta.
