@@ -16,7 +16,7 @@
  * Od 2.5: hárok Žiaci môže byť zasadací poriadok skopírovaný z Excelu (Trieda | Rad | A | B | A | B …), skupina je v hlavičke stĺpca.
  * Test so šachovnicou (stĺpec „šachovnica“ v hárku Testy) má v každom druhom rade skupiny prehodené.
  */
-const VERSION = '2.5';
+const VERSION = '2.5.1';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
@@ -594,12 +594,27 @@ function appendResult_(sh, test, vals, cells) {
   sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setValues([row]);
 }
 // Riadky výsledkov. Neprítomný žiak má riadok s textom „neprítomný“ namiesto percent; učiteľ má riadok s menom Učiteľ.
+// Čas odovzdania ako text presne tak, ako ho ukazuje tabuľka. Hodnota z getValues() je Date a pri prevode na text
+// sa môže posunúť o časové pásmo projektu skriptu (napr. pacifický čas), preto sa číta zobrazená hodnota bunky.
+function sentCol_(sh, c, n) {
+  if (c < 0 || !n) return [];
+  return sh.getRange(2, c + 1, n, 1).getDisplayValues().map(function (r) { return r[0]; });
+}
+function sentText_(disp, raw) {
+  const p2 = function (x) { return ('0' + x).slice(-2); }, d = String(disp || '').trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})/.exec(d);
+  if (m) return m[1] + '-' + p2(m[2]) + '-' + p2(m[3]) + ' ' + p2(m[4]) + ':' + m[5];
+  m = /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\s+(\d{1,2}):(\d{2})/.exec(d);
+  if (m) return m[3] + '-' + p2(m[2]) + '-' + p2(m[1]) + ' ' + p2(m[4]) + ':' + m[5];
+  return s_(raw);
+}
 // keys = objekty, ktoré žiak písal (jeho skupina), leaves = počet odchodov (prvý strháva LEAVE_PENALTY).
 function readResults_(test) {
   const sh = resultsGet_(test.id);
   if (!sh) return [];
   const t = tableOf_(sh), cN = t.need('ziak'), cS = t.col('odoslane'), cT = t.col('tipy'), cF = t.col('priznak'), cR = t.need('vysledok'), cG = t.col('skupina'), cL = t.col('odchody');
   const first = cR + 1, back = {}; Object.keys(WHY).forEach(function (k) { back[normName(WHY[k])] = k; });
+  const sentD = sentCol_(sh, cS, t.rows.length);
   const out = [];
   t.rows.forEach(function (row, ri) {
     if (!s_(row[cN])) return;
@@ -612,7 +627,7 @@ function readResults_(test) {
     });
     let tips = {}; try { tips = JSON.parse(String(row[cT]) || '{}'); } catch (e) { tips = {}; }
     const rv = row[cR];
-    out.push({ row: ri + 2, pupilId: pupilKey_(test.cls, row[cN]), name: s_(row[cN]), sent: s_(row[cS]), group: g, keys: keys, leaves: cL >= 0 ? num_(row[cL]) || 0 : 0,
+    out.push({ row: ri + 2, pupilId: pupilKey_(test.cls, row[cN]), name: s_(row[cN]), sent: sentText_(sentD[ri], row[cS]), group: g, keys: keys, leaves: cL >= 0 ? num_(row[cL]) || 0 : 0,
       km: km, why: why, tips: tips, flag: cF >= 0 ? s_(row[cF]) : '',
       absent: typeof rv !== 'number' && normName(rv) === normName(ABSENT), teacher: !test.open && normName(row[cN]) === normName(TEACHER) });
   });

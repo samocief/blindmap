@@ -2,6 +2,10 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.20.1 (2026-11-12) – skript tabuľky 2.5.1
+
+- Čas odovzdania (dátum na obrázku výsledku, čas v prehľade učiteľa) je presne ten z tabuľky. Doteraz sa mohol posunúť na pacifický čas – test pred 9:00 mal na obrázku predchádzajúci deň.
+
 ## 2.20 (2026-11-10) – skript tabuľky 2.5
 
 - **Hárok Žiaci = zasadací poriadok.** Celú tabuľku zo Skola.xlsx (hárok Sedenie) stačí vložiť do hárka Žiaci: `Trieda | Rad | A | B | A | B …`. Skupina žiaka je písmeno v hlavičke jeho stĺpca, prázdna bunka je prázdne miesto. Riadok bez triedy patrí k triede nad ním, zopakovaná hlavička sa preskočí. Starý tvar (Trieda | Meno | Skupina | Aktívny) funguje ďalej, stĺpec Skupina sa do zasadacieho poriadku nedopĺňa.
