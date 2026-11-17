@@ -6,7 +6,7 @@ var T = {
   s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.3';
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.7';
 
 function tStatus(id, msg, cls) { var e = $(id); e.textContent = msg || ''; e.className = 'small ' + (cls || 'muted'); e.hidden = !msg; }
 function appBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
@@ -561,12 +561,14 @@ function tRefresh() {
     else if (T.sub === 'class') { if ($('class-body').hidden) tClass(); else if (T.cview) { tClassStats(); T.cview.redraw(); } }
   });
 }
+// Obnova prehľadu každých 6 s; keď niekto čaká na vrátenie do testu, každé 3 s.
 function tPollStart() {
-  clearInterval(T.poll);
+  clearInterval(T.poll); T.pollN = 0;
   T.poll = setInterval(function () {
     if (T.tab !== 'test' || !T.cur || document.hidden || T.sub === 'score') return;
+    if (++T.pollN % 2 && !(T.waiting && T.waiting.length)) return;
     tRefresh().catch(function () {});
-  }, 6000);
+  }, 3000);
 }
 function tSub(name) {
   T.sub = name;
@@ -606,7 +608,7 @@ function tRows() {
   return rows.filter(function (p) { return !p.teacher; }).concat(rows.filter(function (p) { return p.teacher; }));
 }
 function tOverview() {
-  var d = T.cur.d, x = d.test, by = {}, done = 0, writing = 0, absent = 0, total = 0, tb = el('tbody'), seen = {}, list = [];
+  var d = T.cur.d, x = d.test, by = {}, done = 0, writing = 0, absent = 0, total = 0, tb = el('tbody'), seen = {}, list = [], waiting = [];
   T.cur.res.forEach(function (r) { by[r.pupilId] = r; });
   tRows().forEach(function (p) {
     var key = p.id.split('#')[0], r = seen[key] ? null : by[key], L = d.logins.p[p.id], ab = !r && !L && !!T.cur.absent[key], st, cls = '', btn = null;
@@ -618,12 +620,22 @@ function tOverview() {
     else if (ab) { st = t('t.st_absent'); cls = 'absent'; absent++; }
     else st = t('t.st_none');
     var flags = r && r.flag ? [r.flag] : d.logins.f.filter(function (f) { return f.p === p.id; }).map(function (f) { return f.k + ' ' + f.t; });
-    if (L) btn = el('button', { type: 'button', class: 'mini', text: r ? t('t.allow_retry') : t('t.unlock'), onclick: function () {
+    if (!r && pr && pr.sh) flags.push(t('t.short_n', { n: pr.sh }));
+    // zamknutý alebo práve mimo testu: čaká na učiteľa (vrátiť, vrátiť so strhnutím, ukončiť)
+    var wait = !!(L && !r && pr && (pr.lock || pr.away));
+    if (wait) {
+      st = t(pr.lock ? 't.st_lock' : 't.st_away', { time: pr.lock || pr.away, why: pr.why || '' }); cls = 'bad';
+      waiting.push({ id: p.id, label: p.label });
+      btn = [el('button', { type: 'button', class: 'mini primary', text: t('t.ret_ok'), onclick: function () { tReturn(p, 'ok', this); } }),
+        pr.lv ? null : el('button', { type: 'button', class: 'mini', text: t('t.ret_pen', { pct: Math.round((d.penalty || 0) * 100) }), onclick: function () { tReturn(p, 'pen', this); } }),
+        el('button', { type: 'button', class: 'mini', text: t('t.ret_end'), onclick: function () { tReturn(p, 'end', this); } })];
+    }
+    else if (L) btn = el('button', { type: 'button', class: 'mini', text: r ? t('t.allow_retry') : t('t.unlock'), onclick: function () {
       if (r && !confirm(t('t.retry_confirm', { name: p.label }))) return;
       api('tUnlock', A({ t: T.cur.id, p: p.id })).then(function () { delete d.logins.p[p.id]; tOverview(); }).catch(function (e) { tStatus('test-msg', errText(e), 'bad'); });
     } });
     else if (!r && !p.teacher && !x.open && !T.oldScript) btn = el('button', { type: 'button', class: 'mini', text: ab ? t('t.unmark_absent') : t('t.mark_absent'), onclick: function () { tAbsent(p, !ab, this); } });
-    list.push({ p: p, r: r, st: st, cls: cls, flags: flags, btn: btn });
+    list.push({ p: p, r: r, st: st, cls: cls, flags: flags, btn: btn, wait: wait });
   });
   // stĺpec Príznak len vtedy, keď nejaký príznak je (na telefóne by inak tabuľka nevošla)
   var anyFlag = list.some(function (o) { return o.flags.length; });
@@ -632,9 +644,10 @@ function tOverview() {
     var cells = [nm, el('td', { class: o.cls, text: o.st })];
     if (T.showRes) cells.push(el('td', { class: 'num', text: o.r ? fmtPct(o.r.pct) : '' }));
     if (anyFlag) cells.push(el('td', { class: o.flags.length ? 'bad small' : 'small', text: o.flags.join('; ') }));
-    cells.push(el('td', { class: 'act' }, [o.btn]));
-    tb.appendChild(el('tr', {}, cells));
+    cells.push(el('td', { class: 'act' }, [].concat(o.btn)));
+    tb.appendChild(el('tr', { class: o.wait ? 'wait' : null }, cells));
   });
+  tWaiting(waiting);
   $('over-sum').textContent = t('t.over_sum', { done: done, total: total - absent, writing: writing }) + (absent ? ' ' + t('t.over_absent', { n: absent }) : '');
   var heads = [t('t.col_pupil'), t('t.col_status')].concat(T.showRes ? [t('t.col_result')] : []).concat(anyFlag ? [t('t.col_flag')] : []).concat(['']);
   var box = $('over-table'); box.innerHTML = '';
@@ -643,6 +656,28 @@ function tOverview() {
   $('avg-label').textContent = t(x.open ? 't.avg_label_open' : 't.avg_label');
   $('avg-pct').textContent = avg === null ? '–' : fmtPct(avg);
   $('avg-note').textContent = avg === null ? t('t.no_results') : t(x.open ? 't.avg_note_open' : 't.avg_note', { pct: Math.round((d.penalty || 0) * 100) });
+}
+// Žiaci, ktorí čakajú na vrátenie do testu: upozornenie nad tabuľkou, počet v názve karty a pípnutie pri novom.
+function tWaiting(list) {
+  var old = T.waiting || [], fresh = list.some(function (w) { return !old.some(function (o) { return o.id === w.id; }); });
+  T.waiting = list;
+  $('over-lock').hidden = !list.length;
+  if (list.length) $('over-lock').textContent = t('t.lock_wait', { names: list.map(function (w) { return w.label; }).join(', ') });
+  document.title = (list.length ? '(' + list.length + ') ' : '') + document.title.replace(/^\(\d+\) /, '');
+  if (fresh) tBeep();
+}
+function tBeep() {
+  try {
+    var c = T.ac || (T.ac = new (window.AudioContext || window.webkitAudioContext)()), o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = 880; g.gain.value = 0.12; o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime + 0.25);
+  } catch (e) { /* bez zvuku */ }
+}
+async function tReturn(p, m, btn) {
+  if (m === 'end' && !confirm(t('t.end_confirm', { name: p.label }))) return;
+  if (btn) btn.disabled = true;
+  try { await api('tReturn', A({ t: T.cur.id, p: p.id, m: m })); await tRefresh(); }
+  catch (e) { tStatus('test-msg', errText(e), 'bad'); if (btn) btn.disabled = false; }
 }
 async function tAbsent(p, on, btn) {
   if (btn) btn.disabled = true;

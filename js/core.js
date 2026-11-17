@@ -1,5 +1,5 @@
 /* Slepá mapa: spoločné pomôcky (texty v jazykoch, spojenie so skriptom tabuľky, drobnosti pre stránku). */
-var APP = { version: '2.21', dataUrl: 'data/' };
+var APP = { version: '2.22', dataUrl: 'data/' };
 
 /* ---------- stránka ---------- */
 function $(id) { return document.getElementById(id); }
@@ -158,9 +158,10 @@ function diffSlider(box, lo, hi) {
 var API = { url: '' };
 function scriptUrl(s) { s = String(s || '').trim(); return /^https?:\/\//.test(s) ? s : 'https://script.google.com/macros/s/' + encodeURIComponent(s) + '/exec'; }
 function ApiError(code, msg) { var e = new Error(msg || code); e.code = code; return e; }
-function api(action, data) {
+// opts.keepalive: požiadavka dobehne, aj keď sa stránka práve skrýva alebo zatvára (žiak odchádza z testu).
+function api(action, data, opts) {
   var body = JSON.stringify(Object.assign({ a: action, v: APP.version }, data || {}));
-  return fetch(API.url, { method: 'POST', body: body, redirect: 'follow', cache: 'no-store' })
+  return fetch(API.url, { method: 'POST', body: body, redirect: 'follow', cache: 'no-store', keepalive: !!(opts && opts.keepalive) })
     .catch(function () { throw ApiError('network'); })
     .then(function (r) { if (!r.ok) throw ApiError('http', String(r.status)); return r.text(); })
     .then(function (txt) {

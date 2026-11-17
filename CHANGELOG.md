@@ -2,6 +2,20 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.22 (2026-11-17) – skript tabuľky 2.7 (treba vymeniť skript tabuľky)
+
+- **Odchod z testu sa už netrestá automaticky.** Ak je žiak mimo testu (iná karta alebo aplikácia, iné okno, zmenšené okno, zamknutý telefón, zatvorená stránka):
+  do 1 s sa nič nedeje; do 5 s (obnovenie stránky do 10 s) sa vráti sám a pokračuje, učiteľ vidí „krátko mimo testu n×“;
+  dlhšie: **test sa zamkne a čas sa mu zastaví** od chvíle, keď odišiel. Tipy ostanú uložené, žiak čaká na učiteľa.
+- V prehľade učiteľa (aj dozoru) je zamknutý žiak zvýraznený s časom a dôvodom, nad tabuľkou je upozornenie „Na vrátenie do testu čaká…“,
+  v názve karty počet a pri novom zamknutí krátke pípnutie. Prehľad sa vtedy obnovuje každé 3 s. Tlačidlá:
+  **Vrátiť** (bez trestu), **Vrátiť −10 %** (strhnutie najviac raz), **Ukončiť** (test sa hneď odovzdá s uloženými tipmi).
+  Žiak pokračuje s rovnakým zvyšným časom, aký mal pri odchode.
+- Učiteľ vidí aj žiaka, ktorý je práve mimo testu (napr. zamknutý telefón vo vrecku), a môže ho vrátiť alebo mu test ukončiť skôr, než sa vráti.
+- Zamknutie ostane aj po obnovení stránky. Druhý odchod test už neukončuje.
+- Stĺpec **odchody** v hárku výsledkov = počet odchodov, za ktoré učiteľ strhol body (0 alebo 1). V stĺpci príznak sú zamknutia a vrátenia s časom.
+- Aplikácia potrebuje skript 2.7, so starším skriptom žiak test nezačne a učiteľ vidí upozornenie.
+
 ## 2.21 (2026-11-17) – skript tabuľky 2.6 (treba vymeniť skript tabuľky)
 
 - **Viac času na test pre vybraných žiakov:** hárok **Čas** (vytvorí sa sám pri otvorení aplikácie učiteľa) so stĺpcami Meno | Čas. Do stĺpca Meno stačí skopírovať mená žiakov; dostanú o 50 % viac času (zaokrúhlené nahor na celé minúty, napr. 10 → 15 min). Iná hodnota pri žiakovi v stĺpci Čas, napr. `25 %` alebo `5 min`. Meno ako v hárku Žiaci, poradie mena a priezviska ani diakritika nevadí.
