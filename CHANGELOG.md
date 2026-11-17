@@ -2,6 +2,13 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.21 (2026-11-17) – skript tabuľky 2.6 (treba vymeniť skript tabuľky)
+
+- **Viac času na test pre vybraných žiakov:** hárok **Čas** (vytvorí sa sám pri otvorení aplikácie učiteľa) so stĺpcami Meno | Čas. Do stĺpca Meno stačí skopírovať mená žiakov; dostanú o 50 % viac času (zaokrúhlené nahor na celé minúty, napr. 10 → 15 min). Iná hodnota pri žiakovi v stĺpci Čas, napr. `25 %` alebo `5 min`. Meno ako v hárku Žiaci, poradie mena a priezviska ani diakritika nevadí.
+- Žiak vidí svoj čas len na svojej obrazovke (úvod testu, časomiera). V prehľade učiteľa ani vo výsledkoch to nevidno, aby to ostatní žiaci nepostrehli napr. na projektore. Hárok má zámerne nenápadný názov.
+- Čas sa zafixuje, keď žiak ťukne na Začať; neskoršia zmena hárka ho už nezmení. Upozornenie „odovzdané po čase“ sa ráta z jeho času.
+- Platí pre testy triedy, nie pre externých hráčov ani pre učiteľa.
+
 ## 2.20.1 (2026-11-12) – skript tabuľky 2.5.1
 
 - Čas odovzdania (dátum na obrázku výsledku, čas v prehľade učiteľa) je presne ten z tabuľky. Doteraz sa mohol posunúť na pacifický čas – test pred 9:00 mal na obrázku predchádzajúci deň.

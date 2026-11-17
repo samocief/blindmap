@@ -15,13 +15,17 @@
  *
  * Od 2.5: hárok Žiaci môže byť zasadací poriadok skopírovaný z Excelu (Trieda | Rad | A | B | A | B …), skupina je v hlavičke stĺpca.
  * Test so šachovnicou (stĺpec „šachovnica“ v hárku Testy) má v každom druhom rade skupiny prehodené.
+ *
+ * Od 2.6: hárok „Čas“ (Meno | Čas) = žiaci, ktorí majú na test viac času (predvolene +50 %, v stĺpci Čas aj iné, napr. „25 %“ alebo „5 min“).
  */
-const VERSION = '2.5.1';
+const VERSION = '2.6';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
-const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], tests: 'Testy', packs: '_balíky' };
+const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], extra: ['Čas', 'Cas', 'Time'], tests: 'Testy', packs: '_balíky' };
 const PUPIL_HEAD = ['Trieda', 'Rad', 'A', 'B', 'A', 'B', 'A', 'B', 'A', 'B'];   // nový hárok Žiaci: zasadací poriadok
 const CUSTOM_HEAD = ['Názov', 'Typ', 'Oblasť', 'Obtiažnosť', 'Súradnice'];
+const EXTRA_HEAD = ['Meno', 'Čas'];   // hárok má nenápadný názov, aby žiaci pri pohľade na tabuľku nič nepostrehli
+const EXTRA_PCT = 0.5;         // žiak z hárka Čas bez vlastnej hodnoty: +50 % celkového času testu
 const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
   '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa', 'režim',
   'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica'];
@@ -169,6 +173,11 @@ function ensureBaseSheets_() {
   // Hárok Žiaci zo starších verzií (zoznam s menami) dostane na koniec stĺpec Skupina (A/B), ak ho ešte nemá. Zasadací poriadok nie.
   else if (pupils.getLastColumn() > 0) { const pt = tableOf_(pupils); if (pt.col(['meno', 'name', 'ziak']) >= 0 && pt.col(['skupina', 'group']) < 0) ensureCols_(pupils, ['Skupina']); }
   if (!sheetByNames_(SH.custom)) ensureSheet_(SH.custom[0], CUSTOM_HEAD);
+  if (!sheetByNames_(SH.extra)) {
+    const sh = ensureSheet_(SH.extra[0], EXTRA_HEAD);
+    sh.getRange(1, 1).setNote('Mená ako v hárku Žiaci (poradie mena a priezviska nevadí).');
+    sh.getRange(1, 2).setNote('Prázdne = +' + Math.round(EXTRA_PCT * 100) + ' %. Inak napr. „25 %“ alebo „5 min“.');
+  }
 }
 // Kľúč a adresa sa ukladajú spolu s id tabuľky: v kópii tabuľky (iný učiteľ) neplatia a vytvoria sa nové.
 function ownProp_(name) {
@@ -360,6 +369,32 @@ function classGroups_(pupils) {
     if (p.seat) o.seat = true;
   });
   return out;
+}
+// Hárok Čas: v prvom stĺpci mená (ako v hárku Žiaci, poradie slov nevadí), v druhom voliteľne koľko navyše („25 %“, „5 min“, prázdne = EXTRA_PCT).
+// Hlavička nie je povinná. Výsledok: {kľúč mena: {pct} alebo {min}}.
+function extraKey_(label) { return normName(label).split(' ').filter(String).sort().join(' '); }
+function readExtra_() {
+  const sh = sheetByNames_(SH.extra), out = {};
+  if (!sh || sh.getLastRow() < 1) return out;
+  sh.getRange(1, 1, sh.getLastRow(), Math.min(2, Math.max(1, sh.getLastColumn()))).getValues().forEach(function (r) {
+    const k = extraKey_(r[0]);
+    if (!k || k === 'meno' || k === 'name' || k === 'ziak') return;
+    const v = s_(r[1]), n = num_(v.replace(/[^\d,.]/g, ''));
+    if (n === null || n <= 0) out[k] = { pct: EXTRA_PCT };
+    else if (/%/.test(v)) out[k] = { pct: n / 100 };
+    else if (typeof r[1] === 'number' && n < 1) out[k] = { pct: n };   // bunka vo formáte percent (0,25)
+    else out[k] = { min: n };
+  });
+  return out;
+}
+// Celkový čas žiaka v minútach: čas testu, žiakom z hárka Čas viac (zaokrúhlené nahor na celé minúty).
+function extraOf_(test, label, X) {
+  if (test.open || !label || label === TEACHER) return null;
+  return (X || readExtra_())[extraKey_(label)] || null;
+}
+function pupilTotal_(test, label, X) {
+  const x = extraOf_(test, label, X);
+  return !x ? test.total : test.total + Math.ceil(x.pct ? test.total * x.pct : x.min);
 }
 // Hárok Vlastné objekty: Názov | Typ | Oblasť | Obtiažnosť | Súradnice („48.73, 19.15“ ako z Google Máp).
 function readCustom_() {
@@ -736,8 +771,9 @@ function pupilLogin_(req) {
   keys.forEach(function (k) { if (pack.objects[k]) objects[k] = pack.objects[k]; });
   // Ak už žiak začal (napr. na inom zariadení pred odomknutím), pokračuje so zvyšným časom a s uloženými tipmi.
   const st = starts_(testId)[me.id], prog = progGet_(testId, me.id);
-  const out = { ok: true, pid: me.id, name: me.label, group: group, total: test.total, penalty: LEAVE_PENALTY, scoring: test.scoring, keys: keys, objects: objects, begun: !!st };
-  if (st) { out.left = st[0] + test.total * 60000 - Date.now(); out.leaves = st[1] || 0; }
+  const total = st && st[2] ? st[2] : pupilTotal_(test, me.label);
+  const out = { ok: true, pid: me.id, name: me.label, group: group, total: total, penalty: LEAVE_PENALTY, scoring: test.scoring, keys: keys, objects: objects, begun: !!st };
+  if (st) { out.left = st[0] + total * 60000 - Date.now(); out.leaves = st[1] || 0; }
   if (prog) { out.tips = cleanTips_(prog.tips, keys); out.marks = (prog.mk || []).filter(function (k) { return keys.indexOf(k) >= 0; }); }
   return out;
 }
@@ -751,8 +787,10 @@ function pupilBegin_(req) {
     if (!e || e.d !== device) fail_('not_logged');
     if (e.done) fail_('done');
     const S = starts_(testId);
-    if (!S[pupilId]) { S[pupilId] = [Date.now(), 0]; saveStarts_(testId, S); }
-    return { ok: true, left: S[pupilId][0] + test.total * 60000 - Date.now(), total: test.total, leaves: S[pupilId][1] || 0 };
+    // [začiatok, odchody, celkový čas žiaka v min]: čas sa zafixuje pri štarte, neskoršia zmena hárka Čas ho už nemení
+    if (!S[pupilId]) { S[pupilId] = [Date.now(), 0, pupilTotal_(test, e.n)]; saveStarts_(testId, S); }
+    const total = S[pupilId][2] || test.total;
+    return { ok: true, left: S[pupilId][0] + total * 60000 - Date.now(), total: total, leaves: S[pupilId][1] || 0 };
   });
 }
 // Priebežné uloženie tipov počas písania (len vyrovnávacia pamäť, do tabuľky sa píše až pri odovzdaní).
@@ -826,7 +864,8 @@ function pupilSubmit_(req) {
     const flags = L.f.filter(function (x) { return x.p === pupilId && x.k.indexOf('odchod') !== 0; }).map(function (x) { return x.k + ' ' + x.t; });
     if (leaves > 0) flags.push('odchod z testu: ' + leaves + '× (−' + Math.round(LEAVE_PENALTY * 100) + ' %)');
     if (ended) flags.push('test ukončený po druhom odchode');
-    if (st && Date.now() > st[0] + test.total * 60000 + GRACE_MS) flags.push('odovzdané po čase (+' + Math.round((Date.now() - st[0]) / 60000 - test.total) + ' min)');
+    const myTotal = st ? st[2] || test.total : test.total;
+    if (st && Date.now() > st[0] + myTotal * 60000 + GRACE_MS) flags.push('odovzdané po čase (+' + Math.round((Date.now() - st[0]) / 60000 - myTotal) + ' min)');
     if (miss.length) flags.push((ended ? 'nedokončené: ' : 'bez tipu: ') + miss.join(', '));
     appendResult_(sh, test, { odoslane: now_(), ziak: label, skupina: group, vysledok: pct, odchody: leaves, tipy: JSON.stringify(tipOut), priznak: flags.join('; ') }, cells);
     L.p[pupilId] = { d: device, t: e ? e.t : now_('HH:mm:ss'), n: label, done: 1 };
@@ -925,7 +964,7 @@ function tTest_(req) {
     writing.forEach(function (id) {
       let p = null; try { p = JSON.parse(got[progKey_(test.id, id)] || 'null'); } catch (e) { p = null; }
       const st = S[id];
-      if (p || st) prog[id] = { n: p ? p.n || 0 : 0, mk: p && p.mk ? p.mk.length : 0, lv: st ? st[1] || 0 : 0, left: st ? st[0] + test.total * 60000 - Date.now() : null };
+      if (p || st) prog[id] = { n: p ? p.n || 0 : 0, mk: p && p.mk ? p.mk.length : 0, lv: st ? st[1] || 0 : 0, left: st ? st[0] + (st[2] || test.total) * 60000 - Date.now() : null };
     });
   }
   const out = { test: test, pupils: pupils, logins: L, prog: prog, penalty: LEAVE_PENALTY, results: readResults_(test) };

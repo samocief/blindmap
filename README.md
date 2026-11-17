@@ -69,6 +69,10 @@ Trieda, v ktorej majú v hárku Žiaci niektorí žiaci skupinu **A** a niektor�
 
 **Zasadací poriadok v hárku Žiaci** (od verzie skriptu 2.5): celú tabuľku zasadacieho poriadku stačí skopírovať zo svojho Excelu do hárka Žiaci. Hlavička: `Trieda | Rad | A | B | A | B | …`. Každá bunka pod písmenom je jedno miesto, skupina žiaka je písmeno v hlavičke jeho stĺpca, prázdna bunka je prázdne miesto. Riadok bez triedy patrí k triede nad ním, zopakovaná hlavička sa preskočí, trieda „7A“ je to isté ako „7.A“. Skupiny teda idú po stĺpcoch: vedľa seba sedia rôzne skupiny, za sebou tá istá. Prepínač **Šachovnica** pri novom teste skupiny v každom druhom rade prehodí (podľa stĺpca Rad), takže inú skupinu má aj sused vpredu a vzadu. Hlavička môže mať aj ďalšie písmená (A/B/C), testy však zatiaľ majú len dve sady (A a B), žiaci ďalších skupín píšu A. Starší tvar hárka (Trieda | Meno | Skupina | Aktívny) funguje ďalej.
 
+### Viac času pre vybraných žiakov
+
+Hárok **Čas** (vytvorí sa sám, stĺpce **Meno | Čas**): do stĺpca Meno skopíruj mená žiakov, ktorí majú na test viac času. Mená ako v hárku Žiaci, poradie mena a priezviska ani diakritika nevadí. Dostanú o **50 %** viac (zaokrúhlené nahor na celé minúty). Inú hodnotu pre žiaka napíš do stĺpca Čas: `25 %` alebo `5 min`. Platí pre všetky triedy a testy; čas sa žiakovi zafixuje, keď ťukne na Začať. Predĺžený čas vidí len žiak sám, v prehľade učiteľa sa nezobrazuje.
+
 ### Vlastné objekty
 
 Hárok **Vlastné objekty** (vytvorí sa sám): Názov | Typ | Oblasť | Obtiažnosť | Súradnice. Súradnice skopíruj z Google Máp (pravé tlačidlo na mieste, napr. `48.7297, 19.1498`). Typ môže byť „mesto“, „vrch“, „rieka“… alebo čokoľvek iné, Oblasť kód (`sk`) alebo názov (Slovensko). Tieto objekty sa v aplikácii ponúkajú spolu s katalógom, ale vidíš ich len ty.
