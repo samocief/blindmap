@@ -2,6 +2,20 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.23 (2026-11-18) – skript tabuľky 2.8 (treba vymeniť skript tabuľky)
+
+- **Pridať čas v prehľade.** Pri každom žiakovi, ktorý píše (aj pri zamknutom), je tlačidlo **+2 min**. Dá sa ťukať opakovane.
+  Nad tabuľkou je **+2 min všetkým** pre všetkých, ktorí práve píšu.
+- **Aj žiakovi, ktorý už odovzdal** (kým test neuzavrieš): po potvrdení sa mu test znova otvorí s jeho tipmi. Pokračuje so zvyšným časom
+  z chvíle odovzdania + 2 min (kto odovzdal po čase, má 2 min). Čas mu začne bežať, až keď sa do testu vráti; telefón mu test otvorí sám
+  do pár sekúnd, inak po obnovení stránky. Po novom odovzdaní sa jeho predošlý riadok vo výsledkoch nahradí (príznak „pokračoval po odovzdaní“).
+  **+2 min všetkým** sa týka len tých, ktorí práve píšu.
+- Pri stave žiaka je „pridané +n min“, vo výsledkoch príznak „pridaný čas +n min“. Čas z hárka Čas sa v prehľade naďalej nezobrazuje.
+- Žiak sa o pridanom čase dozvie do pol minúty, časomiera sa posunie a zobrazí sa „Učiteľ ti pridal čas: +2 min“. Keď mu čas vyprší,
+  aplikácia sa ešte opýta servera, či čas nebol pridaný, až potom test odovzdá.
+- Žiak, ktorému učiteľ test ukončí počas písania, sa to dozvie do pol minúty. Tlačidlá môže použiť aj dozor.
+- Aplikácia potrebuje skript 2.8.
+
 ## 2.22 (2026-11-17) – skript tabuľky 2.7 (treba vymeniť skript tabuľky)
 
 - **Odchod z testu sa už netrestá automaticky.** Ak je žiak mimo testu (iná karta alebo aplikácia, iné okno, zmenšené okno, zamknutý telefón, zatvorená stránka):

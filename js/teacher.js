@@ -6,7 +6,7 @@ var T = {
   s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.7';
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.8';
 
 function tStatus(id, msg, cls) { var e = $(id); e.textContent = msg || ''; e.className = 'small ' + (cls || 'muted'); e.hidden = !msg; }
 function appBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
@@ -612,6 +612,7 @@ function tOverview() {
   T.cur.res.forEach(function (r) { by[r.pupilId] = r; });
   tRows().forEach(function (p) {
     var key = p.id.split('#')[0], r = seen[key] ? null : by[key], L = d.logins.p[p.id], ab = !r && !L && !!T.cur.absent[key], st, cls = '', btn = null;
+    if (r && L && !L.done) r = null;   // odovzdal, ale znova píše (pridaný čas alebo nový pokus)
     seen[key] = 1;
     if (!p.teacher) total++;
     var pr = d.prog && d.prog[p.id];
@@ -621,6 +622,7 @@ function tOverview() {
     else st = t('t.st_none');
     var flags = r && r.flag ? [r.flag] : d.logins.f.filter(function (f) { return f.p === p.id; }).map(function (f) { return f.k + ' ' + f.t; });
     if (!r && pr && pr.sh) flags.push(t('t.short_n', { n: pr.sh }));
+    if (!r && L && pr && pr.rw) st = t('t.st_reopen');
     // zamknutý alebo práve mimo testu: čaká na učiteľa (vrátiť, vrátiť so strhnutím, ukončiť)
     var wait = !!(L && !r && pr && (pr.lock || pr.away));
     if (wait) {
@@ -635,6 +637,13 @@ function tOverview() {
       api('tUnlock', A({ t: T.cur.id, p: p.id })).then(function () { delete d.logins.p[p.id]; tOverview(); }).catch(function (e) { tStatus('test-msg', errText(e), 'bad'); });
     } });
     else if (!r && !p.teacher && !x.open && !T.oldScript) btn = el('button', { type: 'button', class: 'mini', text: ab ? t('t.unmark_absent') : t('t.mark_absent'), onclick: function () { tAbsent(p, !ab, this); } });
+    // pridať čas: kto píše (aj zamknutý), aj kto už odovzdal (test sa mu znova otvorí s jeho tipmi)
+    var writes = !!(L && !r && pr && pr.left !== null && pr.left !== undefined), again = !!(r && L && L.done && d.again && d.again[p.id]);
+    if (x.state === 'open' && !T.oldScript && (writes || again)) {
+      if (writes && pr.ad) st += ' · ' + t('t.added', { n: pr.ad });
+      btn = [el('button', { type: 'button', class: 'mini', text: t('t.add_time', { n: d.addMin || 2 }), title: t(again ? 't.add_again_hint' : 't.add_time_hint', { n: d.addMin || 2 }),
+        onclick: function () { if (again && !confirm(t('t.add_again_confirm', { name: p.label, n: d.addMin || 2 }))) return; tAddTime(p.id, this); } })].concat(btn);
+    }
     list.push({ p: p, r: r, st: st, cls: cls, flags: flags, btn: btn, wait: wait });
   });
   // stĺpec Príznak len vtedy, keď nejaký príznak je (na telefóne by inak tabuľka nevošla)
@@ -648,6 +657,9 @@ function tOverview() {
     tb.appendChild(el('tr', { class: o.wait ? 'wait' : null }, cells));
   });
   tWaiting(waiting);
+  var addAll = $('over-add');
+  addAll.hidden = !(x.state === 'open' && !T.oldScript && list.some(function (o) { var pr = d.prog && d.prog[o.p.id]; return !o.r && d.logins.p[o.p.id] && pr && pr.left !== null && pr.left !== undefined; }));
+  addAll.textContent = t('t.add_time_all', { n: d.addMin || 2 });
   $('over-sum').textContent = t('t.over_sum', { done: done, total: total - absent, writing: writing }) + (absent ? ' ' + t('t.over_absent', { n: absent }) : '');
   var heads = [t('t.col_pupil'), t('t.col_status')].concat(T.showRes ? [t('t.col_result')] : []).concat(anyFlag ? [t('t.col_flag')] : []).concat(['']);
   var box = $('over-table'); box.innerHTML = '';
@@ -678,6 +690,14 @@ async function tReturn(p, m, btn) {
   if (btn) btn.disabled = true;
   try { await api('tReturn', A({ t: T.cur.id, p: p.id, m: m })); await tRefresh(); }
   catch (e) { tStatus('test-msg', errText(e), 'bad'); if (btn) btn.disabled = false; }
+}
+// Pridať čas jednému žiakovi (id) alebo všetkým, ktorí práve píšu ('*'). Dá sa ťukať opakovane.
+async function tAddTime(pid, btn) {
+  if (pid === '*' && !confirm(t('t.add_all_confirm', { n: T.cur.d.addMin || 2 }))) return;
+  if (btn) btn.disabled = true;
+  try { await api('tAddTime', A({ t: T.cur.id, p: pid })); await tRefresh(); }
+  catch (e) { tStatus('test-msg', errText(e), 'bad'); }
+  if (btn) btn.disabled = false;
 }
 async function tAbsent(p, on, btn) {
   if (btn) btn.disabled = true;
@@ -843,6 +863,7 @@ async function tExportAll() {
   on('list-toggle', function () { tListToggle(!T.listOpen); });
   on('show-res', function () { T.showRes = this.checked; if (T.sub === 'over') tOverview(); else if (T.sub === 'score') tScore(); }, 'onchange');
   on('over-copy', tCopyResults);
+  on('over-add', function () { tAddTime('*', $('over-add')); });
   on('class-force', function () { T.classForce = true; tClass(); });
   on('practice', tPractice);
   on('test-toggle', tToggleState);
