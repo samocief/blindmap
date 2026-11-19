@@ -6,7 +6,9 @@ var T = {
   s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.8';
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.9';
+// Názov testu je zároveň jeho id (odkaz, QR, hárok výsledkov): bez diakritiky, medzier a bodiek, unikátny bez ohľadu na veľké písmená.
+var NAME_RE = /^[A-Za-z0-9_-]+$/, NAME_MAX = 40;
 
 function tStatus(id, msg, cls) { var e = $(id); e.textContent = msg || ''; e.className = 'small ' + (cls || 'muted'); e.hidden = !msg; }
 function appBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
@@ -90,9 +92,9 @@ function tForm() {
   if (!cls.length) sel.appendChild(el('option', { value: '', text: t('t.no_classes'), disabled: true }));
   cls.forEach(function (c) { sel.appendChild(el('option', { value: c, text: t('t.class_opt', { cls: c, n: I.classes[c].length }) })); });
   if (!T.oldScript) sel.appendChild(el('option', { value: OPEN_CLS, text: t('t.class_open') }));
-  sel.value = ''; $('f-title').value = '';
+  sel.value = ''; $('f-title').value = ''; tNameCheck();
   sel.onchange = function () { sel.classList.remove('invalid'); tStatus('start-msg', ''); tClassChanged(); };
-  $('f-title').oninput = function () { $('f-title').classList.remove('invalid'); tStatus('start-msg', ''); };
+  $('f-title').oninput = function () { tStatus('start-msg', ''); tNameCheck(); };
   tListToggle(false);
   $('f-dmin').value = String(F.dmin || 1); $('f-dmax').value = String(F.dmax || 2);
   diffSlider($('f-diff'), $('f-dmin'), $('f-dmax'));
@@ -395,7 +397,9 @@ async function tStart(state) {
   if (groups && rows.some(function (r) { return !!r.a !== !!r.b; })) { tStatus('start-msg', t('t.err_pairs'), 'bad'); if (!T.listOpen) tListToggle(true); return; }
   rows = rows.filter(function (r) { return r.a; });
   var chosen = rows.map(function (r) { return r.a; }), chosenB = groups ? rows.map(function (r) { return r.b; }) : [];
-  $('f-cls').classList.toggle('invalid', !clsSel); $('f-title').classList.toggle('invalid', !title);
+  var nameErr = tNameCheck(true);
+  $('f-cls').classList.toggle('invalid', !clsSel);
+  if (nameErr && nameErr !== 'empty') { var fi = $('f-title'); fi.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(function () { fi.focus({ preventScroll: true }); }, 300); return; }
   if (!clsSel || !title) {
     tStatus('start-msg', t(!clsSel && !title ? 't.err_required' : !clsSel ? 't.err_class' : 't.err_title'), 'bad');
     var f = !clsSel ? $('f-cls') : $('f-title'); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(function () { f.focus({ preventScroll: true }); }, 300);
@@ -422,13 +426,41 @@ async function tStart(state) {
     var ids = function (l) { return l.map(function (o) { return o.id; }); };
     var r = await api('tCreateTest', A({ cfg: cfg, pack: { keys: ids(chosen), keysB: ids(chosenB), objects: objects } }));
     tStatus('start-msg', '');
-    var x = { id: r.id, created: '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: title, n: chosen.length, groups: groups, alt: !!cfg.alt, total: total, state: state, dk: r.dk || '' };
+    var x = { id: r.id, created: r.created || nowStr(), started: r.started !== undefined ? r.started : state === 'open' ? nowStr() : '', cls: r.cls || clsSel, open: open, regions: cfg.regions, title: r.id || title, n: chosen.length, groups: groups, alt: !!cfg.alt, total: total, state: state, dk: r.dk || '' };
     T.init.tests.push(x);
+    (T.init.taken = T.init.taken || []).push(String(x.id).toLowerCase());
     // ďalší test sa začína s prázdnou triedou, názvom a skrytými objektmi
-    $('f-cls').value = ''; $('f-title').value = ''; tClassChanged(); tListToggle(false); if (T.pview) T.pview.redraw();
+    $('f-cls').value = ''; $('f-title').value = ''; tNameCheck(); tClassChanged(); tListToggle(false); if (T.pview) T.pview.redraw();
     tStarted(x);
   } catch (e) { tStatus('start-msg', t('t.err_save', { msg: errText(e) }), 'bad'); }
   $('start').disabled = $('prepare').disabled = false;
+  tNameCheck();
+}
+// Kontrola názvu testu: vráti chybu ('empty' | 'chars' | 'long' | 'taken') alebo ''. Chybný názov je červený a test sa nedá spustiť.
+// Prázdny názov sa vyznačí až pri pokuse o spustenie (show).
+function nameTaken(v) {
+  var k = String(v).toLowerCase(), list = (T.init && T.init.taken) || ((T.init && T.init.tests) || []).map(function (x) { return String(x.id).toLowerCase(); });
+  return list.indexOf(k) >= 0;
+}
+function tNameCheck(show) {
+  var inp = $('f-title'), v = inp.value.trim(), max = (T.init && T.init.nameMax) || NAME_MAX;
+  var err = !v ? 'empty' : v.length > max ? 'long' : !NAME_RE.test(v) ? 'chars' : nameTaken(v) ? 'taken' : '';
+  var mark = !!err && (err !== 'empty' || !!show);
+  inp.classList.toggle('invalid', mark);
+  tStatus('f-title-msg', mark && err !== 'empty' ? t('t.name_' + err, { max: max }) : '', 'bad');
+  $('start').disabled = $('prepare').disabled = T.oldScript || (!!err && err !== 'empty');
+  return err;
+}
+function nowStr() { var d = new Date(), p = function (x) { return ('0' + x).slice(-2); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+// „vytvorený 18.11. 08:38 · spustený 08:41“ (pri inom dni aj s dátumom), pripravený: „· nespustený“
+function whenText(x) {
+  var m = function (s) { return /^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/.exec(String(s || '')); };
+  var c = m(x.created), s = m(x.started), day = function (a) { return (+a[3]) + '.' + (+a[2]) + '.'; }, hm = function (a) { return a[4] + ':' + a[5]; };
+  var out = [];
+  if (c) out.push(t('t.when_created', { when: day(c) + ' ' + hm(c) })); else if (x.created) out.push(t('t.when_created', { when: x.created }));
+  if (s) out.push(t('t.when_started', { when: c && day(c) === day(s) && c[1] === s[1] ? hm(s) : day(s) + ' ' + hm(s) }));
+  else if (x.state === 'ready') out.push(t('t.when_not_started'));
+  return out.join(' · ');
 }
 function tStarted(x) {
   tTab('started');
@@ -440,7 +472,7 @@ function tStarted(x) {
   $('started-go').hidden = !ready;
   $('started-go').onclick = async function () {
     $('started-go').disabled = true;
-    try { await api('tSetTest', A({ t: x.id, patch: { state: 'open' } })); x.state = 'open'; tStarted(x); }
+    try { await api('tSetTest', A({ t: x.id, patch: { state: 'open' } })); x.state = 'open'; if (!x.started) x.started = nowStr(); tStarted(x); }
     catch (e) { tStatus('t-status', errText(e), 'bad'); }
     $('started-go').disabled = false;
   };
@@ -495,14 +527,14 @@ function stateBadge(state) { return el('span', { class: 'badge' + (state === 'op
 async function tTests() {
   var box = $('tests-list');
   box.innerHTML = ''; box.appendChild(el('p', { class: 'muted' }, [el('span', { class: 'spin' }), t('common.loading')]));
-  try { var init = await apiRetry('tInit', A(), 2); T.init.tests = init.tests; T.init.classes = init.classes; T.init.custom = init.custom; } catch (e) { /* ukážeme, čo máme */ }
+  try { var init = await apiRetry('tInit', A(), 2); T.init.tests = init.tests; if (init.taken) T.init.taken = init.taken; T.init.classes = init.classes; T.init.custom = init.custom; } catch (e) { /* ukážeme, čo máme */ }
   box.innerHTML = '';
   var rows = T.init.tests.slice().reverse();
   if (!rows.length) { box.appendChild(el('p', { class: 'muted', text: t('t.no_tests') })); return; }
   var tb = el('tbody');
   rows.forEach(function (x) {
     tb.appendChild(el('tr', {}, [
-      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: x.id })]),
+      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: whenText(x) })]),
       el('td', { text: x.open ? t('t.open_short') : x.cls }), el('td', { class: 'num', text: String(x.n) }),
       el('td', {}, [stateBadge(x.state)]),
       el('td', {}, [el('button', { type: 'button', class: 'mini', text: t('t.open'), onclick: function () { tOpenTest(x.id); } })])]));
@@ -585,7 +617,7 @@ function tHead() {
   $('test-toggle').className = st === 'closed' ? '' : 'primary';
   $('test-toggle-hint').textContent = st === 'ready' ? t('t.ready_hint') : st === 'open' ? t('t.close_hint') : t('t.closed_hint');
   $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: keysA(x).length }), x.groups ? t('t.groups_ab') : '', x.alt ? t('t.alt_short') : '',
-    x.total ? t('t.time_short', { n: x.total }) : '', x.created, x.id].filter(Boolean).join(' · ');
+    x.total ? t('t.time_short', { n: x.total }) : '', whenText(x), x.id !== x.title ? x.id : ''].filter(Boolean).join(' · ');
 }
 async function tToggleState() {
   var x = T.cur.d.test, next = NEXT_STATE[x.state] || 'open';
@@ -593,8 +625,8 @@ async function tToggleState() {
   $('test-toggle').disabled = true;
   try {
     await api('tSetTest', A({ t: T.cur.id, patch: { state: next } }));
-    x.state = next; tHead();
-    if (T.init) T.init.tests.forEach(function (y) { if (y.id === T.cur.id) y.state = next; });
+    x.state = next; if (next === 'open' && !x.started) x.started = nowStr(); tHead();
+    if (T.init) T.init.tests.forEach(function (y) { if (y.id === T.cur.id) { y.state = next; if (next === 'open' && !y.started) y.started = x.started; } });
     if (T.sub === 'class') tClass();
   } catch (e) { tStatus('test-msg', errText(e), 'bad'); }
   $('test-toggle').disabled = false;

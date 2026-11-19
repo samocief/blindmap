@@ -25,8 +25,11 @@
  * Od 2.8: učiteľ (alebo dozor) môže v prehľade pridať žiakovi čas (ADD_MIN minút, aj opakovane), alebo naraz všetkým, ktorí práve píšu.
  * Žiakovi, ktorý už odovzdal, sa tým test znova otvorí (kým je test otvorený): pokračuje so svojimi tipmi, so zvyšným časom z chvíle
  * odovzdania + pridaným časom. Čas mu začne bežať, až keď sa vráti do testu. Po novom odovzdaní sa jeho predošlý riadok výsledkov nahradí.
+ *
+ * Od 2.9: id testu = jeho názov, ktorý napíše učiteľ (len A–Z, a–z, 0–9, - a _, najviac NAME_MAX znakov, unikátny bez ohľadu na veľké písmená).
+ * Podľa neho sa volá hárok výsledkov „Res_<názov>“. Staršie testy si nechávajú svoje id. Nový stĺpec „spustený“ v hárku Testy.
  */
-const VERSION = '2.8';
+const VERSION = '2.9';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], extra: ['Čas', 'Cas', 'Time'], tests: 'Testy', packs: '_balíky' };
@@ -36,7 +39,9 @@ const EXTRA_HEAD = ['Meno', 'Čas'];   // hárok má nenápadný názov, aby ži
 const EXTRA_PCT = 0.5;         // žiak z hárka Čas bez vlastnej hodnoty: +50 % celkového času testu
 const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
   '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa', 'režim',
-  'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica'];
+  'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica', 'spustený'];
+const NAME_MAX = 40;                              // najdlhší názov testu (= id testu)
+const NAME_RE = /^[A-Za-z0-9_-]+$/;              // povolené znaky názvu: bez diakritiky, medzier a bodiek (kvôli URL a hárkom)
 const RES_FIXED = ['odoslané', 'žiak', 'výsledok (%)'];        // testy do verzie 2.2
 const RES_FIXED_AB = ['odoslané', 'žiak', 'skupina', 'výsledok (%)'];
 const RES_TAIL3 = ['odchody', 'tipy (šírka, dĺžka)', 'príznak'];
@@ -450,7 +455,7 @@ function testObj_(t, row) {
   const keysA = list(g('id objektov')), keysB = list(g('id objektov b'));
   const time = num_(g('cas')) || 0, total = num_(g('celkovy cas')) || 0;
   return {
-    id: s_(g('id testu')), created: s_(g('vytvoreny')), cls: s_(g('trieda')), regions: s_(g('oblast')), types: s_(g('typy')), diff: s_(g('obtiaznost') || g('obtaznost')),
+    id: s_(g('id testu')), created: s_(g('vytvoreny')), started: s_(g('spusteny')), cls: s_(g('trieda')), regions: s_(g('oblast')), types: s_(g('typy')), diff: s_(g('obtiaznost') || g('obtaznost')),
     n: num_(g('pocet')) || 0, time: time || (total ? 0 : 30), state: st === normName(STATE.closed) ? 'closed' : st === normName(STATE.ready) ? 'ready' : 'open',
     // celkový čas v minútach (od 2.3); staré testy mali čas na tip, pri nich sa celkový čas dopočíta
     total: total || Math.max(1, Math.ceil((time || 30) * keysA.length / 60)),
@@ -1080,14 +1085,24 @@ function tInit_() {
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
   const t = testsTable_();
   const tests = t.rows.map(function (r) { return testObj_(t, r); }).filter(function (x) { return x.id; })
-    .map(function (x) { return { id: x.id, created: x.created, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keysA.length, groups: x.groups, alt: x.alt, total: x.total, state: x.state }; });
-  return { v: VERSION, classes: classes, groups: classGroups_(pupils), penalty: LEAVE_PENALTY, tests: tests, custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName() };
+    .map(function (x) { return { id: x.id, created: x.created, started: x.started, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keysA.length, groups: x.groups, alt: x.alt, total: x.total, state: x.state }; });
+  return { v: VERSION, classes: classes, groups: classGroups_(pupils), penalty: LEAVE_PENALTY, tests: tests, taken: takenNames_(t), nameMax: NAME_MAX,
+    custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName() };
+}
+// Obsadené názvy testov (malými písmenami): id testov, staré id (prezývky) a hárky výsledkov „Res_…“.
+function takenNames_(t) {
+  const out = {}, cI = t.need('id testu'), add = function (x) { x = String(x || '').trim().toLowerCase(); if (x) out[x] = 1; };
+  t.rows.forEach(function (r) { add(r[cI]); });
+  Object.keys(aliases_()).forEach(add);
+  ss_().getSheets().forEach(function (sh) { const m = /^res_(.+)$/i.exec(sh.getName()); if (m) add(m[1]); });
+  return Object.keys(out);
 }
 // cfg: {cls, open, state, title, regions, types, diff, total (min), full, zero, diag, lang, map:{bbox, base}, names, namesB}
 // pack: {keys (sada A, alebo jediná sada), keysB (sada B, pri teste bez skupín prázdna), objects: {kľúč: {name, type, diff, g}}}
 function tCreateTest_(req) {
   const cfg = req.cfg || {}, pack = req.pack || {}, open = !!cfg.open;
-  const cls = open ? OPEN_CLASS : String(cfg.cls || '').trim();
+  const cls = open ? OPEN_CLASS : String(cfg.cls || '').trim(), name = String(cfg.title || '').trim();
+  if (!name || name.length > NAME_MAX || !NAME_RE.test(name)) fail_('bad_name', name);
   const keysA = [].concat(pack.keys || []).map(String), keysB = open ? [] : [].concat(pack.keysB || []).map(String);
   if (!cls || !keysA.length || !pack.objects) fail_('bad_request');
   if (keysB.length && (keysB.length !== keysA.length || keysB.some(function (k) { return keysA.indexOf(k) >= 0; }))) fail_('bad_request', 'skupiny A a B');
@@ -1096,17 +1111,17 @@ function tCreateTest_(req) {
   const total = Math.max(1, Math.min(240, Math.round(Number(cfg.total) || 10)));
   return withLock_(function () {
     const t = testsTable_();
-    // id: trieda_mesiac-deň_hodina:minúta, napr. 9A_10-23_09:58 (pri zhode sa pridá písmeno: 9A_10-23_09:58a)
-    let id = (cls.replace(/[^0-9A-Za-z]/g, '').slice(0, 8) || 'test') + '_' + now_('MM-dd_HH:mm');
-    const ids = t.rows.map(function (r) { return s_(r[t.need('id testu')]); });
-    for (let k = 97; ids.indexOf(id) >= 0 || ss_().getSheetByName(resultsName_(id)) || ss_().getSheetByName(oldResultsName_(id)); k++) id = id.replace(/[a-z]?$/, String.fromCharCode(k));
+    // id = názov testu od učiteľa; musí byť unikátny bez ohľadu na veľké písmená (hárky výsledkov)
+    const id = name;
+    if (takenNames_(t).indexOf(id.toLowerCase()) >= 0 || ss_().getSheetByName(oldResultsName_(id))) fail_('name_taken', id);
     const row = t.head.map(function () { return ''; });
     const put = function (p, v) { const i = t.col(p); if (i >= 0) row[i] = v; };
     const names = [].concat(cfg.names || []).map(String), namesB = [].concat(cfg.namesB || []).map(String);
-    put('id testu', id); put('vytvoreny', now_('yyyy-MM-dd HH:mm')); put('trieda', cls); put('oblast', String(cfg.regions || ''));
+    const created = now_('yyyy-MM-dd HH:mm'), started = cfg.state === 'ready' ? '' : created;
+    put('id testu', id); put('vytvoreny', created); put('spusteny', started); put('trieda', cls); put('oblast', String(cfg.regions || ''));
     put('typy', String(cfg.types || '')); put('obtiaznost', String(cfg.diff || '')); put('obtaznost', String(cfg.diff || '')); put('pocet', keysA.length); put('celkovy cas', total);
     put('stav', cfg.state === 'ready' ? STATE.ready : STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
-    put('objekty', names.join('; ')); put('id objektov', keysA.join('; ')); put('nazov', String(cfg.title || '')); put('jazyk', String(cfg.lang || 'sk'));
+    put('objekty', names.join('; ')); put('id objektov', keysA.join('; ')); put('nazov', id); put('jazyk', String(cfg.lang || 'sk'));
     put('mapa', JSON.stringify(cfg.map || null)); put('rezim', open ? MODE.open : MODE.cls);
     if (keysB.length) { put('objekty b', namesB.join('; ')); put('id objektov b', keysB.join('; ')); put('sachovnica', cfg.alt ? 'áno' : ''); }
     const r = t.sheet.getLastRow() + 1;
@@ -1115,7 +1130,7 @@ function tCreateTest_(req) {
     createResultsSheet_({ id: id, groups: keysB.length > 0, names: names, namesB: namesB, keys: all, keysA: keysA, keysB: keysB });
     try { pruneLogins_(t); } catch (e) { /* upratovanie nie je dôležité */ }
     savePack_(id, JSON.stringify({ v: 3, keys: all, objects: pack.objects }));
-    return { id: id, cls: cls, dk: dozorKey_(id), total: total };
+    return { id: id, cls: cls, dk: dozorKey_(id), total: total, created: created, started: started };
   });
 }
 function tTest_(req) {
@@ -1161,7 +1176,12 @@ function tSetTest_(req) {
   const patch = req.patch || {}, t = f.t;
   if (req.dozor && patch.scoring) fail_('auth');
   const set = function (p, v) { const i = t.col(p); if (i >= 0) t.sheet.getRange(f.rowIndex, i + 1).setValue(v); };
-  if (patch.state) set('stav', STATE[patch.state] || STATE.open);
+  if (patch.state) {
+    set('stav', STATE[patch.state] || STATE.open);
+    // čas spustenia: prvé otvorenie pripraveného testu (znovuotvorenie uzavretého ho nemení)
+    const cS = t.col('spusteny');
+    if (patch.state === 'open' && f.test.state === 'ready' && cS >= 0 && !f.test.started) t.sheet.getRange(f.rowIndex, cS + 1).setNumberFormat('@').setValue(now_('yyyy-MM-dd HH:mm'));
+  }
   if (patch.scoring) {
     const full = Number(patch.scoring.full), zero = Number(patch.scoring.zero);
     if (!(zero > full && full >= 0)) fail_('bad_request');

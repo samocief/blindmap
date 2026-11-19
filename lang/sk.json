@@ -166,7 +166,9 @@
   "not_started": "Test ešte nezačal.",
   "name_taken": "Toto meno už hrá na inom zariadení. Pridaj k nemu napríklad začiatočné písmeno priezviska.",
   "bad_name": "Napíš svoje meno.",
-  "logged_in": "Žiak je už prihlásený, nemôže byť neprítomný."
+  "logged_in": "Žiak je už prihlásený, nemôže byť neprítomný.",
+  "bad_name": "Názov testu môže mať len písmená bez diakritiky, číslice, - a _ (najviac 40 znakov).",
+  "name_taken": "Test s názvom „{msg}“ už existuje. Zmeň názov."
  },
  "p": {
   "no_link": "Tento odkaz nie je na test. Na test naskenuj QR kód od učiteľa, alebo si mapu precvič sám.",
@@ -284,7 +286,13 @@
   "step3": "3. Mapa a hodnotenie",
   "class": "Trieda",
   "title": "Názov testu",
-  "title_ph": "Napr. Rieky Slovenska",
+  "title_ph": "Napr. Geo7A_RiekySR",
+  "name_chars": "Len písmená bez diakritiky, číslice, - a _ (bez medzier a bodiek).",
+  "name_long": "Najviac {max} znakov.",
+  "name_taken": "Test s týmto názvom už existuje (na veľkých a malých písmenách nezáleží). Zmeň názov.",
+  "when_created": "vytvorený {when}",
+  "when_started": "spustený {when}",
+  "when_not_started": "nespustený",
   "class_ph": "Vyber triedu…",
   "class_open": "Externí (každý napíše svoje meno)",
   "regions": "Oblasť",

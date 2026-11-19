@@ -2,6 +2,16 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.24 (2026-11-19) – skript tabuľky 2.9 (treba vymeniť skript tabuľky)
+
+- **Názov testu je jeho id.** Podľa neho sa volá odkaz a QR kód aj hárok výsledkov (`Res_<názov>`).
+- Povolené sú len písmená bez diakritiky, číslice, `-` a `_` (bez medzier a bodiek), najviac 40 znakov. Názov musí byť unikátny,
+  na veľkých a malých písmenách nezáleží (`Geo7A_Rieky` = `geo7a_rieky`). Neplatný alebo už použitý názov je červený a test sa nedá spustiť, kým ho nezmeníš.
+- V zozname testov je namiesto id čas vytvorenia a spustenia („vytvorený 18.11. 08:38 · spustený 08:41“, pripravený test „nespustený“).
+  Čas spustenia je v novom stĺpci **spustený** v hárku Testy (prvé otvorenie, znovuotvorenie uzavretého testu ho nemení).
+- Staršie testy si nechávajú svoje id a hárky; odkazy a QR kódy fungujú ďalej.
+- Aplikácia potrebuje skript 2.9.
+
 ## 2.23 (2026-11-18) – skript tabuľky 2.8 (treba vymeniť skript tabuľky)
 
 - **Pridať čas v prehľade.** Pri každom žiakovi, ktorý píše (aj pri zamknutom), je tlačidlo **+2 min**. Dá sa ťukať opakovane.

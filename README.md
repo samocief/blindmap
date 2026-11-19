@@ -87,7 +87,7 @@ Učiteľ si urobí kópiu tvojej prázdnej tabuľky (Súbor → Vytvoriť kópiu
 
 Test je ako písomka: jeden celkový čas, žiak sa medzi miestami voľne presúva a tipy mení až do odovzdania.
 
-1. **Nový test:** trieda a názov testu (obe povinné, vždy začínajú prázdne), oblasť, typy objektov, obtiažnosť, počet objektov (pri skupinách v každej skupine) a **celkový čas v minútach**. Posledná možnosť v zozname tried je **Externí**: hráči bez zoznamu, každý si napíše svoje meno (napr. kamaráti alebo iná skupina). Pod triedou je napísané, či píše v skupinách a kto nemá skupinu.
+1. **Nový test:** trieda a názov testu (obe povinné, vždy začínajú prázdne; názov je zároveň id testu: len písmená bez diakritiky, číslice, `-` a `_`, najviac 40 znakov, unikátny bez ohľadu na veľké písmená), oblasť, typy objektov, obtiažnosť, počet objektov (pri skupinách v každej skupine) a **celkový čas v minútach**. Posledná možnosť v zozname tried je **Externí**: hráči bez zoznamu, každý si napíše svoje meno (napr. kamaráti alebo iná skupina). Pod triedou je napísané, či píše v skupinách a kto nemá skupinu.
 2. **Výber objektov:** objekty aj mapa s nimi sú predvolene skryté, aby ich žiaci nevideli na projektore. Ukážeš ich tlačidlom **Ukázať objekty**.
    - **Auto** namieša objekty podľa filtrov (vyvážene podľa obtiažnosti a typov). Pri triede so skupinami sú dva stĺpce, A a B, a v každom riadku dva objekty s rovnakým typom a obtiažnosťou. Na telefóne je dvojica pod sebou.
    - Písaním do políčka si objekt vyberieš sám (diakritika ani veľké písmená nevadia). **Kocka** pri políčku vyberie náhodne iný objekt: pri skupinách s rovnakým typom a obtiažnosťou ako sused vedľa (aj keď si ho zmenil ručne), bez skupín hocijaký z ponuky. Riadok, v ktorom sa typ alebo obtiažnosť dvojice líši, má oranžové číslo.
@@ -101,7 +101,7 @@ Test je ako písomka: jeden celkový čas, žiak sa medzi miestami voľne presú
 9. **Uzavrieť test a ukázať výsledky:** všetkým žiakom sa zobrazí ich mapa s tipmi a správnymi polohami.
 10. **Tipy triedy** (až po uzavretí testu): tipy celej triedy pri každom objekte, medián a návrh obtiažnosti. **Kopírovať štatistiky** dá tabuľku s rovnakým `id` ako v `*_difficulty_edit.csv` (pri EČV id okresu), typom, skupinou, obtiažnosťou v teste a návrhom, takže ju vložíš vedľa tabuľky obtiažností. **Hodnotenie a obrázky:** zmena hraníc percent (prepočíta sa aj tabuľka), obrázky žiakov na stiahnutie alebo uloženie na Disk.
 
-Výsledky sú v tabuľke v hárku „Res_<id testu>“ (napr. `Res_9A_10-23_09:58`), hárky idú hneď za hárkom Testy, najnovší vľavo: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov so strhnutím, tipy a príznaky (zamknutie a vrátenie do testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
+Výsledky sú v tabuľke v hárku „Res_<názov testu>“ (napr. `Res_Geo7A_Rieky`, staršie testy `Res_9A_10-23_09:58`), hárky idú hneď za hárkom Testy, najnovší vľavo: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov so strhnutím, tipy a príznaky (zamknutie a vrátenie do testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
 
 ### Dozor a suplovanie
 
