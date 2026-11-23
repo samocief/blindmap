@@ -103,6 +103,8 @@ Test je ako písomka: jeden celkový čas, žiak sa medzi miestami voľne presú
 
 Výsledky sú v tabuľke v hárku „Res_<názov testu>“ (napr. `Res_Geo7A_Rieky`, staršie testy `Res_9A_10-23_09:58`), hárky idú hneď za hárkom Testy, najnovší vľavo: skupina, percentá, odchýlky v km pri každom objekte (pri skupinách najprv objekty A, potom B), počet odchodov so strhnutím, tipy a príznaky (zamknutie a vrátenie do testu, odovzdanie po čase, pokus o prihlásenie z iného zariadenia).
 
+Uzavretý test sa dá v zozname testov **archivovať**: výsledky sa presunú do spoločného hárka **Archív** a hárok `Res_…` zmizne. **Obnoviť** ich vráti späť, **Vymazať** (len archivovaný test) ho zmaže natrvalo. Obrázky na Disku ostávajú.
+
 ### Dozor a suplovanie
 
 Test môžeš pripraviť pre inú triedu alebo na hodinu, keď nebudeš v škole:

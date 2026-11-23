@@ -2,6 +2,19 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.25 (2026-11-23) – skript tabuľky 2.10 (treba vymeniť skript tabuľky)
+
+- **Archív.** V zozname testov je pri uzavretom (aj nespustenom) teste tlačidlo **Archivovať**. Hárok výsledkov `Res_<názov>` sa presunie
+  do jedného spoločného hárka **Archív** (na konci tabuľky) a zmaže sa. Test ostane v zozname so stavom **Archivovaný** a dátumom.
+  - Hárok Archív: test | č. | odoslané | žiak | skupina | výsledok (%) | riadok (dáta). Dá sa v ňom filtrovať podľa testu;
+    posledný stĺpec je celý pôvodný riadok, podľa ktorého sa test obnoví – ten neupravuj.
+  - **Obnoviť** vráti hárok výsledkov späť a riadky z Archívu odstráni. Test je potom uzavretý (nespustený ostane nespustený).
+  - **Vymazať** je len pri archivovanom teste, s potvrdením: zmaže ho natrvalo (Archív, hárok Testy, _balíky). Obrázky na Disku ostávajú.
+  - Otvorený test archivovať nemožno. Odkaz a QR kód archivovaného testu žiakom ukážu, že test je uzavretý.
+- **Obrázok jedného žiaka priamo z prehľadu:** pri každom, kto odovzdal, je tlačidlo **Obrázok**, ktoré obrázok nakreslí a hneď uloží
+  do priečinka testu na Disku (rovnomenný súbor sa nahradí) a ukáže odkaz. Doterajšie tlačidlo v Hodnotení ostáva.
+- Aplikácia potrebuje skript 2.10.
+
 ## 2.24 (2026-11-19) – skript tabuľky 2.9 (treba vymeniť skript tabuľky)
 
 - **Názov testu je jeho id.** Podľa neho sa volá odkaz a QR kód aj hárok výsledkov (`Res_<názov>`).

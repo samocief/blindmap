@@ -6,7 +6,7 @@ var T = {
   s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.9';
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.10';
 // Názov testu je zároveň jeho id (odkaz, QR, hárok výsledkov): bez diakritiky, medzier a bodiek, unikátny bez ohľadu na veľké písmená.
 var NAME_RE = /^[A-Za-z0-9_-]+$/, NAME_MAX = 40;
 
@@ -523,23 +523,60 @@ function tPractice() {
 }
 
 /* ---------- zoznam testov ---------- */
-function stateBadge(state) { return el('span', { class: 'badge' + (state === 'open' ? ' open' : ''), text: t('state.' + state) }); }
+function stateBadge(state) { return el('span', { class: 'badge' + (state === 'open' ? ' open' : state === 'archived' ? ' arch' : ''), text: t('state.' + state) }); }
 async function tTests() {
   var box = $('tests-list');
   box.innerHTML = ''; box.appendChild(el('p', { class: 'muted' }, [el('span', { class: 'spin' }), t('common.loading')]));
   try { var init = await apiRetry('tInit', A(), 2); T.init.tests = init.tests; if (init.taken) T.init.taken = init.taken; T.init.classes = init.classes; T.init.custom = init.custom; } catch (e) { /* ukážeme, čo máme */ }
+  tTestsList();
+}
+// Zoznam testov: uzavretý alebo nespustený možno archivovať (hárok výsledkov ide do hárka Archív), archivovaný obnoviť alebo vymazať.
+function tTestsList() {
+  var box = $('tests-list');
   box.innerHTML = '';
   var rows = T.init.tests.slice().reverse();
   if (!rows.length) { box.appendChild(el('p', { class: 'muted', text: t('t.no_tests') })); return; }
-  var tb = el('tbody');
+  var tb = el('tbody'), canArch = !T.oldScript;
   rows.forEach(function (x) {
-    tb.appendChild(el('tr', {}, [
-      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: whenText(x) })]),
+    var arch = x.state === 'archived', mini = function (key, fn, cls) { return el('button', { type: 'button', class: 'mini' + (cls ? ' ' + cls : ''), text: t(key), onclick: function () { fn(x, this); } }); };
+    var acts = arch ? [mini('t.restore', tRestore), mini('t.delete', tDeleteTest, 'danger')]
+      : [el('button', { type: 'button', class: 'mini', text: t('t.open'), onclick: function () { tOpenTest(x.id); } }), x.state === 'open' || !canArch ? null : mini('t.archive', tArchive)];
+    var when = whenText(x) + (arch && x.archived ? ' · ' + t('t.when_archived', { when: shortWhen(x.archived) }) : '');
+    tb.appendChild(el('tr', { class: arch ? 'arch' : null }, [
+      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: when })]),
       el('td', { text: x.open ? t('t.open_short') : x.cls }), el('td', { class: 'num', text: String(x.n) }),
       el('td', {}, [stateBadge(x.state)]),
-      el('td', {}, [el('button', { type: 'button', class: 'mini', text: t('t.open'), onclick: function () { tOpenTest(x.id); } })])]));
+      el('td', { class: 'act' }, acts)]));
   });
   box.appendChild(el('div', { class: 'tablebox' }, [el('table', {}, [el('thead', {}, [el('tr', {}, [t('t.col_test'), t('t.col_class'), t('t.col_objects'), t('t.col_state'), ''].map(function (h, i) { return el('th', { class: i === 2 ? 'num' : '', text: h }); }))]), tb])]));
+}
+
+function shortWhen(s) { var m = /^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/.exec(String(s || '')); return m ? (+m[3]) + '.' + (+m[2]) + '. ' + m[4] + ':' + m[5] : String(s || ''); }
+async function tArchive(x, btn) {
+  btn.disabled = true; tStatus('tests-msg', t('t.archiving', { title: x.title || x.id }));
+  try {
+    await api('tArchive', A({ t: x.id }));
+    x.prev = x.state; x.state = 'archived'; x.archived = nowStr();
+    tTestsList(); tStatus('tests-msg', t('t.archived_ok', { title: x.title || x.id }), 'ok');
+  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
+}
+async function tRestore(x, btn) {
+  btn.disabled = true; tStatus('tests-msg', t('t.restoring', { title: x.title || x.id }));
+  try {
+    var r = await api('tRestore', A({ t: x.id }));
+    x.state = r.state || x.prev || 'closed'; x.archived = '';
+    tTestsList(); tStatus('tests-msg', t('t.restored_ok', { title: x.title || x.id }), 'ok');
+  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
+}
+async function tDeleteTest(x, btn) {
+  if (!confirm(t('t.delete_confirm', { title: x.title || x.id }))) return;
+  btn.disabled = true; tStatus('tests-msg', t('t.deleting', { title: x.title || x.id }));
+  try {
+    await api('tDeleteTest', A({ t: x.id }));
+    T.init.tests = T.init.tests.filter(function (y) { return y.id !== x.id; });
+    if (T.init.taken) T.init.taken = T.init.taken.filter(function (k) { return k !== String(x.id).toLowerCase(); });
+    tTestsList(); tStatus('tests-msg', t('t.deleted_ok', { title: x.title || x.id }), 'ok');
+  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
 }
 
 /* ---------- jeden test ---------- */
@@ -676,6 +713,8 @@ function tOverview() {
       btn = [el('button', { type: 'button', class: 'mini', text: t('t.add_time', { n: d.addMin || 2 }), title: t(again ? 't.add_again_hint' : 't.add_time_hint', { n: d.addMin || 2 }),
         onclick: function () { if (again && !confirm(t('t.add_again_confirm', { name: p.label, n: d.addMin || 2 }))) return; tAddTime(p.id, this); } })].concat(btn);
     }
+    // obrázok jedného žiaka rovno na Disk (napr. na rozhovor s rodičom); rovnomenný súbor sa nahradí
+    if (r && !T.dz) btn = [].concat(btn, [el('button', { type: 'button', class: 'mini', text: t('t.image'), title: t('t.image_hint'), onclick: function () { tSaveOne(r, p.label, this); } })]);
     list.push({ p: p, r: r, st: st, cls: cls, flags: flags, btn: btn, wait: wait });
   });
   // stĺpec Príznak len vtedy, keď nejaký príznak je (na telefóne by inak tabuľka nevošla)
@@ -864,6 +903,16 @@ async function tShowImage(r) {
     };
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) { tStatus('sc-img-msg', errText(e), 'bad'); }
+}
+async function tSaveOne(r, label, btn) {
+  btn.disabled = true; tStatus('over-msg', t('t.image_one', { name: label }));
+  try {
+    var url = await sheetPng(T.cur.scene, recFor(r));
+    var s = await apiRetry('tSaveImage', A({ t: T.cur.id, name: fileNameFor(r), b64: url.split(',')[1] }), 3);
+    $('over-msg').innerHTML = esc(t('t.saved_drive')) + ' <a target="_blank" rel="noopener" href="' + esc(s.url) + '">' + esc(fileNameFor(r)) + '</a> · <a target="_blank" rel="noopener" href="' + esc(s.folderUrl) + '">' + esc(t('t.open_folder')) + '</a>';
+    $('over-msg').className = 'small ok'; $('over-msg').hidden = false;
+  } catch (e) { tStatus('over-msg', errText(e), 'bad'); }
+  btn.disabled = false;
 }
 async function tExportAll() {
   var rs = T.cur.stat, folder = '';
