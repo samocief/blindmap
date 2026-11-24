@@ -32,8 +32,15 @@
  * Od 2.10: archív. Uzavretý (alebo nespustený) test sa dá archivovať: jeho hárok „Res_…“ sa presunie do spoločného hárka „Archív“
  * (jeden riadok = jeden riadok výsledkov, celý riadok v stĺpci „riadok (dáta)“) a zmaže sa. V hárku Testy ostane so stavom „archivovaný“.
  * Obnoviť ho vráti späť, Vymazať (len archivovaný) ho zmaže natrvalo: riadky v Archíve, v hárku Testy aj v _balíky. Obrázky na Disku ostávajú.
+ *
+ * Od 2.11: akcie v ponuke testu. Premenovať (tRename: id = názov, hárok výsledkov, _balíky, Archív, prihlásenia, priečinok s obrázkami;
+ * staré id ostane prezývkou, staré odkazy a QR kódy fungujú). Duplikovať / náhradný termín (tDuplicate: nový test s objektmi pôvodného,
+ * voliteľne len pre žiakov, ktorí ho nepísali = stĺpec „žiaci“, voliteľne s prehodenými skupinami). Prepočítať body (tRecalc: aplikácia
+ * pošle aktuálne objekty z dát – opravená geometria a názvy – a odchýlky sa prepočítajú z uložených tipov). Anulovať tip (tVoid: stĺpec
+ * „anulované“, kľúč=full plný počet percent pre všetkých, kľúč=skip nezapočíta sa). Poznámka (tNote). Stupnica známok (tGrades).
+ * Výsledky v hárku Res_… sú vždy v abecednom poradí (učiteľ na konci) a nový hárok výsledkov má filter.
  */
-const VERSION = '2.10';
+const VERSION = '2.11';
 const APP_URL = 'https://samocief.github.io/blindmap/';
 
 const SH = { pupils: ['Žiaci', 'Ziaci', 'Pupils', 'Students'], custom: ['Vlastné objekty', 'Custom objects'], extra: ['Čas', 'Cas', 'Time'], tests: 'Testy', packs: '_balíky', archive: 'Archív' };
@@ -43,7 +50,10 @@ const EXTRA_HEAD = ['Meno', 'Čas'];   // hárok má nenápadný názov, aby ži
 const EXTRA_PCT = 0.5;         // žiak z hárka Čas bez vlastnej hodnoty: +50 % celkového času testu
 const TEST_HEAD = ['id testu', 'vytvorený', 'trieda', 'oblasť', 'typy objektov', 'obtiažnosť', 'počet objektov', 'čas na tip (s)', 'stav',
   '100 % do (km)', '0 % od (km)', 'uhlopriečka mapy (km)', 'objekty', 'id objektov', 'názov', 'jazyk', 'mapa', 'režim',
-  'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica', 'spustený', 'archivovaný'];
+  'celkový čas (min)', 'objekty B', 'id objektov B', 'šachovnica', 'spustený', 'archivovaný', 'poznámka', 'žiaci', 'zdroj', 'anulované'];
+const NOTE_MAX = 500;                             // najdlhšia poznámka k testu
+const GRADES_DEF = [90, 75, 50, 25];              // stupnica: od koľkých % je známka 1, 2, 3, 4 (menej = 5)
+const VOID_TEXT = { full: 'plný počet pre všetkých', skip: 'nezapočítava sa' };
 // Hárok Archív: test | č. (0 = hlavička hárka výsledkov) | čitateľné stĺpce | celý riadok ako JSON (na obnovenie)
 const ARCH_HEAD = ['test', 'č.', 'odoslané', 'žiak', 'skupina', 'výsledok (%)', 'riadok (dáta)'];
 const NAME_MAX = 40;                              // najdlhší názov testu (= id testu)
@@ -61,7 +71,7 @@ const TEACHER = 'Učiteľ';                        // jedno meno navyše v každ
 const ABSENT = 'neprítomný';
 const DOZOR_OK = { tTest: 1, tSetTest: 1, tUnlock: 1, tAbsent: 1, tReturn: 1, tAddTime: 1 };   // čo smie odkaz pre dozor (len jeden test)
 // archivovaný test nemá hárok výsledkov: tieto požiadavky sa odmietnu, kým ho učiteľ neobnoví
-const ARCH_BLOCK = { tTest: 1, tSetTest: 1, tUnlock: 1, tAbsent: 1, tReturn: 1, tAddTime: 1, tSaveImage: 1 };
+const ARCH_BLOCK = { tTest: 1, tSetTest: 1, tUnlock: 1, tAbsent: 1, tReturn: 1, tAddTime: 1, tSaveImage: 1, tRecalc: 1, tVoid: 1 };
 const WHY = { none: 'bez tipu', leave: 'odchod', ended: 'ukončené' };
 const CHUNK = 40000;
 
@@ -243,7 +253,8 @@ const ROUTES = {
   ping: function () { return { ok: true, v: VERSION }; },
   pupilInit: pupilInit_, pupilLogin: pupilLogin_, pupilBegin: pupilBegin_, pupilSave: pupilSave_, pupilEvent: pupilEvent_, pupilAway: pupilAway_, pupilSubmit: pupilSubmit_, pupilState: pupilState_, pupilResult: pupilResult_,
   tInit: tInit_, tCreateTest: tCreateTest_, tTest: tTest_, tSetTest: tSetTest_, tUnlock: tUnlock_, tReturn: tReturn_, tAddTime: tAddTime_, tAbsent: tAbsent_, tSaveImage: tSaveImage_,
-  tArchive: tArchive_, tRestore: tRestore_, tDeleteTest: tDeleteTest_
+  tArchive: tArchive_, tRestore: tRestore_, tDeleteTest: tDeleteTest_,
+  tRename: tRename_, tDuplicate: tDuplicate_, tRecalc: tRecalc_, tVoid: tVoid_, tNote: tNote_, tGrades: tGrades_
 };
 function handle_(req) {
   try {
@@ -475,15 +486,25 @@ function testObj_(t, row) {
     scoring: { full: num_(g('100')) || 0, zero: num_(g('0 % od')) || 1 }, diag: num_(g('uhlopriecka')) || 0,
     names: list(g('objekty')), namesB: list(g('objekty b')),
     keysA: keysA, keysB: keysB, keys: keysA.concat(keysB), groups: keysB.length > 0, alt: keysB.length > 0 && normName(g('sachovnica')) === 'ano',
-    title: s_(g('nazov')), lang: s_(g('jazyk')) || 'sk', map: map
+    title: s_(g('nazov')), lang: s_(g('jazyk')) || 'sk', map: map,
+    note: s_(g('poznamka')), src: s_(g('zdroj')), only: list(g('ziaci')), voids: voidsOf_(g('anulovane'))
   };
 }
+// Stĺpec „anulované“: „ba=full; vah=skip“ → {ba: 'full', vah: 'skip'}
+function voidsOf_(v) {
+  const out = {};
+  s_(v).split(';').forEach(function (x) { const m = /^\s*(.+?)\s*=\s*(full|skip)\s*$/.exec(x); if (m) out[m[1]] = m[2]; });
+  return out;
+}
+function voidsText_(voids) { return Object.keys(voids).map(function (k) { return k + '=' + voids[k]; }).join('; '); }
 // Objekty, ktoré píše žiak danej skupiny (test bez skupín: všetky).
 function groupKeys_(test, g) { return test.groups ? (g === 'B' ? test.keysB : test.keysA) : test.keys; }
 // Hlavička stĺpcov objektov vo výsledkoch: pri dvoch skupinách s predponou A:/B:.
+// Anulovaný objekt má pred názvom „⊘“.
 function resNames_(test) {
-  if (!test.groups) return test.names.length === test.keys.length ? test.names : test.keys;
-  const pre = function (g, names, keys) { return keys.map(function (k, i) { return g + ': ' + (names[i] || k); }); };
+  const v = test.voids || {}, mark = function (k, n) { return (v[k] ? '⊘ ' : '') + n; };
+  if (!test.groups) return (test.names.length === test.keys.length ? test.names : test.keys).map(function (n, i) { return mark(test.keys[i], n); });
+  const pre = function (g, names, keys) { return keys.map(function (k, i) { return g + ': ' + mark(k, names[i] || k); }); };
   return pre('A', test.names, test.keysA).concat(pre('B', test.namesB, test.keysB));
 }
 function findTest_(testId) {
@@ -605,7 +626,12 @@ function createResultsSheet_(test) {
   sh.setFrozenRows(1); sh.setFrozenColumns(2);
   sh.getRange(2, fixed.length, 500, 1).setNumberFormat('0%');
   if (names.length) sh.getRange(2, fixed.length + 1, 500, names.length).setNumberFormat('0.0').setHorizontalAlignment('right');
+  resFilter_(sh, head.length);
   return sh;
+}
+// Filter na celom hárku výsledkov (všetky riadky, aby sa doň dostali aj neskôr pridané výsledky).
+function resFilter_(sh, width) {
+  try { if (!sh.getFilter()) sh.getRange(1, 1, sh.getMaxRows(), Math.max(1, width)).createFilter(); } catch (e) { /* filter nie je dôležitý */ }
 }
 function resultsSheet_(test) { return resultsGet_(test.id) || createResultsSheet_(test); }
 // Premenuje staré hárky „Výsledky <id>“ na „Res_<id>“ a zoradí hárky výsledkov hneď za hárok Testy: najnovší test vľavo.
@@ -676,7 +702,25 @@ function appendResult_(sh, test, vals, cells) {
   Object.keys(vals).forEach(function (k) { const i = t.col(k); if (i >= 0) row[i] = vals[k]; });
   const first = t.need('vysledok') + 1;
   (cells || []).forEach(function (v, i) { if (first + i < row.length) row[first + i] = v; });
-  sh.getRange(sh.getLastRow() + 1, 1, 1, row.length).setValues([row]);
+  const r = sh.getLastRow() + 1;
+  if (r > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), 50);
+  sh.getRange(r, 1, 1, row.length).setValues([row]);
+  placeSorted_(sh, r, t.need('ziak'));
+}
+// Poradie riadkov výsledkov: abecedne podľa mena, učiteľ na konci. Ďalší pokus toho istého žiaka ide pod predošlý.
+function resCmp_(a, b) {
+  const ta = normName(a) === normName(TEACHER) ? 1 : 0, tb = normName(b) === normName(TEACHER) ? 1 : 0;
+  if (ta !== tb) return ta - tb;
+  return String(a).localeCompare(String(b), 'sk') || (normName(a) < normName(b) ? -1 : normName(a) > normName(b) ? 1 : 0);
+}
+// Práve pridaný riadok r sa presunie na svoje miesto v abecede (celý riadok aj s formátom).
+function placeSorted_(sh, r, cN) {
+  if (r <= 2) return;
+  const me = s_(sh.getRange(r, cN + 1).getValue()), names = sh.getRange(2, cN + 1, r - 2, 1).getValues();
+  for (let i = 0; i < names.length; i++) {
+    const n = s_(names[i][0]);
+    if (n && resCmp_(me, n) < 0) { sh.moveRows(sh.getRange(r + ':' + r), i + 2); return; }
+  }
 }
 // Riadky výsledkov. Neprítomný žiak má riadok s textom „neprítomný“ namiesto percent; učiteľ má riadok s menom Učiteľ.
 // Čas odovzdania ako text presne tak, ako ho ukazuje tabuľka. Hodnota z getValues() je Date a pri prevode na text
@@ -738,6 +782,11 @@ function clearAbsentRows_(test, label) {
   }
 }
 function teacherId_(test) { return pupilKey_(test.cls, TEACHER); }
+// Žiaci, ktorí píšu tento test: aktívni žiaci triedy, pri náhradnom termíne len tí zo stĺpca „žiaci“.
+function classPupils_(test) {
+  const only = test.only && test.only.length ? test.only.map(normName) : null;
+  return readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active && (!only || only.indexOf(normName(p.label)) >= 0); });
+}
 function cleanName_(s) { return String(s == null ? '' : s).replace(/[\u0000-\u001f<>"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40); }
 // Kto sa prihlasuje: žiak zo zoznamu triedy, učiteľ, alebo pri externom teste meno, ktoré si hráč sám napísal.
 function player_(test, pupilId, name) {
@@ -747,13 +796,16 @@ function player_(test, pupilId, name) {
     return { id: pupilKey_(test.cls, n), label: n };
   }
   if (pupilId === teacherId_(test)) return { id: pupilId, label: TEACHER, teacher: true };
-  const me = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active && p.id === pupilId; })[0];
+  const me = classPupils_(test).filter(function (p) { return p.id === pupilId; })[0];
   if (!me) fail_('not_in_class');
   return { id: me.id, label: me.label, group: me.group };
 }
 // Celkový výsledok: priemer percent za objekty, za prvý odchod z testu mínus LEAVE_PENALTY (najmenej 0).
-function pctOf_(km, keys, sc, leaves) {
-  let s = 0; keys.forEach(function (k) { s += pctFor(km[k], sc.full, sc.zero); });
+// voids: anulované objekty – 'full' = 100 % každému, 'skip' = objekt sa do priemeru nepočíta.
+function pctOf_(km, keys, sc, leaves, voids) {
+  voids = voids || {};
+  keys = keys.filter(function (k) { return voids[k] !== 'skip'; });
+  let s = 0; keys.forEach(function (k) { s += voids[k] === 'full' ? 1 : pctFor(km[k], sc.full, sc.zero); });
   const p = keys.length ? s / keys.length : 0;
   return Math.max(0, p - (leaves > 0 ? LEAVE_PENALTY : 0));
 }
@@ -787,7 +839,7 @@ function pupilInit_(req) {
   const L = logins_(test.id);
   let names = [];
   if (!test.open) {
-    names = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active; })
+    names = classPupils_(test)
       .map(function (p) { const e = L.p[p.id]; return { id: p.id, label: p.label, done: !!(e && e.done) }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
     const tid = teacherId_(test), te = L.p[tid];
@@ -1036,7 +1088,7 @@ function submitCore_(test, pupilId, device, rawTips, reqLeaves, ended) {
       miss.push(o ? o.name : k);
     }
   });
-  const pct = pctOf_(km, keys, test.scoring, leaves);
+  const pct = pctOf_(km, keys, test.scoring, leaves, test.voids);
   withLock_(function () {
     const L = logins_(testId), e = L.p[pupilId];
     if (e && e.done) return;
@@ -1084,8 +1136,9 @@ function pupilResult_(req) {
   if (!mine) fail_('no_result');
   const pack = loadPack_(testId), objects = {};
   mine.keys.forEach(function (k) { if (pack.objects[k]) objects[k] = pack.objects[k]; });
+  const voids = {}; mine.keys.forEach(function (k) { if (test.voids && test.voids[k]) voids[k] = test.voids[k]; });
   return { name: mine.name, cls: test.cls, title: test.title, sent: mine.sent, group: mine.group, keys: mine.keys, objects: objects, km: mine.km, why: mine.why, tips: mine.tips,
-    leaves: mine.leaves, penalty: LEAVE_PENALTY, scoring: test.scoring, pct: pctOf_(mine.km, mine.keys, test.scoring, mine.leaves), map: test.map };
+    leaves: mine.leaves, penalty: LEAVE_PENALTY, scoring: test.scoring, pct: pctOf_(mine.km, mine.keys, test.scoring, mine.leaves, test.voids), map: test.map, voids: voids };
 }
 
 /* ---------- učiteľ (s kľúčom) a dozor (s kľúčom jedného testu) ---------- */
@@ -1095,12 +1148,37 @@ function tInit_() {
   if (ownProp_('RESORD') !== '3') { try { withLock_(function () { renameOldIds_(); organizeResults_(); }); setOwnProp_('RESORD', '3'); } catch (e) { /* skúsi sa znova nabudúce */ } }
   const pupils = readPupils_(), classes = {};
   pupils.filter(function (p) { return p.active; }).forEach(function (p) { (classes[p.cls] = classes[p.cls] || []).push(p.label); });
-  const t = testsTable_();
+  const t = testsTable_(), links = sheetLinks_(t);
   const tests = t.rows.map(function (r) { return testObj_(t, r); }).filter(function (x) { return x.id; })
     .map(function (x) { return { id: x.id, created: x.created, started: x.started, cls: x.cls, open: x.open, regions: x.regions, title: x.title, n: x.keysA.length, groups: x.groups, alt: x.alt, total: x.total,
-      state: x.arch ? 'archived' : x.state, archived: x.arch ? x.archived.slice(0, 16) : '' }; });
+      state: x.arch ? 'archived' : x.state, archived: x.arch ? x.archived.slice(0, 16) : '', note: x.note, src: x.src, only: x.only.length, link: links[x.id] || null }; });
   return { v: VERSION, classes: classes, groups: classGroups_(pupils), penalty: LEAVE_PENALTY, tests: tests, taken: takenNames_(t), nameMax: NAME_MAX,
-    custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName() };
+    custom: readCustom_(), sheetUrl: ss_().getUrl(), sheetName: ss_().getName(), ssId: ss_().getId(), grades: grades_() };
+}
+// Odkazy do tabuľky pri každom teste: hárok výsledkov (gid), pri archivovanom hárok Archív a prvý riadok testu v ňom (aGid, aRow).
+function sheetLinks_(t) {
+  const out = {}, ar = ss_().getSheetByName(SH.archive), arow = {}, cI = t.col('id testu');
+  if (ar && ar.getLastRow() > 1) ar.getRange(2, 1, ar.getLastRow() - 1, 1).getValues().forEach(function (r, i) { const id = s_(r[0]); if (id && !arow[id]) arow[id] = i + 2; });
+  t.rows.forEach(function (r) {
+    const id = s_(r[cI]); if (!id) return;
+    const res = resultsGet_(id);
+    out[id] = { gid: res ? res.getSheetId() : null, aGid: arow[id] && ar ? ar.getSheetId() : null, aRow: arow[id] || 0 };
+  });
+  return out;
+}
+// Stupnica známok: od koľkých percent je 1, 2, 3, 4 (menej = 5). Nastavuje učiteľ v aplikácii (Kopírovať známky).
+function grades_() {
+  try { const g = JSON.parse(ownProp_('GRADES') || 'null'); if (validGrades_(g)) return g; } catch (e) { /* predvolená */ }
+  return GRADES_DEF.slice();
+}
+function validGrades_(g) {
+  return Array.isArray(g) && g.length === 4 && g.every(function (x, i) { return typeof x === 'number' && x >= 0 && x <= 100 && Math.floor(x) === x && (i === 0 || x < g[i - 1]); });
+}
+function tGrades_(req) {
+  const g = [].concat(req.g || []).map(Number);
+  if (!validGrades_(g)) fail_('bad_grades');
+  setOwnProp_('GRADES', JSON.stringify(g));
+  return { ok: true, grades: g };
 }
 // Obsadené názvy testov (malými písmenami): id testov, staré id (prezývky) a hárky výsledkov „Res_…“.
 function takenNames_(t) {
@@ -1114,36 +1192,50 @@ function takenNames_(t) {
 // pack: {keys (sada A, alebo jediná sada), keysB (sada B, pri teste bez skupín prázdna), objects: {kľúč: {name, type, diff, g}}}
 function tCreateTest_(req) {
   const cfg = req.cfg || {}, pack = req.pack || {}, open = !!cfg.open;
-  const cls = open ? OPEN_CLASS : String(cfg.cls || '').trim(), name = String(cfg.title || '').trim();
-  if (!name || name.length > NAME_MAX || !NAME_RE.test(name)) fail_('bad_name', name);
+  const cls = open ? OPEN_CLASS : String(cfg.cls || '').trim(), name = checkName_(cfg.title);
   const keysA = [].concat(pack.keys || []).map(String), keysB = open ? [] : [].concat(pack.keysB || []).map(String);
   if (!cls || !keysA.length || !pack.objects) fail_('bad_request');
-  if (keysB.length && (keysB.length !== keysA.length || keysB.some(function (k) { return keysA.indexOf(k) >= 0; }))) fail_('bad_request', 'skupiny A a B');
   const all = keysA.concat(keysB);
   if (all.some(function (k) { return !pack.objects[k]; })) fail_('bad_request');
-  const total = Math.max(1, Math.min(240, Math.round(Number(cfg.total) || 10)));
+  return insertTest_({ id: name, cls: cls, open: open, state: cfg.state, regions: cfg.regions, types: cfg.types, diff: cfg.diff, total: cfg.total, full: cfg.full, zero: cfg.zero,
+    diag: cfg.diag, lang: cfg.lang, map: cfg.map, names: cfg.names, namesB: cfg.namesB, keysA: keysA, keysB: keysB, alt: cfg.alt, objects: pack.objects });
+}
+// Názov testu (= id): len A–Z, a–z, 0–9, - a _, najviac NAME_MAX znakov.
+function checkName_(v) {
+  const name = String(v || '').trim();
+  if (!name || name.length > NAME_MAX || !NAME_RE.test(name)) fail_('bad_name', name);
+  return name;
+}
+// Zapíše nový test do hárka Testy, vytvorí hárok výsledkov a uloží balík objektov.
+// o: {id, cls, open, state, regions, types, diff, total, full, zero, diag, lang, map, names, namesB, keysA, keysB, alt, objects,
+//     pupils (mená pri náhradnom termíne), src (z ktorého testu), voids ({kľúč: 'full' | 'skip'})}
+function insertTest_(o) {
+  const keysA = o.keysA, keysB = o.keysB || [], all = keysA.concat(keysB), id = o.id;
+  if (keysB.length && (keysB.length !== keysA.length || keysB.some(function (k) { return keysA.indexOf(k) >= 0; }))) fail_('bad_request', 'skupiny A a B');
+  const total = Math.max(1, Math.min(240, Math.round(Number(o.total) || 10)));
   return withLock_(function () {
     const t = testsTable_();
     // id = názov testu od učiteľa; musí byť unikátny bez ohľadu na veľké písmená (hárky výsledkov)
-    const id = name;
     if (takenNames_(t).indexOf(id.toLowerCase()) >= 0 || ss_().getSheetByName(oldResultsName_(id))) fail_('name_taken', id);
     const row = t.head.map(function () { return ''; });
     const put = function (p, v) { const i = t.col(p); if (i >= 0) row[i] = v; };
-    const names = [].concat(cfg.names || []).map(String), namesB = [].concat(cfg.namesB || []).map(String);
-    const created = now_('yyyy-MM-dd HH:mm'), started = cfg.state === 'ready' ? '' : created;
-    put('id testu', id); put('vytvoreny', created); put('spusteny', started); put('trieda', cls); put('oblast', String(cfg.regions || ''));
-    put('typy', String(cfg.types || '')); put('obtiaznost', String(cfg.diff || '')); put('obtaznost', String(cfg.diff || '')); put('pocet', keysA.length); put('celkovy cas', total);
-    put('stav', cfg.state === 'ready' ? STATE.ready : STATE.open); put('100', Number(cfg.full)); put('0 % od', Number(cfg.zero)); put('uhlopriecka', Number(cfg.diag) || '');
-    put('objekty', names.join('; ')); put('id objektov', keysA.join('; ')); put('nazov', id); put('jazyk', String(cfg.lang || 'sk'));
-    put('mapa', JSON.stringify(cfg.map || null)); put('rezim', open ? MODE.open : MODE.cls);
-    if (keysB.length) { put('objekty b', namesB.join('; ')); put('id objektov b', keysB.join('; ')); put('sachovnica', cfg.alt ? 'áno' : ''); }
+    const names = [].concat(o.names || []).map(String), namesB = [].concat(o.namesB || []).map(String);
+    const created = now_('yyyy-MM-dd HH:mm'), started = o.state === 'ready' ? '' : created;
+    put('id testu', id); put('vytvoreny', created); put('spusteny', started); put('trieda', o.cls); put('oblast', String(o.regions || ''));
+    put('typy', String(o.types || '')); put('obtiaznost', String(o.diff || '')); put('obtaznost', String(o.diff || '')); put('pocet', keysA.length); put('celkovy cas', total);
+    put('stav', o.state === 'ready' ? STATE.ready : STATE.open); put('100', Number(o.full)); put('0 % od', Number(o.zero)); put('uhlopriecka', Number(o.diag) || '');
+    put('objekty', names.join('; ')); put('id objektov', keysA.join('; ')); put('nazov', id); put('jazyk', String(o.lang || 'sk'));
+    put('mapa', JSON.stringify(o.map || null)); put('rezim', o.open ? MODE.open : MODE.cls);
+    if (keysB.length) { put('objekty b', namesB.join('; ')); put('id objektov b', keysB.join('; ')); put('sachovnica', o.alt ? 'áno' : ''); }
+    put('ziaci', (o.pupils || []).join('; ')); put('zdroj', o.src || ''); put('anulovane', voidsText_(o.voids || {}));
     const r = t.sheet.getLastRow() + 1;
     t.sheet.getRange(r, 1, 1, row.length).setNumberFormat('@').setValues([row.map(function (v) { return typeof v === 'number' ? v : String(v); })]);
     t.sheet.getRange(r, t.col('100') + 1, 1, 3).setNumberFormat('0.0');
-    createResultsSheet_({ id: id, groups: keysB.length > 0, names: names, namesB: namesB, keys: all, keysA: keysA, keysB: keysB });
+    createResultsSheet_({ id: id, groups: keysB.length > 0, names: names, namesB: namesB, keys: all, keysA: keysA, keysB: keysB, voids: o.voids || {} });
     try { pruneLogins_(t); } catch (e) { /* upratovanie nie je dôležité */ }
-    savePack_(id, JSON.stringify({ v: 3, keys: all, objects: pack.objects }));
-    return { id: id, cls: cls, dk: dozorKey_(id), total: total, created: created, started: started };
+    savePack_(id, JSON.stringify({ v: 3, keys: all, objects: o.objects }));
+    return { id: id, cls: o.cls, dk: dozorKey_(id), total: total, created: created, started: started, n: keysA.length, groups: keysB.length > 0, alt: !!(keysB.length && o.alt),
+      only: (o.pupils || []).length, src: o.src || '' };
   });
 }
 function tTest_(req) {
@@ -1155,7 +1247,7 @@ function tTest_(req) {
     // externí hráči: zoznam vzniká z prihlásení
     pupils = Object.keys(L.p).map(function (id) { return { id: id, label: L.p[id].n || id }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
   } else {
-    pupils = readPupils_(test.alt).filter(function (p) { return sameCls_(p.cls, test.cls) && p.active; })
+    pupils = classPupils_(test)
       .map(function (p) { return { id: p.id, label: p.label, group: test.groups ? p.group || 'A' : '', nogroup: test.groups && !p.group }; })
       .sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); });
     pupils.push({ id: teacherId_(test), label: TEACHER, teacher: true, group: test.groups ? 'A' : '' });
@@ -1204,7 +1296,7 @@ function tSetTest_(req) {
     if (sh && sh.getLastRow() > 1) {
       const test = f.test; test.scoring = { full: full, zero: zero };
       const cR = tableOf_(sh).need('vysledok') + 1, rng = sh.getRange(2, cR, sh.getLastRow() - 1, 1), vals = rng.getValues();
-      readResults_(test).forEach(function (r) { if (!r.absent) vals[r.row - 2][0] = pctOf_(r.km, r.keys, test.scoring, r.leaves); });
+      readResults_(test).forEach(function (r) { if (!r.absent) vals[r.row - 2][0] = pctOf_(r.km, r.keys, test.scoring, r.leaves, test.voids); });
       rng.setValues(vals);
     }
   }
@@ -1356,6 +1448,7 @@ function tRestore_(req) {
         if (nk > 0) sh.getRange(2, cR + 2, rowsNeed - 1, nk).setNumberFormat('0.0').setHorizontalAlignment('right');
       }
       if (data.length) sh.getRange(2, 1, data.length, w).setValues(data);
+      resFilter_(sh, w);
     }
     if (got.idx.length) deleteRows_(ar, got.idx);
     const ready = /pripraven/.test(test.archived);
@@ -1384,5 +1477,221 @@ function tDeleteTest_(req) {
     forgetTest_(id);
     try { cache_().remove('P2_' + id + '_n'); } catch (e) { /* nevadí */ }
     return { ok: true };
+  });
+}
+
+/* ---------- 2.11: akcie v ponuke testu ---------- */
+// Poznámka k testu (len pre učiteľa, v zozname testov a v prehľade). Dá sa aj pri archivovanom.
+function tNote_(req) {
+  const note = String(req.note || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, ' ').trim().slice(0, NOTE_MAX);
+  return withLock_(function () {
+    const f = findTest_(String(req.t || ''));
+    if (!f) fail_('no_test');
+    setTestCells_(f, { poznamka: note });
+    forgetTest_(f.test.id);
+    return { ok: true, note: note };
+  });
+}
+
+// Premenovanie testu: nové id = nový názov. Premenuje sa riadok v hárku Testy, hárok výsledkov, riadky v _balíky a v Archíve,
+// prihlásenia a priebeh písania (vlastnosti skriptu) a priečinok s obrázkami na Disku. Staré id ostane prezývkou (aliases_),
+// takže starý odkaz, QR kód aj papier pre dozor fungujú ďalej. Otvorený test premenovať nemožno (žiaci práve píšu).
+function tRename_(req) {
+  const id = String(req.t || ''), name = checkName_(req.name);
+  return withLock_(function () {
+    const f = findTest_(id);
+    if (!f) fail_('no_test');
+    if (f.test.state === 'open' && !f.test.arch) fail_('rename_open');
+    if (name === id) return { ok: true, id: id, dk: dozorKey_(id), same: true };
+    const al = aliases_(), low = name.toLowerCase();
+    // obsadené sú názvy iných testov; vlastné id, vlastný hárok výsledkov a vlastné staré id nie (dá sa vrátiť späť aj zmeniť len veľkosť písmen)
+    const own = {}; own[id.toLowerCase()] = 1;
+    Object.keys(al).forEach(function (o) { if (al[o] === id) own[o.toLowerCase()] = 1; });
+    if (takenNames_(f.t).some(function (x) { return x === low && !own[x]; }) || ss_().getSheetByName(oldResultsName_(name))) fail_('name_taken', name);
+    const t = f.t, cI = t.need('id testu'), cN = t.col('nazov'), cZ = t.col('zdroj');
+    t.sheet.getRange(f.rowIndex, cI + 1).setNumberFormat('@').setValue(name);
+    if (cN >= 0) t.sheet.getRange(f.rowIndex, cN + 1).setNumberFormat('@').setValue(name);
+    if (cZ >= 0) t.rows.forEach(function (r, i) { if (s_(r[cZ]) === id) t.sheet.getRange(i + 2, cZ + 1).setNumberFormat('@').setValue(name); });
+    const res = resultsGet_(id);
+    if (res) res.setName(resultsName_(name));
+    [ss_().getSheetByName(SH.packs), ss_().getSheetByName(SH.archive)].forEach(function (sh) {
+      rowsOf_(sh, id, 1).idx.forEach(function (r) { sh.getRange(r, 1).setNumberFormat('@').setValue(name); });
+    });
+    ['L2_', 'S2_'].forEach(function (p) { const v = props_().getProperty(p + id); if (v !== null) { props_().setProperty(p + name, v); props_().deleteProperty(p + id); } });
+    Object.keys(al).forEach(function (o) { if (al[o] === id) al[o] = name; if (o.toLowerCase() === low) delete al[o]; });
+    al[id] = name;
+    setOwnProp_('ALIAS', JSON.stringify(al));
+    forgetTest_(id); forgetTest_(name);
+    try { cache_().remove('P2_' + id + '_n'); } catch (e) { /* nevadí */ }
+    return { ok: true, id: name, dk: dozorKey_(name), drive: renameFolder_(id, name) };
+  });
+}
+// Priečinok s obrázkami na Disku: „Slepá mapa – obrázky/<id>“ → nové id. Vráti 'ok', 'none' (priečinok nie je), 'exists' (nový už je), 'error'.
+function renameFolder_(id, name) {
+  try {
+    const it = DriveApp.getFileById(ss_().getId()).getParents(), root = it.hasNext() ? it.next() : DriveApp.getRootFolder();
+    const base = root.getFoldersByName('Slepá mapa – obrázky');
+    if (!base.hasNext()) return 'none';
+    const dir = base.next(), old = dir.getFoldersByName(id);
+    if (!old.hasNext()) return 'none';
+    const f = old.next();
+    if (id.toLowerCase() !== name.toLowerCase() && dir.getFoldersByName(name).hasNext()) return 'exists';
+    f.setName(name);
+    return 'ok';
+  } catch (e) { return 'error'; }
+}
+
+// Duplikovať / náhradný termín: nový test s objektmi pôvodného (aj s hranicami hodnotenia, mapou a anulovaním).
+// cfg: {title, cls, mode, who, total, state}
+//  mode: 'same' rovnako ako pôvodný, 'swap' prehodené skupiny (A píše objekty B a naopak), 'A' / 'B' všetci jednu sadu, 'all' všetci všetko
+//  who: 'all' celá trieda, 'missing' len žiaci, ktorí pôvodný test nepísali (aj neprítomní) – len v tej istej triede
+function tDuplicate_(req) {
+  const cfg = req.cfg || {}, name = checkName_(cfg.title);
+  const f = findTest_(String(req.t || ''));
+  if (!f) fail_('no_test');
+  const src = f.test, open = src.open;
+  const cls = open ? OPEN_CLASS : String(cfg.cls || src.cls).trim(), same = sameCls_(cls, src.cls);
+  if (!open && !readPupils_().some(function (p) { return p.active && sameCls_(p.cls, cls); })) fail_('no_class', cls);
+  const mode = String(cfg.mode || 'same'), nA = src.names, nB = src.namesB;
+  let keysA, keysB = [], names, namesB = [];
+  if (mode === 'same') { keysA = src.keysA.slice(); keysB = src.keysB.slice(); names = nA.slice(); namesB = nB.slice(); }
+  else if (mode === 'swap') { if (!src.groups) fail_('bad_request'); keysA = src.keysB.slice(); keysB = src.keysA.slice(); names = nB.slice(); namesB = nA.slice(); }
+  else if (mode === 'A') { keysA = src.keysA.slice(); names = nA.slice(); }
+  else if (mode === 'B') { if (!src.groups) fail_('bad_request'); keysA = src.keysB.slice(); names = nB.slice(); }
+  else if (mode === 'all') { keysA = src.keysA.concat(src.keysB); names = nA.concat(nB); }
+  else fail_('bad_request');
+  if (open && keysB.length) fail_('bad_request');
+  let pupils = [];
+  if (cfg.who === 'missing') {
+    if (open || !same) fail_('dup_cls');
+    pupils = missingNames_(src);
+    if (!pupils.length) fail_('dup_none');
+  }
+  const pack = loadPack_(src.id), objects = {}, voids = {};
+  keysA.concat(keysB).forEach(function (k) { if (pack.objects[k]) objects[k] = pack.objects[k]; if (src.voids[k]) voids[k] = src.voids[k]; });
+  return insertTest_({ id: name, cls: cls, open: open, state: cfg.state, regions: src.regions, types: src.types, diff: src.diff, total: cfg.total || src.total,
+    full: src.scoring.full, zero: src.scoring.zero, diag: src.diag, lang: src.lang, map: src.map, names: names, namesB: namesB, keysA: keysA, keysB: keysB,
+    alt: same && src.alt, objects: objects, pupils: pupils, src: src.id, voids: voids });
+}
+// Žiaci testu, ktorí ho nepísali: nemajú výsledok (neprítomní a neprihlásení). Pri archivovanom sa výsledky čítajú z hárka Archív.
+function missingNames_(test) {
+  const done = {};
+  if (test.arch) {
+    rowsOf_(ss_().getSheetByName(SH.archive), test.id, ARCH_HEAD.length).vals.forEach(function (r) {
+      if ((num_(r[1]) || 0) > 0 && !(typeof r[5] !== 'number' && normName(r[5]) === normName(ABSENT))) done[normName(r[3])] = 1;
+    });
+  } else readResults_(test).forEach(function (r) { if (!r.absent) done[normName(r.name)] = 1; });
+  return classPupils_(test).filter(function (p) { return !done[normName(p.label)]; }).map(function (p) { return p.label; })
+    .sort(function (a, b) { return a.localeCompare(b, 'sk'); });
+}
+
+// Prepočítať body: aplikácia pošle aktuálne objekty testu z dát (objects: {kľúč: {name, type, diff, g}}, len tie, ktoré sa líšia od balíka).
+// Odchýlky žiakov sa prepočítajú z ich uložených tipov, potom percentá (s aktuálnymi hranicami a anulovaním).
+// dry = len zistiť, čo by sa zmenilo (koľkým žiakom a o koľko km najviac).
+function tRecalc_(req) {
+  const f = findTest_(String(req.t || ''));
+  if (!f) fail_('no_test');
+  const test = f.test, dry = !!req.dry, objs = req.objects || {};
+  return withLock_(function () {
+    const pack = loadPack_(test.id), fresh = {}, changes = [];
+    Object.keys(objs).slice(0, 200).forEach(function (k) {
+      if (test.keys.indexOf(k) < 0 || !pack.objects[k]) return;
+      const o = cleanObj_(objs[k]), old = pack.objects[k];
+      if (!o) return;
+      const nameCh = o.name !== old.name, geoCh = JSON.stringify(o.g) !== JSON.stringify(old.g);
+      if (!nameCh && !geoCh) return;
+      fresh[k] = o;
+      changes.push({ k: k, tag: keyTag_(test, k), name: old.name, name2: o.name, geo: geoCh, n: 0, max: 0 });
+    });
+    // koľkým žiakom sa zmení odchýlka (aspoň o 0,1 km) a o koľko najviac
+    readResults_(test).forEach(function (r) {
+      if (r.absent) return;
+      changes.forEach(function (c) {
+        const tip = r.tips[c.k];
+        if (!c.geo || r.keys.indexOf(c.k) < 0 || !tip || r.km[c.k] === null || r.km[c.k] === undefined) return;
+        const d = round1(measure(fresh[c.k].g, [tip[1], tip[0]]).d), diff = Math.abs(d - r.km[c.k]);
+        if (diff >= 0.1) { c.n++; c.max = Math.max(c.max, round1(diff)); }
+      });
+    });
+    if (dry) return { ok: true, dry: true, changes: changes };
+    if (changes.length) {
+      Object.keys(fresh).forEach(function (k) { pack.objects[k] = fresh[k]; });
+      replacePack_(test.id, JSON.stringify(pack));
+      // názvy objektov v hárku Testy (hlavička výsledkov sa z nich skladá)
+      const nm = function (keys, names) { return keys.map(function (k, i) { return fresh[k] ? fresh[k].name : names[i] || k; }); };
+      test.names = nm(test.keysA, test.names); test.namesB = nm(test.keysB, test.namesB);
+      setTestCells_(f, test.groups ? { objekty: test.names.join('; '), 'objekty b': test.namesB.join('; ') } : { objekty: test.names.join('; ') });
+      forgetTest_(test.id);
+    }
+    return { ok: true, changes: changes, n: recalcAll_(test, fresh), pack: pack };
+  });
+}
+// Objekt z aplikácie: názov, typ, obtiažnosť a geometria (bod, čiara, plocha) s konečnými súradnicami.
+function cleanObj_(o) {
+  if (!o || typeof o !== 'object' || !o.g) return null;
+  const g = o.g, okPt = function (c) { return Array.isArray(c) && c.length === 2 && isFinite(c[0]) && isFinite(c[1]) && Math.abs(c[1]) <= 90 && Math.abs(c[0]) <= 360; };
+  const okLine = function (l) { return Array.isArray(l) && l.length > 0 && l.every(okPt); };
+  const ok = g.t === 'pt' ? okPt(g.c) : g.t === 'line' ? Array.isArray(g.c) && g.c.length > 0 && g.c.every(okLine)
+    : g.t === 'area' ? Array.isArray(g.c) && g.c.length > 0 && g.c.every(function (p) { return Array.isArray(p) && p.length > 0 && p.every(okLine); }) : false;
+  if (!ok) return null;
+  return { name: String(o.name || '').slice(0, 160), type: String(o.type || '').slice(0, 40), diff: Math.max(1, Math.min(5, Math.round(+o.diff) || 3)), g: { t: g.t, c: g.c } };
+}
+// Balík testu nahradí novým (staré riadky v _balíky sa zmažú).
+function replacePack_(id, json) {
+  const sh = ss_().getSheetByName(SH.packs), old = rowsOf_(sh, id, 1);
+  if (old.idx.length) deleteRows_(sh, old.idx);
+  savePack_(id, json);
+}
+// „A3.“ / „B3.“, bez skupín „3.“ (ako v aplikácii učiteľa)
+function keyTag_(test, k) {
+  const b = test.keysB.indexOf(k);
+  return test.groups ? (b >= 0 ? 'B' + (b + 1) : 'A' + (test.keysA.indexOf(k) + 1)) + '.' : (test.keys.indexOf(k) + 1) + '.';
+}
+// Prepočíta hárok výsledkov: hlavičky objektov, odchýlky objektov s novou geometriou (fresh) z uložených tipov a výsledok každého žiaka.
+function recalcAll_(test, fresh) {
+  const sh = resultsGet_(test.id);
+  if (!sh) return 0;
+  fresh = fresh || {};
+  const tb = tableOf_(sh), cR = tb.need('vysledok'), first = cR + 1, w = tb.head.length;
+  const nk = Math.min(test.keys.length, Math.max(0, w - first));
+  if (nk) sh.getRange(1, first + 1, 1, nk).setValues([resNames_(test).slice(0, nk)]);
+  if (sh.getLastRow() < 2) return 0;
+  const rng = sh.getRange(2, 1, sh.getLastRow() - 1, w), vals = rng.getValues();
+  let n = 0;
+  readResults_(test).forEach(function (r) {
+    if (r.absent) return;
+    const v = vals[r.row - 2];
+    r.keys.forEach(function (k) {
+      const tip = r.tips[k], i = test.keys.indexOf(k);
+      if (!fresh[k] || !tip || i < 0 || i >= nk) return;
+      r.km[k] = round1(measure(fresh[k].g, [tip[1], tip[0]]).d);
+      v[first + i] = r.km[k];
+    });
+    v[cR] = pctOf_(r.km, r.keys, test.scoring, r.leaves, test.voids);
+    n++;
+  });
+  rng.setValues(vals);
+  return n;
+}
+
+// Anulovať tip: mode 'full' = 100 % pre všetkých, 'skip' = objekt sa do priemeru nepočíta, '' = zrušiť anuláciu.
+// Tipy a odchýlky žiakov ostávajú, štatistika objektu (Tipy triedy) sa ďalej ukazuje. Výsledky všetkých žiakov sa prepočítajú.
+function tVoid_(req) {
+  const f = findTest_(String(req.t || ''));
+  if (!f) fail_('no_test');
+  const test = f.test, k = String(req.q || ''), mode = String(req.mode || '');
+  if (['full', 'skip', ''].indexOf(mode) < 0 || test.keys.indexOf(k) < 0) fail_('bad_request');
+  return withLock_(function () {
+    const v = test.voids;
+    if (mode === 'skip') {
+      // každá skupina musí mať aspoň jeden objekt, ktorý sa počíta
+      (test.groups ? [test.keysA, test.keysB] : [test.keys]).forEach(function (list) {
+        if (list.indexOf(k) >= 0 && !list.some(function (x) { return x !== k && v[x] !== 'skip'; })) fail_('void_last');
+      });
+    }
+    if (mode) v[k] = mode; else delete v[k];
+    setTestCells_(f, { anulovane: voidsText_(v) });
+    forgetTest_(test.id);
+    return { ok: true, n: recalcAll_(test, null), voids: v };
   });
 }

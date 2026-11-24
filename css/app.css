@@ -311,3 +311,32 @@ footer.copy{justify-content:center}
   #print-sheet li{margin-bottom:2mm}
 }
 .toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:1500;max-width:calc(100% - 24px);background:var(--ok-bg, #e8f5e9);border:2px solid currentColor;border-radius:10px;padding:10px 16px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+
+/* 2.26: ponuka ⋯ pri teste a okno s otázkou */
+button.kebab{min-width:40px;min-height:34px;padding:0 8px;font-size:1.25rem;line-height:1;font-weight:800;letter-spacing:.05em}
+button.kebab[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}
+td.act button.kebab{margin-left:4px;vertical-align:middle}
+.titlerow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.menu{position:absolute;z-index:30;min-width:240px;max-width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.22);display:flex;flex-direction:column}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;border:0;border-radius:8px;background:none;padding:9px 12px;min-height:40px;font-weight:600;color:var(--ink)}
+.menu button:hover:not([disabled]),.menu button:focus-visible{background:var(--bg);outline:none}
+.menu button:focus-visible{box-shadow:0 0 0 2px var(--accent) inset}
+.menu button small{font-weight:400;font-size:.8rem;color:var(--muted)}
+.menu button.danger{color:var(--warn)}
+.menu button[disabled]{opacity:.55}
+.menu .sep{height:1px;background:var(--line);margin:5px 6px}
+.dlgcover{cursor:default;align-items:flex-start;overflow-y:auto;padding:5vh 12px}
+.dlg{background:var(--panel);color:var(--ink);border-radius:14px;padding:18px;width:min(560px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:0 10px 40px rgba(0,0,0,.3);margin:auto 0}
+.dlg h2{overflow-wrap:anywhere}
+.dlgbtns{justify-content:flex-end;align-items:center}
+button.danger{color:var(--warn);border-color:var(--warn)}
+textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;resize:vertical}
+.notetxt{color:var(--muted);font-style:italic;white-space:pre-wrap;overflow-wrap:anywhere}
+.voidrow{align-items:center;gap:8px}
+.scale label{flex:1 1 90px}
+.gradebox{max-height:45vh;overflow-y:auto}
+.gradebox td,.gradebox th{padding:5px 10px}
+/* náhľad ako žiak: pás hore, nič sa neukladá */
+.previewbar{position:fixed;left:0;right:0;top:0;z-index:25;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:.85rem;text-align:center;padding:3px 10px;pointer-events:none}
+body.preview{padding-top:24px}
+#r-list li.void .r{color:var(--muted)}

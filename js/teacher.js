@@ -6,7 +6,8 @@ var T = {
   s: '', k: '', dz: false, dk: '', init: null, oldScript: false, regions: [], poolAll: [], pool: [], slots: [], slotsB: [], groups: false, mode: 'auto', loadSeq: 0, listOpen: false,
   scene: null, sceneKey: '', pview: null, cur: null, cview: null, poll: null, tab: 'new', sub: 'over', objKey: '', showNames: false, showRes: false, classForce: false, imgRec: null
 };
-var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.10';
+// NEED_SCRIPT: bez neho sa nové testy nespustia; FEAT_SCRIPT: akcie v ponuke ⋯ (premenovať, duplikovať, …), so starším skriptom sú vypnuté.
+var FORM_KEY = 'sm-form', OPEN_CLS = '*ext*', NEED_SCRIPT = '2.10', FEAT_SCRIPT = '2.11';
 // Názov testu je zároveň jeho id (odkaz, QR, hárok výsledkov): bez diakritiky, medzier a bodiek, unikátny bez ohľadu na veľké písmená.
 var NAME_RE = /^[A-Za-z0-9_-]+$/, NAME_MAX = 40;
 
@@ -44,7 +45,7 @@ async function teacherStart() {
   catch (e) { tConnect(e.code === 'auth' ? t('t.connect_auth') : errText(e)); return; }
   try { T.regions = await Data.index(); } catch (e) { T.regions = []; tStatus('t-status', t('t.no_index'), 'bad'); }
   // Test ako písomka (celkový čas, skupiny A/B) potrebuje skript 2.3. So starším skriptom sa dajú len otvárať doterajšie testy.
-  T.oldScript = cmpVer(T.init.v, NEED_SCRIPT) < 0;
+  T.oldScript = cmpVer(T.init.v, NEED_SCRIPT) < 0; T.feat = cmpVer(T.init.v, FEAT_SCRIPT) >= 0;
   if (T.oldScript) tStatus('t-status', t('t.old_script', { v: T.init.v || '1' }), 'bad');
   $('start').disabled = $('prepare').disabled = T.oldScript;
   $('t-sheet').href = T.init.sheetUrl; $('t-sheet').hidden = false;
@@ -442,9 +443,18 @@ function nameTaken(v) {
   var k = String(v).toLowerCase(), list = (T.init && T.init.taken) || ((T.init && T.init.tests) || []).map(function (x) { return String(x.id).toLowerCase(); });
   return list.indexOf(k) >= 0;
 }
+// own: vlastný názov testu pri premenovaní (nie je obsadený, dá sa zmeniť aj len veľkosť písmen)
+function nameErr(v, own) {
+  var max = (T.init && T.init.nameMax) || NAME_MAX;
+  if (!v) return 'empty';
+  if (v.length > max) return 'long';
+  if (!NAME_RE.test(v)) return 'chars';
+  if (own && v.toLowerCase() === String(own).toLowerCase()) return '';
+  return nameTaken(v) ? 'taken' : '';
+}
 function tNameCheck(show) {
   var inp = $('f-title'), v = inp.value.trim(), max = (T.init && T.init.nameMax) || NAME_MAX;
-  var err = !v ? 'empty' : v.length > max ? 'long' : !NAME_RE.test(v) ? 'chars' : nameTaken(v) ? 'taken' : '';
+  var err = nameErr(v);
   var mark = !!err && (err !== 'empty' || !!show);
   inp.classList.toggle('invalid', mark);
   tStatus('f-title-msg', mark && err !== 'empty' ? t('t.name_' + err, { max: max }) : '', 'bad');
@@ -527,99 +537,122 @@ function stateBadge(state) { return el('span', { class: 'badge' + (state === 'op
 async function tTests() {
   var box = $('tests-list');
   box.innerHTML = ''; box.appendChild(el('p', { class: 'muted' }, [el('span', { class: 'spin' }), t('common.loading')]));
-  try { var init = await apiRetry('tInit', A(), 2); T.init.tests = init.tests; if (init.taken) T.init.taken = init.taken; T.init.classes = init.classes; T.init.custom = init.custom; } catch (e) { /* ukážeme, čo máme */ }
+  try { await refreshInit(); } catch (e) { /* ukážeme, čo máme */ }
   tTestsList();
 }
-// Zoznam testov: uzavretý alebo nespustený možno archivovať (hárok výsledkov ide do hárka Archív), archivovaný obnoviť alebo vymazať.
+// Zoznam testov: pri každom jedno tlačidlo (Otvoriť, pri archivovanom Obnoviť) a ponuka ⋯ s ostatnými akciami.
 function tTestsList() {
   var box = $('tests-list');
   box.innerHTML = '';
   var rows = T.init.tests.slice().reverse();
   if (!rows.length) { box.appendChild(el('p', { class: 'muted', text: t('t.no_tests') })); return; }
-  var tb = el('tbody'), canArch = !T.oldScript;
+  var tb = el('tbody');
   rows.forEach(function (x) {
-    var arch = x.state === 'archived', mini = function (key, fn, cls) { return el('button', { type: 'button', class: 'mini' + (cls ? ' ' + cls : ''), text: t(key), onclick: function () { fn(x, this); } }); };
-    var acts = arch ? [mini('t.restore', tRestore), mini('t.delete', tDeleteTest, 'danger')]
-      : [el('button', { type: 'button', class: 'mini', text: t('t.open'), onclick: function () { tOpenTest(x.id); } }), x.state === 'open' || !canArch ? null : mini('t.archive', tArchive)];
+    var arch = x.state === 'archived';
+    var main = arch ? el('button', { type: 'button', class: 'mini', text: t('t.restore'), onclick: function () { tRestore(x, this); } })
+      : el('button', { type: 'button', class: 'mini', text: t('t.open'), onclick: function () { tOpenTest(x.id); } });
+    var kebab = el('button', { type: 'button', class: 'kebab', text: '⋯', title: t('t.menu'), 'aria-label': t('t.menu_of', { title: x.title || x.id }), 'aria-haspopup': 'menu', 'aria-expanded': 'false',
+      onclick: function () { menuOpen(this, testItems(x)); } });
     var when = whenText(x) + (arch && x.archived ? ' · ' + t('t.when_archived', { when: shortWhen(x.archived) }) : '');
     tb.appendChild(el('tr', { class: arch ? 'arch' : null }, [
-      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: when })]),
+      el('td', {}, [el('b', { text: x.title || x.id }), el('br'), el('span', { class: 'small muted', text: [when, onlyText(x)].filter(Boolean).join(' · ') }),
+        x.note ? el('div', { class: 'notetxt small', text: x.note }) : null]),
       el('td', { text: x.open ? t('t.open_short') : x.cls }), el('td', { class: 'num', text: String(x.n) }),
       el('td', {}, [stateBadge(x.state)]),
-      el('td', { class: 'act' }, acts)]));
+      el('td', { class: 'act' }, [main, kebab])]));
   });
   box.appendChild(el('div', { class: 'tablebox' }, [el('table', {}, [el('thead', {}, [el('tr', {}, [t('t.col_test'), t('t.col_class'), t('t.col_objects'), t('t.col_state'), ''].map(function (h, i) { return el('th', { class: i === 2 ? 'num' : '', text: h }); }))]), tb])]));
 }
-
+// Náhradný termín: „náhradný termín (3 žiaci) · z testu Geo8A“
+function onlyText(x) {
+  if (!x.only && !x.src) return '';
+  return [x.only ? t('t.only_n', { n: x.only }) : '', x.src ? t('t.src', { src: x.src }) : ''].filter(Boolean).join(' · ');
+}
 function shortWhen(s) { var m = /^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/.exec(String(s || '')); return m ? (+m[3]) + '.' + (+m[2]) + '. ' + m[4] + ':' + m[5] : String(s || ''); }
+// Archivovať a obnoviť sa dá zo zoznamu aj z prehľadu testu; archivovaný test prehľad nemá, preto sa ide do zoznamu.
 async function tArchive(x, btn) {
-  btn.disabled = true; tStatus('tests-msg', t('t.archiving', { title: x.title || x.id }));
+  if (btn) btn.disabled = true;
+  var fromTest = T.tab === 'test';
+  say(t('t.archiving', { title: x.title || x.id }));
   try {
     await api('tArchive', A({ t: x.id }));
     x.prev = x.state; x.state = 'archived'; x.archived = nowStr();
-    tTestsList(); tStatus('tests-msg', t('t.archived_ok', { title: x.title || x.id }), 'ok');
-  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
+    if (fromTest) { tStatus('test-msg', ''); tTab('tests'); } else { tTestsList(); refreshInit().then(function () { if (T.tab === 'tests') tTestsList(); }).catch(function () {}); }
+    tStatus('tests-msg', t('t.archived_ok', { title: x.title || x.id }), 'ok');
+  } catch (e) { if (btn) btn.disabled = false; say(errText(e), 'bad'); }
 }
 async function tRestore(x, btn) {
-  btn.disabled = true; tStatus('tests-msg', t('t.restoring', { title: x.title || x.id }));
+  if (btn) btn.disabled = true;
+  tStatus('tests-msg', t('t.restoring', { title: x.title || x.id }));
   try {
     var r = await api('tRestore', A({ t: x.id }));
     x.state = r.state || x.prev || 'closed'; x.archived = '';
     tTestsList(); tStatus('tests-msg', t('t.restored_ok', { title: x.title || x.id }), 'ok');
-  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
+    refreshInit().then(function () { if (T.tab === 'tests') tTestsList(); }).catch(function () {});
+  } catch (e) { if (btn) btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
 }
 async function tDeleteTest(x, btn) {
   if (!confirm(t('t.delete_confirm', { title: x.title || x.id }))) return;
-  btn.disabled = true; tStatus('tests-msg', t('t.deleting', { title: x.title || x.id }));
+  if (btn) btn.disabled = true;
+  tStatus('tests-msg', t('t.deleting', { title: x.title || x.id }));
   try {
     await api('tDeleteTest', A({ t: x.id }));
     T.init.tests = T.init.tests.filter(function (y) { return y.id !== x.id; });
     if (T.init.taken) T.init.taken = T.init.taken.filter(function (k) { return k !== String(x.id).toLowerCase(); });
     tTestsList(); tStatus('tests-msg', t('t.deleted_ok', { title: x.title || x.id }), 'ok');
-  } catch (e) { btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
+  } catch (e) { if (btn) btn.disabled = false; tStatus('tests-msg', errText(e), 'bad'); }
 }
 
 /* ---------- jeden test ---------- */
-async function tOpenTest(id) {
+// sub: otvoriť rovno záložku ('over' | 'class' | 'score'); force: tipy triedy ukázať aj pred uzavretím (učiteľ ich chce vidieť z ponuky)
+async function tOpenTest(id, sub, force, msg) {
   tTab('test'); $('test-body').hidden = true; tStatus('test-msg', t('common.loading'));
   try {
     var d = await apiRetry('tTest', A({ t: id, withPack: true }), 3);
     var map = d.test.map || {};
     var scene = await buildScene(map.bbox || [-180, -60, 180, 85], map.base || []);
     T.cur = { id: id, d: d, pack: d.pack, scene: scene, dk: d.dk || T.dk }; T.cview = null; T.objKey = ''; T.imgRec = null;
-    T.showRes = false; $('show-res').checked = false; T.classForce = false;
+    T.showRes = false; $('show-res').checked = false; T.classForce = !!force;
+    if (sub) T.sub = sub;
     if (T.dz) T.sub = 'over';
     tPrepResults();
     $('test-qr').innerHTML = qrSvg(pupilUrl(id));
     $('test-qr-btn').onclick = function () { tQrCover(id, d.test.title); };
     $('test-dozor-btn').hidden = T.dz || !T.cur.dk;
     $('test-dozor-btn').onclick = function () { tDozorShow(tSummary()); };
+    $('test-menu').hidden = T.dz || !T.init;
+    $('test-menu').onclick = function () { menuOpen(this, testItems(testRef(), true)); };
     $('test-body').hidden = false; tStatus('test-msg', '');
     $('sc-image').hidden = true;
     tSub(T.sub); tPollStart();
+    if (msg) tStatus(T.sub === 'class' ? 'class-vmsg' : 'test-msg', msg, 'ok');
   } catch (e) { tStatus('test-msg', errText(e), 'bad'); }
 }
 function tSummary() { var x = T.cur.d.test; return { id: x.id, title: x.title, cls: x.cls, open: x.open, n: keysA(x).length, total: x.total, groups: !!x.groups, dk: T.cur.dk }; }
 // Objekty jednej skupiny (test bez skupín: všetky). Testy zo staršieho skriptu nemajú keysA.
 function keysA(x) { return x.keysA || x.keys; }
-function keysOf(r) { return r && r.keys ? r.keys : T.cur.d.test.keys; }
+// c: údaje testu (predvolene práve otvorený T.cur; ponuka v zozname si ich načíta samostatne)
+function keysOf(r, c) { return r && r.keys ? r.keys : (c || T.cur).d.test.keys; }
 function groupOfKey(k) { var x = T.cur.d.test; return x.groups && (x.keysB || []).indexOf(k) >= 0 ? 'B' : x.groups ? 'A' : ''; }
 // Poradie objektu v jeho skupine pre popis „A3.“ / „B3.“ (bez skupín „3.“).
 function keyLabel(k) { var x = T.cur.d.test, g = groupOfKey(k), list = g === 'B' ? x.keysB : keysA(x); return g + (list.indexOf(k) + 1) + '. '; }
 // Posledný odovzdaný pokus každého žiaka, s percentami podľa aktuálnych hraníc.
 // res = všetky odovzdané testy (aj učiteľ), stat = bez učiteľa (priemer, tipy triedy), absent = neprítomní.
-function tPrepResults() {
-  var d = T.cur.d, last = {};
+function tPrepResults(c) {
+  c = c || T.cur;
+  var d = c.d, last = {};
   d.results.forEach(function (r) { var cur = last[r.pupilId]; if (!cur || !r.absent || cur.absent) last[r.pupilId] = r; });
-  T.cur.res = []; T.cur.absent = {};
-  Object.keys(last).forEach(function (k) { var r = last[k]; if (r.absent) T.cur.absent[k] = r; else { r.pct = resPct(r); T.cur.res.push(r); } });
-  T.cur.stat = T.cur.res.filter(function (r) { return !r.teacher; });
+  c.res = []; c.absent = {};
+  Object.keys(last).forEach(function (k) { var r = last[k]; if (r.absent) c.absent[k] = r; else { r.pct = resPct(r, c); c.res.push(r); } });
+  c.stat = c.res.filter(function (r) { return !r.teacher; });
 }
 // Percentá žiaka: priemer za objekty jeho skupiny, za odchod z testu mínus strhnutie (rovnako ako skript tabuľky).
-function resPct(r) {
-  var sc = T.cur.d.test.scoring, keys = keysOf(r), s = 0;
-  keys.forEach(function (k) { s += pctFor(r.km[k], sc.full, sc.zero); });
-  return Math.max(0, (keys.length ? s / keys.length : 0) - (r.leaves > 0 ? T.cur.d.penalty || 0 : 0));
+// Anulovaný objekt: 'full' = 100 % každému, 'skip' = do priemeru sa nepočíta.
+function resPct(r, c) {
+  c = c || T.cur;
+  var sc = c.d.test.scoring, v = c.d.test.voids || {}, keys = keysOf(r, c).filter(function (k) { return v[k] !== 'skip'; }), s = 0;
+  keys.forEach(function (k) { s += v[k] === 'full' ? 1 : pctFor(r.km[k], sc.full, sc.zero); });
+  return Math.max(0, (keys.length ? s / keys.length : 0) - (r.leaves > 0 ? c.d.penalty || 0 : 0));
 }
 function classAvg() { var a = T.cur.stat; return a.length ? a.reduce(function (s, r) { return s + r.pct; }, 0) / a.length : null; }
 function tRefresh() {
@@ -654,7 +687,8 @@ function tHead() {
   $('test-toggle').className = st === 'closed' ? '' : 'primary';
   $('test-toggle-hint').textContent = st === 'ready' ? t('t.ready_hint') : st === 'open' ? t('t.close_hint') : t('t.closed_hint');
   $('test-meta').textContent = [x.open ? t('t.open_short') : t('t.class_short', { cls: x.cls }), x.regions, t('t.n_objects', { n: keysA(x).length }), x.groups ? t('t.groups_ab') : '', x.alt ? t('t.alt_short') : '',
-    x.total ? t('t.time_short', { n: x.total }) : '', whenText(x), x.id !== x.title ? x.id : ''].filter(Boolean).join(' · ');
+    x.total ? t('t.time_short', { n: x.total }) : '', whenText(x), x.id !== x.title ? x.id : '', onlyText({ only: (x.only || []).length, src: x.src })].filter(Boolean).join(' · ');
+  $('test-note').textContent = x.note ? t('t.note_label', { note: x.note }) : ''; $('test-note').hidden = !x.note || T.dz;
 }
 async function tToggleState() {
   var x = T.cur.d.test, next = NEXT_STATE[x.state] || 'open';
@@ -671,9 +705,10 @@ async function tToggleState() {
 
 /* prehľad */
 // Riadky prehľadu: žiaci triedy (učiteľ na konci), k tomu odovzdané testy mien, ktoré už v zozname nie sú.
-function tRows() {
-  var d = T.cur.d, rows = d.pupils.map(function (p) { return { id: p.id, label: p.teacher ? t('p.teacher') : p.label, teacher: !!p.teacher, group: p.group || '', nogroup: !!p.nogroup }; });
-  T.cur.res.forEach(function (r) { if (!rows.some(function (p) { return p.id.split('#')[0] === r.pupilId; })) rows.push({ id: r.pupilId, label: r.teacher ? t('p.teacher') : r.name, teacher: r.teacher, group: r.group || '' }); });
+function tRows(c) {
+  c = c || T.cur;
+  var d = c.d, rows = d.pupils.map(function (p) { return { id: p.id, label: p.teacher ? t('p.teacher') : p.label, teacher: !!p.teacher, group: p.group || '', nogroup: !!p.nogroup }; });
+  c.res.forEach(function (r) { if (!rows.some(function (p) { return p.id.split('#')[0] === r.pupilId; })) rows.push({ id: r.pupilId, label: r.teacher ? t('p.teacher') : r.name, teacher: r.teacher, group: r.group || '' }); });
   return rows.filter(function (p) { return !p.teacher; }).concat(rows.filter(function (p) { return p.teacher; }));
 }
 function tOverview() {
@@ -775,11 +810,13 @@ async function tAbsent(p, on, btn) {
   try { await api('tAbsent', A({ t: T.cur.id, p: p.id, on: on })); await tRefresh(); }
   catch (e) { tStatus('test-msg', errText(e), 'bad'); if (btn) btn.disabled = false; }
 }
-// Výsledky do Excelu: meno a percentá (bez učiteľa), neprítomní s textom.
+// Žiaci podľa abecedy (ako v hárku výsledkov), bez učiteľa.
+function sortedRows(c) { return tRows(c).filter(function (p) { return !p.teacher; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); }); }
+// Výsledky do Excelu: meno a percentá (bez učiteľa), neprítomní s textom. Žiaci podľa abecedy.
 function tCopyResults() {
   var g = !!T.cur.d.test.groups, by = {}, seen = {}, lines = [[t('t.tsv_pupil')].concat(g ? [t('t.tsv_group')] : [], [t('t.tsv_result')]).join('\t')];
   T.cur.res.forEach(function (r) { by[r.pupilId] = r; });
-  tRows().forEach(function (p) {
+  sortedRows().forEach(function (p) {
     var key = p.id.split('#')[0]; if (p.teacher || seen[key]) return; seen[key] = 1;
     var r = by[key];
     lines.push([p.label].concat(g ? [r ? r.group : p.group] : [], [r ? Math.round(r.pct * 100) : T.cur.absent[key] ? t('t.st_absent') : '']).join('\t'));
@@ -807,9 +844,11 @@ function tClass() {
   var keys = T.cur.d.test.keys, pack = T.cur.pack;
   if (keys.indexOf(T.objKey) < 0) T.objKey = keys[0];
   var sel = $('class-obj'); sel.innerHTML = '';
-  keys.forEach(function (k) { sel.appendChild(el('option', { value: k, text: keyLabel(k) + pack.objects[k].name })); }); sel.value = T.objKey;
+  var vd = T.cur.d.test.voids || {};
+  keys.forEach(function (k) { sel.appendChild(el('option', { value: k, text: keyLabel(k) + (vd[k] ? '⊘ ' : '') + pack.objects[k].name })); }); sel.value = T.objKey;
   var o = pack.objects[T.objKey];
   var ck = $('class-kind'); ck.innerHTML = ''; ck.appendChild(typeIcon(o.type)); ck.appendChild(document.createTextNode(typeOne(o.type)));
+  voidCtl();
   tClassStats();
   if (!T.cview) { T.cview = new MapView(freshSvg('class-map'), T.cur.scene, { overlay: tClassOverlay }); mapControls($('class-box'), function () { return T.cview; }); }
   T.cview.zoomTo(bboxUnion(geomBBox(o.g), tTipsBBox(T.objKey) || geomBBox(o.g)));
@@ -834,7 +873,7 @@ function tClassStats() {
   var tb = el('tbody');
   keys.map(function (k) { return { k: k, s: objStats(k) }; }).sort(function (a, b) { return a.s.avg - b.s.avg; }).forEach(function (x) {
     tb.appendChild(el('tr', { class: x.k === T.objKey ? 'sel' : '' }, [
-      el('td', {}, [el('button', { type: 'button', class: 'linkbtn', text: (T.cur.d.test.groups ? groupOfKey(x.k) + ': ' : '') + pack.objects[x.k].name, onclick: function () { T.objKey = x.k; tClass(); } })]),
+      el('td', {}, [el('button', { type: 'button', class: 'linkbtn', text: (T.cur.d.test.groups ? groupOfKey(x.k) + ': ' : '') + ((T.cur.d.test.voids || {})[x.k] ? '⊘ ' : '') + pack.objects[x.k].name, onclick: function () { T.objKey = x.k; tClass(); } })]),
       el('td', { class: 'num', text: x.s.med === null ? '–' : fmtKm(x.s.med) }), el('td', { class: 'num', text: x.s.n ? fmtPct(x.s.avg) : '–' }),
       el('td', { class: 'num', text: x.s.suggest === null ? '–' : String(x.s.suggest) })]));
   });
@@ -887,7 +926,7 @@ async function tSaveScoring() {
 function recFor(r) {
   var x = T.cur.d.test, pack = T.cur.pack;
   return { title: x.title || t('app.title'), name: r.name, cls: x.cls, when: (r.sent || '').slice(0, 10), pct: r.pct, scoring: x.scoring,
-    items: keysOf(r).map(function (k) { var o = pack.objects[k], tip = r.tips[k]; return { name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: r.km[k], why: r.km[k] === null ? (r.why[k] || 'none') : '' }; }) };
+    items: keysOf(r).map(function (k) { var o = pack.objects[k], tip = r.tips[k]; return { name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: r.km[k], why: r.km[k] === null ? (r.why[k] || 'none') : '', void: (x.voids || {})[k] || '' }; }) };
 }
 function fileNameFor(r) { return (T.cur.d.test.cls + ' ' + r.name + '.png').replace(/[\\/:*?"<>|]/g, '_'); }
 async function tShowImage(r) {
@@ -930,6 +969,413 @@ async function tExportAll() {
   $('sc-export').disabled = false;
 }
 
+/* ---------- ponuka ⋯ pri teste ---------- */
+// Jedna ponuka pre zoznam aj prehľad testu. Položka: {label, run, disabled, hint (prečo je vypnutá), danger} alebo {sep: 1}.
+var MENU = { btn: null };
+function menuOpen(btn, items) {
+  if (MENU.btn === btn) { menuClose(true); return; }
+  menuClose();
+  var m = $('menu'); m.innerHTML = '';
+  items.forEach(function (it) {
+    if (!it) return;
+    if (it.sep) { if (m.lastChild && !m.lastChild.classList.contains('sep')) m.appendChild(el('div', { class: 'sep', role: 'separator' })); return; }
+    m.appendChild(el('button', { type: 'button', role: 'menuitem', class: it.danger ? 'danger' : null, disabled: !!it.disabled, onclick: function () { menuClose(); it.run(); } },
+      [el('span', { text: it.label }), it.disabled && it.hint ? el('small', { text: it.hint }) : null]));
+  });
+  while (m.lastChild && m.lastChild.classList.contains('sep')) m.lastChild.remove();
+  m.hidden = false; MENU.btn = btn; btn.setAttribute('aria-expanded', 'true');
+  // pod tlačidlom, zarovnané k jeho pravému okraju; keď sa dole nezmestí, nad ním. Ponuka je v stránke (posúva sa s ňou).
+  var r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight, vw = document.documentElement.clientWidth, vh = window.innerHeight;
+  var top = r.bottom + 4;
+  if (top + mh > vh - 8) top = r.top - mh - 4 >= 8 ? r.top - mh - 4 : Math.max(8, vh - mh - 8);
+  m.style.left = (Math.max(8, Math.min(r.right - mw, vw - mw - 8)) + window.scrollX) + 'px'; m.style.top = (top + window.scrollY) + 'px';
+  var first = m.querySelector('button:not([disabled])'); if (first) first.focus();
+}
+function menuClose(focus) {
+  var m = $('menu'), b = MENU.btn;
+  if (m.hidden) return;
+  m.hidden = true; m.innerHTML = ''; MENU.btn = null;
+  if (b) { b.setAttribute('aria-expanded', 'false'); if (focus) b.focus(); }
+}
+// Akcie testu x (záznam zo zoznamu). inView: ponuka v prehľade testu.
+function testItems(x, inView) {
+  var arch = x.state === 'archived', open = x.state === 'open', title = x.title || x.id;
+  var need = function (it) { if (!T.feat) { it.disabled = true; it.hint = t('t.need_script', { v: FEAT_SCRIPT }); } return it; };
+  var toClass = function (msg) { if (inView) { T.classForce = true; tSub('class'); if (msg) tStatus('class-vmsg', msg, 'ok'); } else tOpenTest(x.id, 'class', true, msg); };
+  return [
+    arch ? null : { label: t('t.m_class'), run: function () { toClass(''); } },
+    arch ? null : { label: t('t.m_preview'), run: function () { tPupilPreview(x); } },
+    { sep: 1 },
+    { label: t(arch ? 't.m_open_arch' : 't.m_open_res'), run: function () { openSheet(x); } },
+    { sep: 1 },
+    arch ? null : { label: t('t.m_grades'), run: function () { tGradesDlg(x); } },
+    arch ? null : need({ label: t('t.m_recalc'), run: function () { tRecalcDlg(x); } }),
+    arch ? null : need({ label: t('t.m_void'), run: function () { toClass(t('t.void_pick')); } }),
+    { sep: 1 },
+    need({ label: t('t.m_note'), run: function () { tNoteDlg(x); } }),
+    need({ label: t('t.m_rename'), disabled: open, hint: open ? t('t.rename_open_hint') : '', run: function () { tRenameDlg(x); } }),
+    need({ label: t('t.m_duplicate'), run: function () { tDupDlg(x); } }),
+    { sep: 1 },
+    arch ? { label: t('t.restore'), run: function () { tRestore(x); } }
+      : { label: t('t.archive'), disabled: open, hint: open ? t('t.archive_open_hint') : '', run: function () { if (confirm(t('t.archive_confirm', { title: title }))) tArchive(x); } },
+    arch ? { label: t('t.delete'), danger: true, run: function () { tDeleteTest(x); } } : null
+  ];
+}
+// Záznam testu zo zoznamu pre práve otvorený prehľad (stav a poznámka z prehľadu sú novšie).
+function testRef() {
+  var d = T.cur.d.test, x = (T.init && T.init.tests || []).filter(function (y) { return y.id === T.cur.id; })[0];
+  if (!x) { x = { id: d.id, title: d.title, cls: d.cls, open: d.open, regions: d.regions, n: keysA(d).length, groups: d.groups, alt: d.alt, total: d.total, created: d.created, started: d.started }; if (T.init) T.init.tests.push(x); }
+  x.state = d.state; x.note = d.note || ''; x.total = d.total;
+  return x;
+}
+async function refreshInit() {
+  var init = await apiRetry('tInit', A(), 2);
+  ['tests', 'taken', 'classes', 'groups', 'custom', 'ssId', 'grades', 'sheetUrl'].forEach(function (k) { if (init[k] !== undefined) T.init[k] = init[k]; });
+  T.feat = cmpVer(init.v, FEAT_SCRIPT) >= 0;
+  return T.init;
+}
+// Hlásenie pod zoznamom alebo pod hlavičkou testu, podľa toho, kde učiteľ je.
+function say(msg, cls) { tStatus(T.tab === 'test' ? 'test-msg' : 'tests-msg', msg, cls); }
+// Údaje testu (žiaci, výsledky, balík objektov) pre akciu z ponuky: z otvoreného prehľadu, inak sa načítajú.
+async function curFor(id) {
+  if (T.cur && T.cur.id === id && T.cur.pack) return T.cur;
+  var d = await apiRetry('tTest', A({ t: id, withPack: true }), 3);
+  var c = { id: id, d: d, pack: d.pack || null, dk: d.dk };
+  tPrepResults(c);
+  return c;
+}
+
+/* ---------- okno s otázkou (dialóg) ---------- */
+// o: {title, body: [prvky], buttons: [{text, primary, danger, run: async () => true = nechať okno otvorené}]}
+var DLG = { busy: false, onclose: null };
+function dlgOpen(o) {
+  menuClose();
+  $('dlg-title').textContent = o.title;
+  var body = $('dlg-body'); body.innerHTML = '';
+  [].concat(o.body || []).forEach(function (n) { if (n) body.appendChild(typeof n === 'string' ? el('p', { text: n }) : n); });
+  dlgMsg(''); dlgButtons(o.buttons || [{ text: t('common.close') }]);
+  DLG.busy = false; DLG.onclose = o.onclose || null;
+  $('dlg').hidden = false;
+  // na telefóne nie do políčka (klávesnica by zakryla okno), len na tlačidlo
+  var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  var f = (!touch && body.querySelector('input:not([type=radio]):not([type=checkbox]),textarea')) || $('dlg-btns').querySelector('button.primary:not([disabled])') || $('dlg-btns').querySelector('button');
+  if (f) setTimeout(function () { f.focus({ preventScroll: true }); if (f.tagName === 'INPUT' && f.select) f.select(); }, 0);
+}
+function dlgButtons(list) {
+  var row = $('dlg-btns'); row.innerHTML = '';
+  list.forEach(function (b) {
+    if (!b) return;
+    var btn = el('button', { type: 'button', class: [b.primary ? 'primary' : '', b.danger ? 'danger' : ''].join(' ').trim() || null, text: b.text });
+    btn.onclick = async function () {
+      if (!b.run) { dlgClose(); return; }
+      dlgBusy(true); dlgMsg(b.wait || t('common.working'));
+      var keep;
+      try { keep = await b.run(btn); if (keep !== true) dlgMsg(''); } catch (e) { dlgMsg(errText(e), 'bad'); keep = true; }
+      dlgBusy(false);
+      if (keep !== true) dlgClose();
+    };
+    b.el = btn; row.appendChild(btn);
+  });
+}
+function dlgBusy(on) { DLG.busy = on; $('dlg-btns').querySelectorAll('button').forEach(function (b) { b.disabled = on || b.dataset.off === '1'; }); }
+function dlgOff(btn, off) { if (!btn) return; btn.dataset.off = off ? '1' : ''; btn.disabled = !!off || DLG.busy; }
+function dlgMsg(m, cls) { tStatus('dlg-msg', m, cls); }
+function dlgClose() {
+  if (DLG.busy) return;
+  $('dlg').hidden = true; $('dlg-body').innerHTML = ''; $('dlg-btns').innerHTML = '';
+  var f = DLG.onclose; DLG.onclose = null; if (f) f();
+}
+function field(label, input, extra) { return el('label', {}, [el('span', { text: label }), input].concat(extra || [])); }
+function radios(name, opts, val, onchange) {
+  return el('div', { class: 'chips' }, opts.map(function (o) {
+    var inp = el('input', { type: 'radio', name: name, value: o[0] }); inp.checked = o[0] === val;
+    inp.onchange = function () { if (onchange) onchange(o[0]); };
+    return el('label', { class: 'chip' }, [inp, ' ' + o[1]]);
+  }));
+}
+function radioVal(box) { var c = box.querySelector('input:checked'); return c ? c.value : ''; }
+
+/* ---------- otvoriť výsledky v tabuľke ---------- */
+function sheetHref(gid, row) {
+  var base = T.init && T.init.ssId ? 'https://docs.google.com/spreadsheets/d/' + T.init.ssId + '/edit' : String(T.init && T.init.sheetUrl || '').split('#')[0];
+  return base + (gid !== null && gid !== undefined ? '#gid=' + gid + (row ? '&range=A' + row : '') : '');
+}
+// Hárok výsledkov Res_…, pri archivovanom hárok Archív na prvom riadku testu.
+function openSheet(x) {
+  var L = x.link || {};
+  if (!x.link) say(t('t.link_old'), 'muted');
+  window.open(x.state === 'archived' ? sheetHref(L.aGid, L.aRow) : sheetHref(L.gid, 0), '_blank', 'noopener');
+}
+
+/* ---------- premenovať ---------- */
+function tRenameDlg(x) {
+  var inp = el('input', { maxlength: '40', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' }), msg = el('span', { class: 'small bad', style: 'font-weight:400', hidden: true });
+  inp.value = x.id;
+  var go = { text: t('t.rename_go'), primary: true, wait: t('t.renaming'), run: async function () {
+    var name = inp.value.trim();
+    if (nameErr(name, x.id)) return true;
+    if (name === x.id) return;
+    var r = await api('tRename', A({ t: x.id, name: name }));
+    var old = x.id;
+    x.id = x.title = r.id;
+    (T.init.taken = T.init.taken || []).push(r.id.toLowerCase());
+    var m = t('t.renamed_ok', { old: old, title: r.id }) + (r.drive === 'exists' ? ' ' + t('t.renamed_drive_exists') : r.drive === 'error' ? ' ' + t('t.renamed_drive_err') : '');
+    if (T.cur && T.cur.id === old) tOpenTest(r.id, T.sub, T.classForce, m);
+    else { tTestsList(); say(m, 'ok'); }
+    refreshInit().then(function () { if (T.tab === 'tests') tTestsList(); }).catch(function () {});
+  } };
+  var check = function () {
+    var e = nameErr(inp.value.trim(), x.id);
+    inp.classList.toggle('invalid', !!e && e !== 'empty');
+    msg.textContent = e ? t('t.name_' + e, { max: (T.init && T.init.nameMax) || NAME_MAX }) : ''; msg.hidden = !e;
+    dlgOff(go.el, !!e || inp.value.trim() === x.id);
+  };
+  inp.oninput = check;
+  inp.onkeydown = function (e) { if (e.key === 'Enter' && !go.el.disabled) go.el.click(); };
+  dlgOpen({ title: t('t.rename_title', { title: x.title || x.id }), body: [field(t('t.title'), inp, [msg]), el('p', { class: 'small muted', text: t('t.rename_hint') })],
+    buttons: [go, { text: t('common.cancel') }] });
+  check();
+}
+
+/* ---------- poznámka ---------- */
+function tNoteDlg(x) {
+  var ta = el('textarea', { rows: '4', maxlength: '500' }); ta.value = x.note || '';
+  dlgOpen({ title: t('t.note_title', { title: x.title || x.id }), body: [field(t('t.note_field'), ta), el('p', { class: 'small muted', text: t('t.note_hint') })],
+    buttons: [{ text: t('common.save'), primary: true, run: async function () {
+      var r = await api('tNote', A({ t: x.id, note: ta.value }));
+      x.note = r.note;
+      if (T.cur && T.cur.id === x.id) { T.cur.d.test.note = r.note; tHead(); }
+      if (T.tab === 'tests') tTestsList();
+      say(t(r.note ? 't.note_saved' : 't.note_removed'), 'ok');
+    } }, { text: t('common.cancel') }] });
+}
+
+/* ---------- duplikovať / náhradný termín ---------- */
+// Voľný názov: Geo8A_N, Geo8A_N2, … (náhradný termín) alebo Geo8A_2, Geo8A_3, …
+function freeName(base, sfx) {
+  var max = (T.init && T.init.nameMax) || NAME_MAX;
+  for (var i = 1; i < 100; i++) {
+    var tail = sfx === 'N' ? '_N' + (i > 1 ? i : '') : '_' + (i + 1), v = base.slice(0, max - tail.length) + tail;
+    if (!nameTaken(v)) return v;
+  }
+  return '';
+}
+function classHasGroups(cls) { var g = (T.init.groups || {})[cls]; return !!(g && g.A > 0 && g.B > 0); }
+async function tDupDlg(x) {
+  var groups = !!x.groups, open = !!x.open, title = x.title || x.id;
+  var nameIn = el('input', { maxlength: '40', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' }), nameMsg = el('span', { class: 'small bad', style: 'font-weight:400', hidden: true });
+  var touched = false;
+  nameIn.oninput = function () { touched = true; check(); };
+  var clsSel = el('select');
+  Object.keys(T.init.classes || {}).sort(function (a, b) { return a.localeCompare(b, I18N.lang, { numeric: true }); })
+    .forEach(function (c) { clsSel.appendChild(el('option', { value: c, text: t('t.class_opt', { cls: c, n: T.init.classes[c].length }) })); });
+  if (!open && !T.init.classes[x.cls]) clsSel.appendChild(el('option', { value: x.cls, text: x.cls }));
+  if (!open) clsSel.value = x.cls;
+  var timeIn = el('input', { type: 'number', min: '1', max: '240', inputmode: 'numeric' }); timeIn.value = x.total || 10;
+  var missInfo = el('p', { class: 'small muted' });
+  var whoBox = radios('dup-who', [['all', t('t.dup_all')], ['missing', t('t.dup_missing')]], 'all', function () { prefill(); modeRender(); check(); });
+  var modeWrap = el('div', { class: 'stack tight' });
+  var missing = null;   // mená žiakov, ktorí nepísali (null = ešte sa načítava / archivovaný)
+  var prefill = function () { if (!touched) nameIn.value = freeName(x.id, radioVal(whoBox) === 'missing' ? 'N' : '2'); };
+  // Ktoré objekty: len pri teste so skupinami. Trieda bez skupín nemôže písať „ako pôvodný“ ani „prehodené“.
+  var modeRender = function () {
+    var keep = radioVal(modeWrap) || 'same', cls = radioVal(whoBox) === 'missing' ? x.cls : clsSel.value, ab = classHasGroups(cls);
+    modeWrap.innerHTML = '';
+    if (!groups) return;
+    var opts = [['same', t('t.dup_same')], ['swap', t('t.dup_swap')], ['A', t('t.dup_only_a', { n: x.n })], ['B', t('t.dup_only_b', { n: x.n })], ['all', t('t.dup_every', { n: x.n * 2 })]];
+    if (!ab) { opts = opts.slice(2); if (keep === 'same' || keep === 'swap') keep = 'all'; }
+    modeWrap.appendChild(el('p', { class: 'small', style: 'font-weight:600', text: t('t.dup_mode') }));
+    modeWrap.appendChild(radios('dup-mode', opts, keep));
+    if (!ab) modeWrap.appendChild(el('p', { class: 'small muted', text: t('t.dup_nogroups', { cls: cls }) }));
+  };
+  clsSel.onchange = function () { modeRender(); };
+  var start = function (state) {
+    return { text: t(state === 'open' ? 't.start' : 't.prepare'), primary: state === 'open', wait: t('t.saving'), run: async function () {
+      var name = nameIn.value.trim(), who = open ? 'all' : radioVal(whoBox);
+      if (nameErr(name)) { check(); return true; }
+      var total = Math.max(1, Math.min(240, parseInt(timeIn.value, 10) || x.total || 10));
+      var cfg = { title: name, cls: open ? '' : who === 'missing' ? x.cls : clsSel.value, mode: groups ? radioVal(modeWrap) || 'same' : 'same', who: who, total: total, state: state };
+      var r = await api('tDuplicate', A({ t: x.id, cfg: cfg }));
+      var y = { id: r.id, created: r.created || nowStr(), started: r.started || '', cls: r.cls || cfg.cls, open: open, regions: x.regions, title: r.id, n: r.n, groups: !!r.groups, alt: !!r.alt,
+        total: r.total || total, state: state, dk: r.dk || '', only: r.only || 0, src: r.src || x.id, note: '' };
+      T.init.tests.push(y); (T.init.taken = T.init.taken || []).push(r.id.toLowerCase());
+      tStarted(y);
+      refreshInit().catch(function () {});
+    } };
+  };
+  var bOpen = start('open'), bReady = start('ready');
+  var check = function () {
+    var miss = !open && radioVal(whoBox) === 'missing', e = nameErr(nameIn.value.trim());
+    nameIn.classList.toggle('invalid', !!e && e !== 'empty');
+    nameMsg.textContent = e ? t('t.name_' + e, { max: (T.init && T.init.nameMax) || NAME_MAX }) : ''; nameMsg.hidden = !e;
+    clsSel.disabled = miss; if (miss) clsSel.value = x.cls;
+    missInfo.hidden = !miss;
+    var none = miss && missing && !missing.length;
+    if (miss) missInfo.textContent = missing === null ? t(x.state === 'archived' ? 't.dup_missing_arch' : 'common.loading') : missing.length ? t('t.dup_missing_list', { n: missing.length, names: missing.join(', ') }) : t('t.dup_missing_none');
+    missInfo.className = 'small ' + (none ? 'bad' : 'muted');
+    dlgOff(bOpen.el, !!e || none); dlgOff(bReady.el, !!e || none);
+  };
+  dlgOpen({ title: t('t.dup_title', { title: title }), body: [
+    el('p', { class: 'small muted', text: t('t.dup_hint') }),
+    open ? null : el('p', { class: 'small', style: 'font-weight:600', text: t('t.dup_who') }), open ? null : whoBox, open ? null : missInfo,
+    el('div', { class: 'row' }, [field(t('t.title'), nameIn, [nameMsg]), open ? null : field(t('t.class'), clsSel), el('label', { style: 'flex:0 1 150px' }, [el('span', { text: t('t.time') }), timeIn])]),
+    modeWrap], buttons: [bOpen, bReady, { text: t('common.cancel') }] });
+  prefill(); modeRender(); check();
+  // kto nepísal: žiaci bez výsledku (aj neprítomní); pri archivovanom to zistí až skript
+  if (!open && x.state !== 'archived') {
+    try {
+      var c = await curFor(x.id), done = {};
+      c.res.forEach(function (r) { if (!r.teacher) done[r.pupilId] = 1; });
+      missing = sortedRows(c).filter(function (p) { return !done[p.id.split('#')[0]]; }).map(function (p) { return p.label; });
+    } catch (e) { missing = null; missInfo.textContent = errText(e); }
+    if (!$('dlg').hidden) check();
+  }
+}
+
+/* ---------- prepočítať body (opravené objekty v dátach) ---------- */
+// Objekty testu, ako sú teraz v dátach aplikácie (a vo Vlastných objektoch), zjednodušené rovnako ako pri vytvorení testu.
+// Vráti {objects: tie, čo sa líšia od balíka testu, missing: kľúče, ktoré sa v dátach nenašli}.
+async function currentObjects(c) {
+  var x = c.d.test, map = x.map || {}, labels = String(x.regions || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  var regs = T.regions.filter(function (r) { return labels.indexOf(regionLabel(r.code, r.names)) >= 0; });
+  if (!regs.length && map.bbox) regs = T.regions.filter(function (r) { return r.bbox && bboxHit(r.bbox, map.bbox); });
+  var files = [];
+  regs.forEach(function (r) { r.objects.forEach(function (o) { files.push({ entry: o, region: r.code }); }); });
+  var lists = await Promise.all(files.map(function (f) { return Data.objects(f.entry, f.entry.type, f.region); }));
+  var byId = {};
+  lists.forEach(function (l) { l.forEach(function (o) { if (!byId[o.id]) byId[o.id] = o; }); });
+  (T.init.custom || []).forEach(function (o) { if (!byId[o.id]) byId[o.id] = { id: o.id, name: o.name, type: typeCode(o.type), diff: o.diff, g: { t: 'pt', c: o.c } }; });
+  var tol = map.bbox ? bboxSpan(map.bbox) / 6000 : 0.01, dec = decFor(tol), out = {}, missing = [];
+  x.keys.forEach(function (k) {
+    var o = byId[k], old = c.pack.objects[k];
+    if (!o) { missing.push(k); return; }
+    var n = { name: o.name, type: o.type, diff: o.diff, g: simpGeom(o.g, tol, dec) };
+    if (old && (n.name !== old.name || JSON.stringify(n.g) !== JSON.stringify(old.g))) out[k] = n;
+  });
+  return { objects: out, missing: missing };
+}
+async function tRecalcDlg(x) {
+  dlgOpen({ title: t('t.recalc_title', { title: x.title || x.id }), body: [el('p', { class: 'muted' }, [el('span', { class: 'spin' }), t('t.recalc_loading')])], buttons: [{ text: t('common.cancel') }] });
+  var c, cur, d;
+  try { c = await curFor(x.id); cur = await currentObjects(c); d = await api('tRecalc', A({ t: x.id, objects: cur.objects, dry: true })); }
+  catch (e) { dlgMsg(errText(e), 'bad'); return; }
+  if ($('dlg').hidden) return;
+  var pack = c.pack, body = $('dlg-body'); body.innerHTML = '';
+  var label = function (k) { var b = (c.d.test.keysB || []).indexOf(k); return c.d.test.groups ? (b >= 0 ? 'B' + (b + 1) : 'A' + (c.d.test.keysA.indexOf(k) + 1)) + '. ' : (c.d.test.keys.indexOf(k) + 1) + '. '; };
+  if (d.changes.length) {
+    body.appendChild(el('p', { text: t('t.recalc_changes', { n: d.changes.length }) }));
+    body.appendChild(el('ul', { class: 'rules small' }, d.changes.map(function (ch) {
+      var parts = [];
+      if (ch.name2 !== ch.name) parts.push(t('t.recalc_name', { name: ch.name2 }));
+      if (ch.geo) parts.push(ch.n ? t('t.recalc_geo_n', { n: ch.n, km: fmtKm(ch.max) }) : t('t.recalc_geo_0'));
+      return el('li', {}, [el('b', { text: ch.tag + ' ' + ch.name }), ': ' + parts.join(', ')]);
+    })));
+  } else body.appendChild(el('p', { text: t('t.recalc_none') }));
+  if (cur.missing.length) {
+    body.appendChild(el('p', { class: 'small bad', text: t('t.recalc_missing', { n: cur.missing.length }) }));
+    body.appendChild(el('ul', { class: 'rules small' }, cur.missing.map(function (k) { return el('li', { text: label(k) + (pack.objects[k] ? pack.objects[k].name : k) }); })));
+  }
+  body.appendChild(el('p', { class: 'small muted', text: t('t.recalc_hint') }));
+  dlgButtons([{ text: t(d.changes.length ? 't.recalc_go' : 't.recalc_go_anyway'), primary: true, wait: t('t.recalc_running'), run: async function () {
+    var r = await api('tRecalc', A({ t: x.id, objects: cur.objects }));
+    if (T.cur && T.cur.id === x.id) { if (r.pack) T.cur.pack = r.pack; T.cview = null; tRefresh().catch(function () {}); }
+    say(t('t.recalc_done', { n: r.n || 0 }), 'ok');
+  } }, { text: t('common.cancel') }]);
+}
+
+/* ---------- anulovať tip (v záložke Tipy triedy) ---------- */
+function voidCtl() {
+  var box = $('class-void'), k = T.objKey, v = (T.cur.d.test.voids || {})[k];
+  box.innerHTML = '';
+  if (v) box.appendChild(el('span', { class: 'badge warn', text: t('t.void_badge_' + v) }));
+  if (!T.dz && T.feat) box.appendChild(el('button', { type: 'button', class: 'mini', text: t(v ? 't.void_change' : 't.void_btn'), onclick: function () { tVoidDlg(k); } }));
+  box.hidden = !box.firstChild;
+}
+function tVoidDlg(k) {
+  var o = T.cur.pack.objects[k], v = (T.cur.d.test.voids || {})[k];
+  var set = function (mode) {
+    return async function () {
+      var r = await api('tVoid', A({ t: T.cur.id, q: k, mode: mode }));
+      T.cur.d.test.voids = r.voids || {}; tPrepResults(); tClass();
+      tStatus('class-vmsg', t('t.void_done_' + (mode || 'undo'), { n: r.n || 0 }), 'ok');
+    };
+  };
+  dlgOpen({ title: t('t.void_title'), body: [
+    el('p', { style: 'font-weight:800', text: keyLabel(k) + o.name }),
+    v ? el('p', { class: 'bad', text: t('t.void_now_' + v) }) : null,
+    el('ul', { class: 'rules small' }, [el('li', { html: t('t.void_full_hint') }), el('li', { html: t('t.void_skip_hint') })]),
+    el('p', { class: 'small muted', text: t('t.void_hint') })],
+  buttons: [v !== 'full' ? { text: t('t.void_full'), primary: true, run: set('full') } : null,
+    v !== 'skip' ? { text: t('t.void_skip'), primary: !v, run: set('skip') } : null,
+    v ? { text: t('t.void_undo'), run: set('') } : null,
+    { text: t('common.cancel') }] });
+}
+
+/* ---------- známky ---------- */
+// Stupnica: od koľkých % je 1, 2, 3, 4 (menej = 5). Percentá sa zaokrúhlia na celé ako v prehľade.
+function gradeOf(pct, g) { var p = Math.round(pct * 100); return p >= g[0] ? 1 : p >= g[1] ? 2 : p >= g[2] ? 3 : p >= g[3] ? 4 : 5; }
+function gradesOk(g) { return g.length === 4 && g.every(function (v, i) { return v !== null && v >= 0 && v <= 100 && Math.floor(v) === v && (i === 0 || v < g[i - 1]); }); }
+async function tGradesDlg(x) {
+  dlgOpen({ title: t('t.grades_title', { title: x.title || x.id }), body: [el('p', { class: 'muted' }, [el('span', { class: 'spin' }), t('common.loading')])], buttons: [{ text: t('common.cancel') }] });
+  var c;
+  try { c = await curFor(x.id); } catch (e) { dlgMsg(errText(e), 'bad'); return; }
+  if ($('dlg').hidden) return;
+  var g0 = ((T.init && T.init.grades) || store('sm-grades') || [90, 75, 50, 25]).slice(), ins = [];
+  var by = {}; c.res.forEach(function (r) { by[r.pupilId] = r; });
+  var list = (c.d.test.open ? c.res.filter(function (r) { return !r.teacher; }).map(function (r) { return { label: r.name, id: r.pupilId }; }).sort(function (a, b) { return a.label.localeCompare(b.label, 'sk'); }) : sortedRows(c))
+    .map(function (p) { var key = p.id.split('#')[0], r = by[key]; return { name: p.label, pct: r ? r.pct : null, absent: !r && !!c.absent[key] }; });
+  var tb = el('tbody'), scale = el('div', { class: 'row scale' });
+  [1, 2, 3, 4].forEach(function (n, i) {
+    var inp = el('input', { type: 'number', min: '0', max: '100', inputmode: 'numeric' }); inp.value = g0[i];
+    inp.oninput = render; ins.push(inp);
+    scale.appendChild(el('label', {}, [el('span', { text: t('t.grade_from', { g: n }) }), inp]));
+  });
+  var cur = function () { return ins.map(function (i) { var v = parseInt(i.value, 10); return isNaN(v) ? null : v; }); };
+  function render() {
+    var g = cur(), ok = gradesOk(g);
+    ins.forEach(function (i) { i.classList.toggle('invalid', !ok); });
+    tb.innerHTML = '';
+    list.forEach(function (p) {
+      tb.appendChild(el('tr', {}, [el('td', { text: p.name }), el('td', { class: 'num', text: p.pct === null ? (p.absent ? t('t.st_absent') : '–') : fmtPct(p.pct) }),
+        el('td', { class: 'num', text: p.pct === null || !ok ? '' : String(gradeOf(p.pct, g)) })]));
+    });
+    dlgOff(copy.el, !ok || !list.some(function (p) { return p.pct !== null; }));
+    tStatus('grades-err', ok ? '' : t('t.grades_bad'), 'bad');
+  }
+  var copy = { text: t('t.grades_copy'), primary: true, run: async function () {
+    var g = cur(), lines = list.map(function (p) { return p.name + '\t' + (p.pct === null ? '' : gradeOf(p.pct, g)); });
+    copyText(lines.join('\n'), 'dlg-msg', t('t.grades_copied', { n: list.filter(function (p) { return p.pct !== null; }).length }));
+    // stupnica sa zapamätá (v tabuľke, so starším skriptom v prehliadači)
+    if (g.join() !== g0.join()) {
+      store('sm-grades', g); if (T.init) T.init.grades = g; g0 = g.slice();
+      if (T.feat) api('tGrades', A({ g: g })).catch(function (e) { tStatus('grades-err', errText(e), 'bad'); });
+    }
+    return true;
+  } };
+  var body = $('dlg-body'); body.innerHTML = '';
+  body.appendChild(el('p', { class: 'small muted', text: t('t.grades_hint') }));
+  body.appendChild(scale);
+  body.appendChild(el('p', { id: 'grades-err', class: 'small bad', hidden: true }));
+  body.appendChild(el('div', { class: 'tablebox gradebox' }, [el('table', {}, [el('thead', {}, [el('tr', {}, [el('th', { text: t('t.col_pupil') }), el('th', { class: 'num', text: t('t.col_result') }), el('th', { class: 'num', text: t('t.col_grade') })])]), tb])]));
+  dlgButtons([copy, { text: t('common.close') }]);
+  render();
+}
+
+/* ---------- náhľad ako žiak ---------- */
+// Stránka žiaka v novej karte s objektmi tohto testu. Nič sa neukladá: tipy aj vyhodnotenie sú len v prehliadači.
+// Údaje idú cez úložisko prehliadača (rovnaká adresa), kľúč učiteľa sa do odkazu nedáva.
+async function tPupilPreview(x) {
+  var url = appBase() + 'test.html?preview=1', w = null;
+  if (!(T.cur && T.cur.id === x.id && T.cur.pack)) { try { w = window.open('', '_blank'); } catch (e) { w = null; } if (w) try { w.document.title = t('common.loading'); } catch (e) { /* nevadí */ } }
+  try {
+    var c = await curFor(x.id), d = c.d.test;
+    store('sm-preview', { id: d.id, title: d.title || d.id, cls: d.cls, open: !!d.open, total: d.total, groups: !!d.groups, keysA: keysA(d), keysB: d.keysB || [], keys: d.keys,
+      objects: c.pack.objects, scoring: d.scoring, map: d.map, voids: d.voids || {}, penalty: c.d.penalty || 0.1, lang: d.lang || 'sk', at: Date.now() });
+    if (w) w.location.href = url;
+    else if (!window.open(url, '_blank')) say(t('t.preview_blocked'), 'bad');
+  } catch (e) { if (w) w.close(); say(errText(e), 'bad'); }
+}
+
 /* ---------- tlačidlá ---------- */
 (function () {
   function on(id, fn, ev) { var e = $(id); if (e) e[ev || 'onclick'] = fn; }
@@ -959,10 +1405,25 @@ async function tExportAll() {
   on('sc-save', tSaveScoring);
   on('sc-export', tExportAll);
   on('qr-close', function () { $('qr-cover').hidden = true; });
+  // ponuka ⋯ sa zatvorí klikom mimo nej, Esc alebo zmenou šírky okna (posúva sa so stránkou)
+  document.addEventListener('pointerdown', function (e) { if (!$('menu').hidden && !$('menu').contains(e.target) && e.target !== MENU.btn) menuClose(); }, true);
+  var lastW = window.innerWidth;
+  window.addEventListener('resize', function () { if (window.innerWidth !== lastW) { lastW = window.innerWidth; menuClose(); } });
+  $('menu').addEventListener('keydown', function (e) {
+    var list = [].slice.call($('menu').querySelectorAll('button:not([disabled])')), i = list.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (list.length) list[(i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length].focus(); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); if (list.length) list[e.key === 'Home' ? 0 : list.length - 1].focus(); }
+    else if (e.key === 'Tab') menuClose();
+  });
   window.addEventListener('afterprint', function () { $('print-sheet').innerHTML = ''; });
   on('qr-cover', function (e) { if (e.target === $('qr-cover')) $('qr-cover').hidden = true; });
   on('t-disconnect', function () { if (confirm(t('t.disconnect_confirm'))) { store('sm-teacher', null); location.reload(); } });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('qr-cover').hidden = true; });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!$('menu').hidden) { menuClose(true); return; }
+    if (!$('dlg').hidden) { dlgClose(); return; }
+    $('qr-cover').hidden = true;
+  });
   // odkaz z tabuľky vložený do už otvorenej stránky mení len časť za #, stránka sa preto načíta znova
   window.addEventListener('hashchange', function () { if (/[#&]k=/.test(location.hash)) location.reload(); });
 })();

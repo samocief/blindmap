@@ -105,6 +105,12 @@ Výsledky sú v tabuľke v hárku „Res_<názov testu>“ (napr. `Res_Geo7A_Rie
 
 Uzavretý test sa dá v zozname testov **archivovať**: výsledky sa presunú do spoločného hárka **Archív** a hárok `Res_…` zmizne. **Obnoviť** ich vráti späť, **Vymazať** (len archivovaný test) ho zmaže natrvalo. Obrázky na Disku ostávajú.
 
+Pri každom teste je v zozname tlačidlo **Otvoriť** (pri archivovanom **Obnoviť**) a ponuka **⋯** (aj v prehľade testu, od skriptu 2.11):
+tipy triedy, náhľad ako žiak, otvoriť výsledky v tabuľke, kopírovať známky (so stupnicou), prepočítať body (po oprave geometrie alebo názvu
+objektu v dátach sa odchýlky prepočítajú z uložených tipov), anulovať tip (plný počet pre všetkých alebo nezapočítať), poznámka, premenovať
+(staré odkazy a QR kódy fungujú ďalej), duplikovať / náhradný termín (len pre žiakov, ktorí test nepísali, voliteľne s prehodenými skupinami),
+archivovať, obnoviť, vymazať. Výsledky v hárku `Res_…` sú vždy podľa abecedy (učiteľ na konci), nový hárok výsledkov má filter.
+
 ### Dozor a suplovanie
 
 Test môžeš pripraviť pre inú triedu alebo na hodinu, keď nebudeš v škole:
