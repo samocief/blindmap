@@ -308,7 +308,7 @@ function mapControls(box, getView) {
 function freshSvg(id) { var old = $(id), n = old.cloneNode(false); old.parentNode.replaceChild(n, old); return n; }
 
 /* ---------- obrázok s tipmi jedného žiaka (PNG) ---------- */
-// rec = {title, name, cls, when, pct, scoring:{full,zero}, items:[{name, type, g, c:[lon,lat]|null, d, why}]}
+// rec = {title, name, cls, when, pct, scoring:{full,zero}, items:[{name, type, g, c:[lon,lat]|null, d, why, void: '' | 'full' | 'skip'}]}
 function sheetPng(scene, rec) {
   var W = 1600, MH = 900, top = 112, pal = PAL_LIGHT, rows = Math.ceil(rec.items.length / 2), H = top + MH + 44 + rows * 44 + 64;
   var B = scene.B, proj = scene.proj, u = Math.max(B.w * 1.04 / (W - 80), B.h * 1.04 / MH), vw = (W - 80) * u, vh = MH * u, vx = B.x + B.w / 2 - vw / 2, vy = B.y + B.h / 2 - vh / 2;
@@ -332,8 +332,10 @@ function sheetPng(scene, rec) {
     var col = i < rows ? 0 : 1, x = 40 + col * (W / 2 - 20), y = ty + (i % rows) * 44;
     s += '<circle cx="' + (x + 15) + '" cy="' + (y - 8) + '" r="15" fill="' + pal.tip + '"/><text x="' + (x + 15) + '" y="' + (y - 2) + '" font-size="18" font-weight="800" text-anchor="middle" fill="#fff" ' + F + '>' + (i + 1) + '</text>';
     s += '<text x="' + (x + 44) + '" y="' + y + '" font-size="24" fill="' + pal.muted + '" ' + F + '>' + esc(typeOne(it.type) + ': ') + '<tspan font-weight="600" fill="' + pal.ink + '">' + esc(it.name) + '</tspan></text>';
+    // anulovaný tip: plný počet (100 %) alebo sa nepočíta
+    var pc = it.void === 'full' ? fmtPct(1) + ' · ' + t('img.void_full') : it.void === 'skip' ? t('img.void_skip') : fmtPct(pctFor(it.why ? null : it.d, rec.scoring.full, rec.scoring.zero));
     s += '<text x="' + (x + W / 2 - 80) + '" y="' + y + '" font-size="24" font-weight="800" text-anchor="end" fill="' + pal.ink + '" ' + F + '>' + esc(it.why ? t('why.' + it.why) : fmtKm(it.d)) +
-      '<tspan font-weight="400" fill="' + pal.muted + '" dx="14">' + esc(fmtPct(pctFor(it.why ? null : it.d, rec.scoring.full, rec.scoring.zero))) + '</tspan></text>';
+      '<tspan font-weight="400" fill="' + pal.muted + '" dx="14">' + esc(pc) + '</tspan></text>';
   });
   s += '<text x="40" y="' + (H - 22) + '" font-size="18" fill="' + pal.muted + '" ' + F + '>' + esc(t('img.legend')) + '</text></svg>';
   return new Promise(function (resolve, reject) {

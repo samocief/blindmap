@@ -23,6 +23,7 @@ async function pupilStart() {
   var s = param('s'), testId = param('t');
   try { await loadLang(param('lang') || 'sk'); } catch (e) { document.body.textContent = e.message; return; }
   applyI18n();
+  if (param('preview')) { previewStart(); return; }
   if (!s || !testId) { pFail(t('p.no_link')); $('p-fail-practice').hidden = false; return; }
   API.url = scriptUrl(s); P.t = testId;
   P.device = store('sm-device') || (Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-5));
@@ -156,7 +157,7 @@ function pupilIntro() {
   });
   $('p-intro-wake').textContent = t('wakeLock' in navigator ? 'p.rule_lock' : 'p.rule_lock_old');
   go.onclick = async function () {
-    if (winSmallVsScreen()) { $('p-intro-err').textContent = t('p.small_start'); $('p-intro-err').hidden = false; return; }
+    if (!P.preview && winSmallVsScreen()) { $('p-intro-err').textContent = t('p.small_start'); $('p-intro-err').hidden = false; return; }
     $('p-intro-err').hidden = true;
     go.disabled = true; go.textContent = t('common.loading');
     var r;
@@ -365,7 +366,7 @@ function winTooSmall() {
 }
 // Malé okno zakryje test hneď a ráta sa ako výpadok; keď sa okno zväčší, žiak je späť.
 function pupilSize() {
-  if (P.phase !== 'test' || document.hidden || !P.S) return;
+  if (P.phase !== 'test' || document.hidden || !P.S || P.preview) return;
   var a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;   // klávesnica telefónu zmenší okno
   var small = winTooSmall();
   $('p-small').hidden = !small;
@@ -388,7 +389,7 @@ function awaySend(ph, ep, why, ms) {
 function awayStartSend() { var S = P.S; P.startSent = true; awaySend('start', S.ep, S.awayWhy).catch(function () {}); }
 // why: tab = skrytá stránka, win = iné okno, small = zmenšené okno. Jeden výpadok môže spustiť viac strážcov naraz: ráta sa raz.
 function awayStart(why) {
-  var S = P.S; if (!S || P.phase !== 'test') return;
+  var S = P.S; if (!S || P.phase !== 'test' || P.preview) return;
   if (why === 'win') $('p-blur').hidden = false;
   if (S.awayAt) {
     // iné okno → iná aplikácia: skrytá stránka má prednosť (časovače v nej nemusia bežať)
@@ -502,6 +503,7 @@ function pupilSend(attempt) {
   var S = P.S, st = $('p-end-status'), again = $('p-end-retry');
   if (S.sent) {
     st.className = 'ok'; st.textContent = t('p.sent'); again.hidden = true; $('p-end-wait').hidden = false;
+    if (P.preview) { pupilResults(); return; }
     pupilPollStart(); return;
   }
   st.className = 'muted'; st.innerHTML = '<span class="spin"></span>' + esc(t('p.sending')); again.hidden = true;
@@ -558,7 +560,7 @@ async function pupilResults() {
   P.R = R; P.rsel = -1;
   P.ritems = order.map(function (k) {
     var o = R.objects[k], tip = R.tips[k];
-    return { k: k, name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: R.km[k], why: R.km[k] === null ? (R.why[k] || 'none') : '' };
+    return { k: k, name: o.name, type: o.type, g: o.g, c: tip ? [tip[1], tip[0]] : null, d: R.km[k], why: R.km[k] === null ? (R.why[k] || 'none') : '', void: (R.voids || {})[k] || '' };
   });
   $('r-title').textContent = R.name;
   $('r-sub').textContent = [R.title, R.cls, R.group ? t('p.group', { g: R.group }) : ''].filter(Boolean).join(' · ');
@@ -568,11 +570,13 @@ async function pupilResults() {
   var list = $('r-list'); list.innerHTML = '';
   P.ritems.forEach(function (it, i) {
     var pc = pctFor(it.why ? null : it.d, R.scoring.full, R.scoring.zero);
+    // anulovaný tip: plný počet pre všetkých alebo sa nepočíta (odchýlka sa ukáže aj tak)
+    var pt = it.void === 'full' ? fmtPct(1) : it.void === 'skip' ? '–' : fmtPct(pc);
     var b = el('button', { type: 'button', onclick: function () { pupilSelect(i); } }, [
       el('span', { class: 'tipnum' + (it.c ? '' : ' none'), text: String(i + 1) }),
-      nameWithIcon(it.type, it.name),
-      el('span', { class: 'r' }, [it.why ? t('why.' + it.why) : fmtKm(it.d), el('span', { text: fmtPct(pc) })])]);
-    list.appendChild(el('li', {}, [b]));
+      nameWithIcon(it.type, it.name, it.void ? t('p.res_void_' + it.void) : ''),
+      el('span', { class: 'r' }, [it.why ? t('why.' + it.why) : fmtKm(it.d), el('span', { text: pt })])]);
+    list.appendChild(el('li', { class: it.void ? 'void' : null }, [b]));
   });
   pShow('p-results');
   P.rview = new MapView(freshSvg('r-map'), P.scene, { overlay: pupilResultsOverlay });
@@ -608,6 +612,64 @@ async function pupilImage() {
     downloadUrl(url, (R.name + ' ' + (R.title || 'slepa-mapa')).replace(/[\\/:*?"<>|]/g, '_') + '.png');
     st.hidden = true;
   } catch (e) { st.textContent = errText(e); }
+}
+
+/* ---------- náhľad ako žiak (test.html?preview=1) ---------- */
+// Učiteľ otvorí z ponuky testu stránku žiaka s jeho objektmi. Spojenie so skriptom tabuľky nahradí napodobnenina v prehliadači:
+// nič sa neukladá, odchod z testu sa nestráži, po odovzdaní sa hneď ukáže vyhodnotenie (ako žiakovi po uzavretí).
+// Údaje (objekty s geometriou, hodnotenie, mapa) pripraví aplikácia učiteľa do úložiska prehliadača.
+function previewStart() {
+  var D = store('sm-preview');
+  if (!D || !D.objects || !D.keys) { pFail(t('p.preview_none')); return; }
+  P.preview = D; P.t = 'preview-' + D.id; P.device = 'preview';
+  store(sessKey(), null);
+  document.body.classList.add('preview');
+  document.body.appendChild(el('div', { class: 'previewbar', text: t('p.preview_bar', { title: D.title }) }));
+  document.title = t('p.preview_title', { title: D.title });
+  var PV = { state: 'open', start: 0, done: false, tips: {} };
+  var left = function () { return PV.start ? PV.start + D.total * 60000 - Date.now() : D.total * 60000; };
+  var keysFor = function (g) { return D.groups ? (g === 'B' ? D.keysB : D.keysA) : D.keys; };
+  var grp = function (p) { return D.groups ? (p === 'B' ? 'B' : 'A') : ''; };
+  var objs = function (keys) { var o = {}; keys.forEach(function (k) { if (D.objects[k]) o[k] = D.objects[k]; }); return o; };
+  var me = function () { return { done: PV.done ? 1 : 0, lock: 0, end: 0, left: left(), ad: 0, leaves: 0 }; };
+  var fake = {
+    pupilInit: function () {
+      var names = D.groups ? ['A', 'B'].map(function (g) { return { id: g, label: t('p.preview_group', { g: g }) }; }) : [{ id: 'all', label: t('p.preview_pupil') }];
+      return { v: '9.9', id: D.id, cls: D.cls, state: PV.state, open: false, total: D.total, n: keysFor('A').length, groups: D.groups, penalty: D.penalty, lang: D.lang, title: D.title, map: D.map, names: names };
+    },
+    pupilLogin: function (d) {
+      var g = grp(d.p), keys = keysFor(g);
+      return { ok: true, pid: d.p, name: t('p.preview_pupil'), group: g, total: D.total, penalty: D.penalty, scoring: D.scoring, keys: keys, objects: objs(keys), begun: !!PV.start, left: left(), ad: 0, leaves: 0, lock: 0, end: 0, ep: 0 };
+    },
+    pupilBegin: function () { if (!PV.start) PV.start = Date.now(); return { ok: true, left: left(), ad: 0, total: D.total, leaves: 0, lock: 0, ep: 0 }; },
+    pupilSave: function () { return { ok: true, left: left(), ad: 0, end: 0 }; },
+    pupilAway: function () { return { ok: true, lock: 0, end: 0, left: left(), ad: 0, leaves: 0 }; },
+    pupilEvent: function () { return { ok: true }; },
+    pupilState: function (d) { return d.p ? { state: PV.state, scoring: D.scoring, me: me() } : { state: PV.state, scoring: D.scoring }; },
+    pupilSubmit: function (d) { PV.tips = d.tips || {}; PV.done = true; PV.state = 'closed'; return { ok: true }; },
+    pupilResult: function (d) {
+      var g = grp(d.p), keys = keysFor(g), km = {}, why = {}, tips = {}, voids = {}, v = D.voids || {}, sum = 0;
+      keys.forEach(function (k) {
+        var o = D.objects[k], c = PV.tips[k];
+        if (v[k]) voids[k] = v[k];
+        if (c && o) { km[k] = round1(measure(o.g, c).d); tips[k] = [c[1], c[0]]; } else { km[k] = null; why[k] = 'none'; tips[k] = null; }
+      });
+      var counted = keys.filter(function (k) { return v[k] !== 'skip'; });
+      counted.forEach(function (k) { sum += v[k] === 'full' ? 1 : pctFor(km[k], D.scoring.full, D.scoring.zero); });
+      return { name: t('p.preview_pupil'), cls: D.cls, title: D.title, sent: '', group: g, keys: keys, objects: objs(keys), km: km, why: why, tips: tips, leaves: 0, penalty: D.penalty,
+        scoring: D.scoring, pct: counted.length ? sum / counted.length : 0, map: D.map, voids: voids };
+    }
+  };
+  // všetky volania skriptu idú do napodobneniny (s krátkym oneskorením ako pri sieti)
+  api = function (action, data) {
+    var fn = fake[action];
+    return sleep(120).then(function () { if (!fn) throw ApiError('bad_request', action); return JSON.parse(JSON.stringify(fn(data || {}))); });
+  };
+  apiRetry = function (action, data) { return api(action, data); };
+  var map = D.map || {};
+  P.scenePromise = buildScene(map.bbox || [-180, -60, 180, 85], map.base || []).then(function (sc) { P.scene = sc; return sc; });
+  pLoading();
+  api('pupilInit', {}).then(function (info) { P.info = info; P.penalty = info.penalty; pupilNames(); });
 }
 
 /* ---------- tlačidlá ---------- */

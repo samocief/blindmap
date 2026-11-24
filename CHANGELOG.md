@@ -2,6 +2,34 @@
 
 Verzia aplikácie je v `js/core.js` (`APP.version`), verzia skriptu tabuľky v `apps-script/Code.gs` (`VERSION`). Aplikácia na GitHub Pages sa aktualizuje sama. Keď sa zmení aj skript, každý učiteľ ho musí vo svojej tabuľke vymeniť (postup v [README](README.md#aktualizácia-skriptu)). Kým to neurobí, aplikácia funguje po starom a ukáže upozornenie.
 
+## 2.26 (2026-11-24) – skript tabuľky 2.11 (treba vymeniť skript tabuľky)
+
+- **Ponuka ⋯ pri každom teste** (v zozname testov aj v prehľade testu). V riadku zoznamu ostalo jedno tlačidlo: **Otvoriť**, pri archivovanom
+  **Obnoviť**. Všetko ostatné je v ponuke; čo sa práve nedá, je sivé s vysvetlením (napr. „Najprv test uzavri“). Ovláda sa aj klávesnicou,
+  na telefóne sa zmestí na obrazovku. Dozor ponuku nemá.
+- **Premenovať** (nie počas písania): nový názov = nové id. Premenuje sa hárok výsledkov, riadky v `_balíky` a v Archíve a priečinok
+  s obrázkami na Disku. Starý odkaz, QR kód aj papier pre dozor fungujú ďalej. Dá sa premenovať aj späť alebo zmeniť len veľkosť písmen.
+- **Duplikovať / náhradný termín**: nový test s objektmi, mapou a hranicami hodnotenia pôvodného (aj s anulovanými tipmi).
+  - **Kto píše:** celá trieda, alebo **len tí, čo pôvodný nepísali** (neprítomní a neprihlásení; okno ich vypíše). Ostatní sa neprihlásia
+    a v prehľade sú len títo žiaci. Názov sa predvyplní (`…_N`, pri kópii `…_2`).
+  - **Objekty** (test so skupinami): ako pôvodný, **prehodiť skupiny** (skupina A píše sadu B a naopak), všetci sadu A, všetci sadu B alebo všetci obe.
+  - Pri kópii sa dá zvoliť iná trieda a čas. Externý test sa dá skopírovať ako externý. V hárku Testy pribudli stĺpce **žiaci** a **zdroj**.
+- **Prepočítať body**: keď opravíš polohu alebo názov objektu v dátach (GeoJSON, tabuľka obtiažností, Vlastné objekty), aplikácia porovná objekty
+  testu s aktuálnymi dátami, ukáže, čo sa zmenilo a koľkým žiakom sa zmení odchýlka (a o koľko najviac), a potom prepočíta odchýlky z uložených tipov
+  aj percentá všetkých. Objekt, ktorý sa v dátach nenájde, ostane pôvodný. Hranice hodnotenia sa naďalej menia v záložke Hodnotenie.
+- **Anulovať tip** (Tipy triedy, tlačidlo pri vybranom objekte; z ponuky „Anulovať tip…“): **plný počet pre všetkých** (100 %), alebo
+  **nezapočítať** (objekt sa do priemeru nepočíta). Dá sa zmeniť aj zrušiť. Výsledky sa prepočítajú, v hárku výsledkov je pri objekte `⊘`
+  (nový stĺpec **anulované** v hárku Testy), v Tipoch triedy tiež. Žiak vo výsledkoch aj na obrázku vidí „anulovaný – …“. Štatistika objektu ostáva skutočná.
+- **Kopírovať známky**: okno so žiakmi podľa abecedy, percentami a známkou, nad tým stupnica (predvolene 1 od 90 %, 2 od 75 %, 3 od 50 %,
+  4 od 25 %), dá sa zmeniť a zapamätá sa. Skopíruje sa meno a známka (dva stĺpce bez hlavičky), kto nepísal, má známku prázdnu.
+- **Tipy triedy** (štatistika objektov) a **Otvoriť výsledky v tabuľke** (hárok `Res_…`, pri archivovanom Archív na jeho riadkoch) sú v ponuke.
+- **Náhľad ako žiak**: stránka žiaka v novej karte s objektmi testu (výber skupiny). Nič sa neukladá, odchod z testu sa nestráži,
+  po odovzdaní sa hneď ukáže vyhodnotenie.
+- **Poznámka k testu** (len pre teba): v zozname pod názvom a v prehľade. Nový stĺpec **poznámka** v hárku Testy.
+- **Výsledky v hárku `Res_…` sú vždy podľa abecedy** (učiteľ na konci; ďalší pokus žiaka hneď pod predošlým). Nový hárok výsledkov má **filter**
+  na celom hárku. Staršie hárky filter nedostanú (pridáš ho sám: Údaje → Vytvoriť filter). Kopírovať výsledky pre Excel je tiež podľa abecedy.
+- So skriptom 2.10 aplikácia funguje ďalej; akcie, ktoré potrebujú nový skript, sú v ponuke sivé („Potrebuje skript tabuľky 2.11“).
+
 ## 2.25 (2026-11-23) – skript tabuľky 2.10 (treba vymeniť skript tabuľky)
 
 - **Archív.** V zozname testov je pri uzavretom (aj nespustenom) teste tlačidlo **Archivovať**. Hárok výsledkov `Res_<názov>` sa presunie
